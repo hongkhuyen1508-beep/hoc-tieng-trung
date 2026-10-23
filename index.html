@@ -247,6 +247,25 @@ textarea.field { font-family: var(--font-zh); line-height: 1.6; resize: vertical
 .how li { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; font-size: 14px; color: var(--muted); counter-increment: how; }
 .how li b { display: block; color: var(--ink); }
 .how li b::before { content: counter(how) ". "; color: var(--seal); }
+.fc-prog { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; margin: 16px 0 14px; }
+.fc-prog i { display: block; height: 100%; background: var(--seal); transition: width .2s; }
+.fc-card { width: 100%; min-height: 340px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; background: var(--surface); border: 1px solid var(--line); border-radius: 28px; padding: 28px 20px; position: relative; box-shadow: 0 10px 30px -18px color-mix(in srgb, var(--ink) 40%, transparent); touch-action: pan-y; }
+.fc-card.flipped { border-color: color-mix(in srgb, var(--seal) 35%, var(--line)); }
+.fc-tag { position: absolute; top: 14px; left: 16px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.fc-zh { font-size: clamp(54px, 17vw, 84px); line-height: 1.25; }
+.fc-zh.sent { font-size: clamp(26px, 7.5vw, 36px); line-height: 1.45; }
+.fc-zh rt { font-family: var(--font-body); font-size: 15px; color: var(--seal); font-weight: 500; }
+.fc-vi { font-size: clamp(24px, 6.5vw, 32px); font-weight: 600; line-height: 1.35; }
+.fc-py { font-size: 19px; color: var(--seal); font-weight: 500; }
+.fc-mean { font-size: 20px; font-weight: 600; }
+.fc-hint { font-size: 14px; margin-top: 10px; }
+.fc-line { width: 48px; height: 2px; background: var(--line); margin: 4px 0; }
+.fc-ex { display: grid; gap: 2px; margin-top: 10px; padding: 10px 14px; border-radius: 14px; background: var(--paper); font-size: 14px; }
+.fc-ex .zh { font-size: 19px; }
+.fc-grade { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.fc-grade .btn { justify-content: center; padding: 15px; font-size: 17px; }
+.fc-again { background: var(--bad-soft); color: var(--bad); }
+.fc-good { background: var(--good); color: var(--paper); }
 .review { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: center; background: var(--seal-soft); border: 1px solid color-mix(in srgb, var(--seal) 25%, transparent); border-radius: var(--r); padding: 16px; margin-top: 18px; }
 .review .big { font-family: var(--font-zh-display); font-weight: 900; font-size: 40px; color: var(--seal); line-height: 1; min-width: 56px; text-align: center; font-variant-numeric: tabular-nums; }
 .review p { margin: 2px 0 10px; font-size: 14px; color: var(--muted); }
@@ -845,8 +864,134 @@ function writeHome() {
       <li><b>Tự viết</b>Viết không nhìn. Viết đúng thì chữ được hẹn ôn lại sau 1, 3, 7, 16 ngày.</li>
     </ol>
     <div class="section-title">Chọn bộ chữ</div>
-    <div class="grid">${decks}</div>`;
+    <div class="grid">${decks}</div>
+    ${fcHome()}`;
 }
+
+/* ---------------- Thẻ ghi nhớ (flashcard) ---------------- */
+// Lật thẻ để xem nghĩa; "Nhớ rồi" thì thẻ được hẹn ôn lại sau 1, 3, 7, 16... ngày như phần tập viết.
+let fcs = store.get("fc", {});
+state.fcKind = store.get("fcKind", "word"); state.fcDir = store.get("fcDir", "zh");
+function fcWords(id) {
+  if (WORDS[id]) return WORDS[id];
+  if (id === "mine") return myWords.map((w) => ({ ...w, ...(findWord(w.zh) || {}) }));
+  const l = LESSONS.find((x) => "L-" + x.id === id);
+  return l ? l.vocab : [];
+}
+function fcItems(id, kind) {
+  const ws = fcWords(id);
+  if (kind === "word") return ws.map((w) => ({ key: "w:" + w.zh, zh: w.zh, pinyin: w.pinyin, vi: w.vi, w }));
+  const seen = new Set(), out = [];
+  for (const w of ws) if (w.ex && !seen.has(w.ex)) { seen.add(w.ex); out.push({ key: "s:" + w.ex, zh: w.ex, pinyin: w.exPy || "", vi: w.exVi || "", w }); }
+  return out;
+}
+const fcState = (k) => (!fcs[k] ? "new" : fcs[k].b >= 3 ? "known" : "learn");
+const fcDue = (items) => { const now = Date.now(); return items.filter((x) => fcs[x.key] && fcs[x.key].d <= now); };
+function fcDeckCard(id, name, mark) {
+  const items = fcItems(id, state.fcKind);
+  if (!items.length) return "";
+  const due = fcDue(items).length, k = items.filter((x) => fcState(x.key) === "known").length, l = items.filter((x) => fcState(x.key) === "learn").length;
+  const pct = (n) => ((n / items.length) * 100).toFixed(1);
+  return `<button class="card" data-fcdeck="${esc(id)}">
+    <div class="card-mark zh">${esc(mark)}</div>
+    <div class="card-body">
+      <div class="card-meta"><span>${items.length} ${state.fcKind === "word" ? "từ" : "câu"}</span>${due ? `<span class="pill">${due} thẻ cần ôn</span>` : ""}</div>
+      <div class="card-title">${esc(name)}</div>
+      <div class="meter" aria-hidden="true"><i class="k" style="width:${pct(k)}%"></i><i class="l" style="width:${pct(l)}%"></i></div>
+      <div class="deck-stats"><span><i class="dot known"></i>Nhớ chắc ${k}</span><span><i class="dot learn"></i>Đang nhớ ${l}</span></div>
+    </div></button>`;
+}
+function fcHome() {
+  const lessonOpts = LESSONS.map((l, i) => `<option value="L-${l.id}">Bài ${i + 1} · ${esc(l.title)} · ${esc(l.titleVi)}</option>`).join("");
+  return `<div class="section-title">Thẻ ghi nhớ (flashcard)</div>
+    <p class="muted" style="margin:0 0 10px">Nhìn mặt thẻ, tự nhớ nghĩa rồi chạm để lật. Nhớ thì bấm “Nhớ rồi”, thẻ sẽ được hẹn ôn lại đúng lúc sắp quên.</p>
+    <div class="chips" style="margin:0 0 8px">
+      <button class="chip" data-fckind="word" aria-pressed="${state.fcKind === "word"}">Học từ</button>
+      <button class="chip" data-fckind="sent" aria-pressed="${state.fcKind === "sent"}">Học câu</button>
+      <span style="width:8px"></span>
+      <button class="chip" data-fcdir="zh" aria-pressed="${state.fcDir === "zh"}">Trung → Việt</button>
+      <button class="chip" data-fcdir="vi" aria-pressed="${state.fcDir === "vi"}">Việt → Trung</button>
+    </div>
+    <div class="grid" style="padding-bottom:8px">${fcDeckCard("hsk1", "Thẻ HSK 1", "壹")}${fcDeckCard("hsk2", "Thẻ HSK 2", "贰")}${myWords.length ? fcDeckCard("mine", "Từ của tôi", "我") : ""}</div>
+    <div class="answer"><select id="fc-lesson" class="field" aria-label="Thẻ theo bài hội thoại" style="font-family:var(--font-body)"><option value="">Hoặc chọn thẻ theo bài hội thoại...</option>${lessonOpts}</select></div>`;
+}
+function openFc(id) {
+  const items = fcItems(id, state.fcKind);
+  if (!items.length) return;
+  const due = fcDue(items).sort((a, b) => fcs[a.key].d - fcs[b.key].d);
+  const fresh = items.filter((x) => !fcs[x.key]);
+  let queue = [...due, ...fresh].slice(0, 20);
+  if (!queue.length) queue = [...items].sort(() => Math.random() - 0.5).slice(0, 10);
+  stopSpeaking();
+  state.view = "fc";
+  state.fc = { id, name: deckName(id) || { hsk1: "HSK 1", hsk2: "HSK 2" }[id], queue, i: 0, flipped: false, good: 0, again: 0, total: queue.length, done: new Set() };
+  render(); window.scrollTo(0, 0);
+  fcAutoPlay();
+}
+const fcCur = () => state.fc.queue[state.fc.i];
+function fcPlay(slow) {
+  const c = fcCur(); if (!c) return;
+  return c.key[0] === "w" ? playWord(c.zh) : playExample(c.w);
+}
+// Mặt có chữ Hán thì đọc luôn cho quen tai.
+function fcAutoPlay() { const f = state.fc; if (f && fcCur() && (state.fcDir === "zh" ? !f.flipped : f.flipped)) fcPlay(); }
+function fcGrade(ok) {
+  const f = state.fc, c = fcCur(); if (!c) return;
+  const r = fcs[c.key] || { b: 0, n: 0 };
+  r.b = ok ? Math.min(r.b + 1, GAP.length - 1) : 0; r.n++;
+  r.d = ok ? Date.now() + GAP[r.b] * DAY - 4 * 3600e3 : Date.now();
+  fcs[c.key] = r; store.set("fc", fcs);
+  if (ok) { if (!f.done.has(c.key)) f.good++; f.done.add(c.key); }
+  else { f.again++; f.queue.splice(Math.min(f.queue.length, f.i + 4), 0, c); } // gặp lại thẻ này sau vài thẻ
+  f.i++; f.flipped = false; stopSpeaking(); render(); fcAutoPlay();
+}
+function fcView() {
+  const f = state.fc, c = fcCur();
+  const top = `<header class="topbar"><div class="wrap">
+      <button class="back" data-home aria-label="Về phần tập viết">${ICON.back}</button>
+      <div class="topbar-title"><span style="color:var(--ink);font-weight:600">Thẻ ${esc(f.name)}</span> <span>· ${state.fcKind === "word" ? "từ" : "câu"}</span></div>
+      <span class="pill">${Math.min(f.i + 1, f.queue.length)}/${f.queue.length}</span>
+    </div></header>`;
+  if (!c) return top + `<div class="wrap"><div class="review" style="margin-top:20px"><div class="big">${f.good}</div><div>
+      <b>thẻ đã nhớ trong lượt này</b><p>${f.again ? `Có ${f.again} lần bạn chọn “Chưa nhớ”. Những thẻ đó sẽ quay lại sớm.` : "Tuyệt vời, bạn nhớ hết rồi!"}</p>
+      <div class="bar"><button class="btn btn-primary" data-fcdeck="${esc(f.id)}">Học tiếp</button><button class="btn btn-ghost" data-home>Xong</button></div></div></div></div>`;
+  const word = c.key[0] === "w", w = c.w;
+  const zhFace = `<div class="fc-zh zh ${word ? "" : "sent"}">${esc(c.zh)}</div>`;
+  const front = state.fcDir === "zh" ? zhFace : `<div class="fc-vi">${esc(c.vi)}</div>`;
+  const back = `${state.fcDir === "zh" ? "" : zhFace}
+    ${!word || state.fcDir === "zh" ? `<div class="fc-py">${esc(c.pinyin)}</div>` : ""}
+    ${state.fcDir === "zh" ? `<div class="fc-mean">${esc(c.vi)}</div>` : ""}
+    ${word && hvOf(w).replace(/[- ]/g, "") ? `<div class="muted" style="font-size:14px">Hán Việt: ${esc(hvOf(w))}</div>` : ""}
+    ${word && w.ex ? `<div class="fc-ex"><span class="zh">${esc(w.ex)}</span><span>${esc(w.exPy || "")}</span><span class="muted">${esc(w.exVi || "")}</span></div>` : ""}`;
+  return top + `<div class="wrap" style="padding-bottom:40px">
+    <div class="fc-prog" aria-hidden="true"><i style="width:${(f.i / f.queue.length) * 100}%"></i></div>
+    <button class="fc-card ${f.flipped ? "flipped" : ""}" data-fcflip aria-label="${f.flipped ? "Mặt sau" : "Chạm để lật thẻ"}">
+      <span class="fc-tag">${fcState(c.key) === "new" ? "Thẻ mới" : "Ôn lại"}</span>
+      ${front}
+      ${f.flipped ? `<div class="fc-line"></div>${back}` : `<div class="muted fc-hint">Chạm để lật thẻ</div>`}
+    </button>
+    <div class="bar" style="justify-content:center;margin-top:12px">
+      <button class="btn btn-ghost" data-fcplay>${ICON.speaker}Nghe</button>
+      ${word && canWrite(c.zh) && f.flipped ? `<button class="btn btn-ghost" data-fcsave="${esc(c.zh)}" ${myWords.some((x) => x.zh === c.zh) ? "disabled" : ""}>${myWords.some((x) => x.zh === c.zh) ? "✓ Đã lưu tập viết" : "✍️ Lưu để tập viết"}</button>` : ""}
+    </div>
+    ${f.flipped ? `<div class="fc-grade"><button class="btn fc-again" data-fcgrade="0">Chưa nhớ</button><button class="btn fc-good" data-fcgrade="1">Nhớ rồi</button></div>
+      <p class="muted" style="text-align:center;font-size:13px;margin-top:8px">Mẹo: vuốt thẻ sang trái là “Chưa nhớ”, sang phải là “Nhớ rồi”.</p>` : ""}
+  </div>`;
+}
+// Vuốt thẻ trên điện thoại.
+let fcTouch = null;
+document.addEventListener("touchstart", (e) => { const c = e.target.closest?.(".fc-card.flipped"); fcTouch = c ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null; }, { passive: true });
+document.addEventListener("touchend", (e) => {
+  if (!fcTouch || state.view !== "fc") return;
+  const dx = e.changedTouches[0].clientX - fcTouch.x, dy = e.changedTouches[0].clientY - fcTouch.y; fcTouch = null;
+  if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) { state.fcSwiped = Date.now(); fcGrade(dx > 0); }
+});
+document.addEventListener("keydown", (e) => {
+  if (state.view !== "fc" || !fcCur() || /input|textarea|select/i.test(e.target.tagName)) return;
+  if (e.key === " " || e.key === "Enter") { e.preventDefault(); state.fc.flipped = !state.fc.flipped; render(); fcAutoPlay(); }
+  else if (state.fc.flipped && (e.key === "1" || e.key === "ArrowLeft")) fcGrade(false);
+  else if (state.fc.flipped && (e.key === "2" || e.key === "ArrowRight")) fcGrade(true);
+});
 
 /* ---------------- Điều hướng ---------------- */
 function openLesson(id) {
@@ -858,7 +1003,7 @@ function openLesson(id) {
   render(); window.scrollTo(0, 0);
 }
 function goHome() {
-  state.roleRun = (state.roleRun || 0) + 1; stopSpeaking(); if (state.view === "write") state.home = "write"; if (state.view === "read" || state.view === "addread") state.home = "read"; state.rplayAll = false; state.view = "home"; state.lesson = null; state.w = null;
+  state.roleRun = (state.roleRun || 0) + 1; stopSpeaking(); if (state.view === "write" || state.view === "fc") state.home = "write"; if (state.view === "read" || state.view === "addread") state.home = "read"; state.rplayAll = false; state.view = "home"; state.lesson = null; state.w = null;
   history.replaceState(null, "", location.pathname + location.search);
   render(); window.scrollTo(0, 0);
 }
@@ -868,7 +1013,7 @@ function setTab(t) { state.roleRun = (state.roleRun || 0) + 1; stopSpeaking(); s
 function render() {
   const app = $("#app");
   if (writer) { try { writer.cancelQuiz(); } catch {} writer = null; }
-  app.innerHTML = state.view === "home" ? homeView() : state.view === "write" ? writeView() : state.view === "call" ? callView() : state.view === "read" ? readView() : state.view === "addread" ? addReadView() : lessonView();
+  app.innerHTML = state.view === "home" ? homeView() : state.view === "write" ? writeView() : state.view === "call" ? callView() : state.view === "read" ? readView() : state.view === "fc" ? fcView() : state.view === "addread" ? addReadView() : lessonView();
   if (state.view === "lesson") renderVoicePicker();
   if (state.view === "write") mountWriter();
   if (state.view === "read") ytAttach();
@@ -1699,6 +1844,13 @@ document.addEventListener("click", (e) => {
   if ("home" in d) return goHome();
   if (d.hometab) { state.home = d.hometab; store.set("home", state.home); return render(); }
   if (d.rdopen) return openRead(d.rdopen);
+  if (d.fcdeck) return openFc(d.fcdeck);
+  if (d.fckind) { state.fcKind = d.fckind; store.set("fcKind", d.fckind); return render(); }
+  if (d.fcdir) { state.fcDir = d.fcdir; store.set("fcDir", d.fcdir); return render(); }
+  if ("fcflip" in d) { if (Date.now() - (state.fcSwiped || 0) < 400) return; state.fc.flipped = !state.fc.flipped; render(); return fcAutoPlay(); }
+  if ("fcplay" in d) return fcPlay();
+  if (d.fcgrade) return fcGrade(d.fcgrade === "1");
+  if (d.fcsave) { const c = fcCur(); if (c) saveWord(c.w); return render(); }
   if (d.rtype) { state.rtype = d.rtype; return render(); }
   if ("addread" in d) { stopSpeaking(); state.view = "addread"; state.add = state.add || { type: "song" }; render(); return window.scrollTo(0, 0); }
   if (d.addtype) { Object.assign(state.add, { type: d.addtype, title: $("#add-title")?.value || "", yt: $("#add-yt")?.value || "", text: $("#add-text")?.value || "" }); return render(); }
@@ -1818,6 +1970,7 @@ document.addEventListener("submit", (e) => {
   }
 });
 document.addEventListener("change", (e) => {
+  if (e.target.id === "fc-lesson" && e.target.value) return openFc(e.target.value);
   const s = e.target.closest("select[data-voice]");
   if (!s) return;
   store.set("voice-" + s.dataset.voice, s.value);

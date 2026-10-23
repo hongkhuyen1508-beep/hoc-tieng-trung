@@ -9,46 +9,54 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;900&display=swap">
 <style>
 /* Layout: một cột kiểu cuộc trò chuyện, rộng tối đa 760px; trên iPad và máy tính danh sách bài chia hai cột. */
+/* Layout: ứng dụng một cột (tối đa 760px). Thanh mục cố định dưới đáy trên điện thoại, nằm trên đầu ở màn hình rộng. Mực tàu cho chữ và nút chính, son đỏ chỉ dùng cho dấu ấn và điểm nhấn. */
 :root {
-  --paper: #f6f5f0;
+  --paper: #f3f4f2;       /* nền giấy xám ngọc nhạt */
   --surface: #ffffff;
-  --ink: #1d1c1a;
-  --muted: #6c6862;
-  --line: #e5e2da;
-  --seal: #cf3b2b;        /* đỏ son như dấu triện */
+  --sunk: #eceeeb;        /* ô chìm, nền phụ */
+  --ink: #141c1b;         /* mực tàu */
+  --muted: #5f6a67;
+  --line: #e1e5e2;
+  --seal: #c8382c;        /* son đỏ của dấu triện */
   --seal-ink: #ffffff;
-  --seal-soft: #f8e3df;
-  --m: #2c6e63;           /* nhân vật nam: xanh ngọc */
-  --m-soft: #e3efec;
-  --f: #a24470;           /* nhân vật nữ: tím mận */
-  --f-soft: #f5e5ed;
-  --good: #23784a;
-  --good-soft: #e1f1e7;
-  --ok: #a86b12;
-  --ok-soft: #f6ecd9;
+  --seal-soft: #fbe8e4;
+  --m: #2a6d62;           /* nhân vật nam: xanh ngọc */
+  --m-soft: #e4efec;
+  --f: #9c4470;           /* nhân vật nữ: tím mận */
+  --f-soft: #f6e8ef;
+  --good: #1f7a4a;
+  --good-soft: #e2f2e8;
+  --ok: #a46a10;
+  --ok-soft: #f7eddb;
   --bad: #c0362a;
-  --bad-soft: #f8e1de;
-  --gold: #c39331;
-  --ghost: #ddd7cb;       /* nét mờ khi tập viết */
+  --bad-soft: #f9e3e0;
+  --gold: #c0912e;
+  --ghost: #dcdcd4;
+  --hero: #141c1b; --hero-ink: #f3f4f2;
+  --shadow: 0 1px 2px rgba(20, 28, 27, .05), 0 6px 20px -12px rgba(20, 28, 27, .18);
   --font-body: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-zh: "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   --font-zh-display: "Noto Serif SC", "Songti SC", "STSong", serif;
-  --r: 18px;
+  --r: 16px;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --paper: #151513; --surface: #1f1e1b; --ink: #f1efe9; --muted: #a39e95; --line: #34322d;
-    --seal: #e5574a; --seal-ink: #1a0d0b; --seal-soft: #3a201d;
-    --m: #6cc1b1; --m-soft: #1c2f2b; --f: #e08ab0; --f-soft: #36202b;
-    --good: #5fcf8e; --good-soft: #193526; --ok: #e3ac4f; --ok-soft: #3a2d15; --bad: #f07a6e; --bad-soft: #3d1f1c; --gold: #e0b55a; --ghost: #4a463f;
+    --paper: #0e1312; --surface: #171e1d; --sunk: #121817; --ink: #edf1ef; --muted: #98a4a0; --line: #273130;
+    --seal: #ec6656; --seal-ink: #1a0b09; --seal-soft: #3a1f1b;
+    --m: #6cc0b0; --m-soft: #17302b; --f: #e08ab0; --f-soft: #34202b;
+    --good: #5fcf8e; --good-soft: #163324; --ok: #e3ac4f; --ok-soft: #372b14; --bad: #f07a6e; --bad-soft: #3b1e1b; --gold: #e0b55a; --ghost: #3c4542;
+    --hero: #1f2b29; --hero-ink: #edf1ef;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px -14px rgba(0, 0, 0, .6);
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --paper: #151513; --surface: #1f1e1b; --ink: #f1efe9; --muted: #a39e95; --line: #34322d;
-  --seal: #e5574a; --seal-ink: #1a0d0b; --seal-soft: #3a201d;
-  --m: #6cc1b1; --m-soft: #1c2f2b; --f: #e08ab0; --f-soft: #36202b;
-  --good: #5fcf8e; --good-soft: #193526; --ok: #e3ac4f; --ok-soft: #3a2d15; --bad: #f07a6e; --bad-soft: #3d1f1c; --gold: #e0b55a; --ghost: #4a463f;
+  --paper: #0e1312; --surface: #171e1d; --sunk: #121817; --ink: #edf1ef; --muted: #98a4a0; --line: #273130;
+  --seal: #ec6656; --seal-ink: #1a0b09; --seal-soft: #3a1f1b;
+  --m: #6cc0b0; --m-soft: #17302b; --f: #e08ab0; --f-soft: #34202b;
+  --good: #5fcf8e; --good-soft: #163324; --ok: #e3ac4f; --ok-soft: #372b14; --bad: #f07a6e; --bad-soft: #3b1e1b; --gold: #e0b55a; --ghost: #3c4542;
+  --hero: #1f2b29; --hero-ink: #edf1ef;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px -14px rgba(0, 0, 0, .6);
   color-scheme: dark;
 }
 
@@ -346,6 +354,145 @@ textarea.field { font-family: var(--font-zh); line-height: 1.6; resize: vertical
 .fix { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; }
 .vocab .chip:disabled { opacity: .6; }
 
+/* ================= Giao diện mới (ghi đè) ================= */
+body { font-size: 15px; letter-spacing: -0.005em; }
+h1, h2, h3 { letter-spacing: -0.02em; }
+
+/* Thanh đầu trang chủ */
+.appbar { display: flex; align-items: center; gap: 12px; padding-block: 18px 6px; }
+.appbar .seal { width: 40px; height: 40px; border-radius: 10px; font-size: 22px; transform: none; box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--seal-ink) 35%, transparent); }
+.appbar-name { display: grid; min-width: 0; line-height: 1.3; }
+.appbar-name b { font-size: 17px; font-weight: 700; letter-spacing: -0.02em; }
+.appbar-name span { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Thanh mục: dưới đáy trên điện thoại, trên đầu khi màn rộng */
+.home { padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
+.switch { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; margin: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; padding: 6px max(8px, env(safe-area-inset-right, 0px)) max(8px, env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)); border: 0; border-top: 1px solid var(--line); border-radius: 0; background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: saturate(1.4) blur(14px); -webkit-backdrop-filter: saturate(1.4) blur(14px); }
+@media (max-width: 560px) { .switch { grid-template-columns: repeat(4, 1fr); } }
+.switch button { position: relative; display: grid; justify-items: center; gap: 3px; padding: 6px 2px 4px; border-radius: 12px; font-size: 12px; font-weight: 600; color: var(--muted); background: transparent; }
+.switch button svg { width: 24px; height: 24px; }
+.switch button[aria-selected="true"] { background: transparent; color: var(--seal); }
+.switch button[aria-selected="true"] svg { stroke-width: 2.2; }
+.switch .badge { position: absolute; top: 2px; left: calc(50% + 6px); min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--seal); color: var(--seal-ink); font-size: 11px; font-style: normal; font-weight: 700; line-height: 18px; font-variant-numeric: tabular-nums; }
+@media (min-width: 761px) {
+  .home { padding-bottom: 40px; }
+  .switch { position: static; margin-top: 14px; padding: 4px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .switch button { grid-auto-flow: column; justify-content: center; align-items: center; gap: 8px; font-size: 14px; padding: 10px; }
+  .switch button svg { width: 20px; height: 20px; }
+  .switch button[aria-selected="true"] { background: var(--ink); color: var(--paper); }
+  .switch .badge { position: static; }
+}
+.home-body { padding-top: 14px; }
+
+/* Thẻ "Học tiếp" */
+.resume { width: 100%; display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; text-align: left; border: 0; border-radius: 20px; padding: 16px; background: var(--hero); color: var(--hero-ink); box-shadow: var(--shadow); position: relative; overflow: hidden; }
+.resume::after { content: "说"; position: absolute; right: 64px; bottom: -34px; font-family: var(--font-zh-display); font-weight: 900; font-size: 120px; line-height: 1; color: color-mix(in srgb, var(--hero-ink) 7%, transparent); pointer-events: none; }
+.resume-mark { width: 56px; height: 56px; border-radius: 14px; display: grid; place-items: center; background: var(--seal); color: var(--seal-ink); font-family: var(--font-zh-display); font-weight: 900; font-size: 28px; }
+.resume-body { min-width: 0; position: relative; z-index: 1; }
+.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; opacity: .7; }
+.resume-title { font-size: 22px; font-weight: 500; line-height: 1.3; margin-top: 2px; }
+.resume-vi { font-size: 14px; opacity: .75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.resume-go { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--hero-ink); color: var(--hero); position: relative; z-index: 1; }
+.resume-go svg { width: 20px; height: 20px; margin-left: 2px; }
+
+.overview { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
+.overview div { display: grid; gap: 1px; padding: 12px 14px; }
+.overview div + div { border-left: 1px solid var(--line); }
+.overview b { font-size: 22px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.overview b small { font-size: 14px; font-weight: 500; color: var(--muted); }
+.overview span { font-size: 12px; color: var(--muted); }
+
+.list-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 26px; }
+.list-head h2 { margin: 0; font-size: 20px; font-weight: 700; }
+.list-note { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+.seg { display: inline-flex; gap: 2px; padding: 3px; background: var(--sunk); border-radius: 10px; }
+.seg button { border: 0; background: transparent; border-radius: 8px; padding: 6px 10px; font-size: 13px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0, 0, 0, .08); }
+
+.section-title { display: flex; align-items: baseline; gap: 8px; font-size: 12px; letter-spacing: .08em; margin: 22px 0 8px; color: var(--muted); }
+.section-title span { font-weight: 500; letter-spacing: 0; text-transform: none; opacity: .8; }
+.grid { gap: 8px; padding-bottom: 0; }
+
+/* Thẻ danh sách chung */
+.card { grid-template-columns: auto 1fr auto; gap: 12px; padding: 12px; border-radius: var(--r); border-color: var(--line); box-shadow: 0 1px 2px rgba(20, 28, 27, .04); transition: border-color .15s, box-shadow .15s, transform .15s; }
+.card:hover { transform: none; border-color: color-mix(in srgb, var(--ink) 22%, var(--line)); box-shadow: var(--shadow); }
+.card:active { transform: scale(.99); }
+.card > .card-body:last-child { grid-column: 2 / 4; }
+.card-mark { width: 48px; height: 48px; border-radius: 12px; font-size: 22px; background: var(--sunk); border: 0; color: var(--ink); }
+.card-title { font-size: 18px; line-height: 1.3; margin-top: 0; }
+.card-meta { order: 0; }
+.card-chev { color: var(--muted); opacity: .6; display: grid; }
+.card-chev svg { width: 18px; height: 18px; }
+.lesson-row.done .card-mark { background: var(--good-soft); color: var(--good); }
+.prog { gap: 3px; margin-top: 7px; }
+.prog i { width: 16px; height: 4px; border-radius: 2px; }
+.prog span { font-size: 12px; margin-left: 8px; font-variant-numeric: tabular-nums; }
+.pill { font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 6px; letter-spacing: .02em; }
+.add-card { border-style: dashed; box-shadow: none; background: transparent; }
+.add-card .card-mark { background: var(--seal-soft); color: var(--seal); }
+
+/* Nút */
+.btn { border-radius: 12px; padding: 11px 16px; font-size: 15px; }
+.btn-primary { background: var(--ink); color: var(--paper); }
+.btn-ghost { background: var(--surface); border: 1px solid var(--line); }
+.btn-dark { background: var(--ink); color: var(--paper); }
+.chip { border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 600; }
+.chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.mini, .say-word, .round { background: var(--surface); }
+
+/* Trang bài học */
+.topbar { background: color-mix(in srgb, var(--paper) 90%, transparent); }
+.topbar .wrap { padding-block: 8px; }
+.back { width: 36px; height: 36px; border-color: var(--line); }
+.topbar-title { font-size: 15px; }
+.lesson-head { padding-block: 16px 4px; }
+.lesson-head h2 { font-size: clamp(30px, 8vw, 40px); letter-spacing: 0; }
+.lesson-head .py { font-size: 15px; }
+.lesson-head p { font-size: 15px; }
+.tabs { gap: 2px; padding: 3px; background: var(--sunk); border-radius: 12px; margin-top: 16px; }
+.tab { border: 0; background: transparent; border-radius: 10px; padding: 9px 4px; font-size: 14px; color: var(--muted); }
+.tab small { font-size: 11px; }
+.tab[aria-selected="true"] { background: var(--surface); color: var(--ink); border: 0; box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 2px 8px -4px rgba(0, 0, 0, .12); }
+.tab[aria-selected="true"] small { color: var(--muted); opacity: 1; }
+@media (max-width: 420px) { .tab { padding: 10px 2px; font-size: 13px; } }
+.chips { margin: 12px 0 14px; }
+details.voices { border-radius: 12px; }
+.vocab { border-radius: var(--r); }
+
+/* Hội thoại */
+.bubble { border-radius: 18px; border: 0; }
+.bubble.male { background: var(--m-soft); }
+.bubble.female { background: var(--f-soft); }
+.av { width: 36px; height: 36px; font-size: 16px; }
+.line-zh p { font-size: 20px; }
+.who { font-size: 12px; }
+
+/* Khối nội dung */
+.drill, .word, .rd-text, .fc-card { border-radius: 20px; box-shadow: var(--shadow); }
+.fc-card { box-shadow: var(--shadow); }
+.how li { border-radius: 12px; }
+.result, .fc-ex { background: var(--sunk); border-color: transparent; }
+.review { border-radius: var(--r); }
+.callout { border-radius: 12px; }
+.field { border-radius: 12px; }
+.dock { background: color-mix(in srgb, var(--surface) 92%, transparent); }
+.answer input { border-radius: 12px; }
+.fc-good { color: var(--surface); }
+.yt.has-frame { background: var(--paper); }
+@media (max-width: 760px) { .yt.has-frame { top: 53px; } }
+.list-head.first { margin-top: 4px; }
+.list-note + .levels, .list-note + .fc-opts { margin-top: 12px; }
+.scroller { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-left: calc(-1 * max(16px, env(safe-area-inset-left, 0px))); margin-right: calc(-1 * max(16px, env(safe-area-inset-right, 0px))); padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px)); }
+.scroller::-webkit-scrollbar { display: none; }
+.scroller .chip { flex: none; }
+.fc-opts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.how { grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 14px; }
+.how li { padding: 10px; font-size: 12px; line-height: 1.35; }
+.how li b { font-size: 14px; margin-bottom: 2px; }
+.review { margin-top: 4px; }
+.review + .how { margin-top: 10px; }
+a { color: var(--seal); }
+
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 </style>
 
@@ -409,6 +556,11 @@ const store = {
   set(k, v) { try { localStorage.setItem("ntt-" + k, JSON.stringify(v)); } catch {} },
 };
 const ICON = {
+  chat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h11a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H9l-4 3v-3H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"/><path d="M17 9h3a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-1v3l-4-3h-3"/></svg>',
+  call: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2Z"/><path d="M15 3.5a6 6 0 0 1 5.5 5.5M15 7a2.5 2.5 0 0 1 2 2"/></svg>',
+  book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5C10 5 7 4.5 3 5v13c4-.5 7 0 9 1.5 2-1.5 5-2 9-1.5V5c-4-.5-7 0-9 1.5Z"/><path d="M12 6.5v13"/></svg>',
+  brush: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 3 10.5 12.5"/><path d="M9.5 13.5c-2 0-3.5 1.5-3.5 3.5 0 1.5-1 2.5-3 3 4 1.5 9 .5 9-3.5 0-1.5-1-3-2.5-3Z"/><path d="m12 11 2 2"/></svg>',
+  chev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>',
   play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5Z"/></svg>',
   stop: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>',
   speaker: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/></svg>',
@@ -859,9 +1011,9 @@ function writeHome() {
     : "";
   return `${review}
     <ol class="how">
-      <li><b>Xem nét</b>Xem thứ tự viết từng nét của chữ.</li>
-      <li><b>Viết theo</b>Tô bằng ngón tay lên nét mờ, máy báo nét sai.</li>
-      <li><b>Tự viết</b>Viết không nhìn. Viết đúng thì chữ được hẹn ôn lại sau 1, 3, 7, 16 ngày.</li>
+      <li><b>Xem nét</b>Thứ tự từng nét</li>
+      <li><b>Viết theo</b>Tô lên nét mờ</li>
+      <li><b>Tự viết</b>Ôn lại sau 1, 3, 7, 16 ngày</li>
     </ol>
     <div class="section-title">Chọn bộ chữ</div>
     <div class="grid">${decks}</div>
@@ -903,14 +1055,11 @@ function fcDeckCard(id, name, mark) {
 }
 function fcHome() {
   const lessonOpts = LESSONS.map((l, i) => `<option value="L-${l.id}">Bài ${i + 1} · ${esc(l.title)} · ${esc(l.titleVi)}</option>`).join("");
-  return `<div class="section-title">Thẻ ghi nhớ (flashcard)</div>
-    <p class="muted" style="margin:0 0 10px">Nhìn mặt thẻ, tự nhớ nghĩa rồi chạm để lật. Nhớ thì bấm “Nhớ rồi”, thẻ sẽ được hẹn ôn lại đúng lúc sắp quên.</p>
-    <div class="chips" style="margin:0 0 8px">
-      <button class="chip" data-fckind="word" aria-pressed="${state.fcKind === "word"}">Học từ</button>
-      <button class="chip" data-fckind="sent" aria-pressed="${state.fcKind === "sent"}">Học câu</button>
-      <span style="width:8px"></span>
-      <button class="chip" data-fcdir="zh" aria-pressed="${state.fcDir === "zh"}">Trung → Việt</button>
-      <button class="chip" data-fcdir="vi" aria-pressed="${state.fcDir === "vi"}">Việt → Trung</button>
+  return `<div class="list-head"><h2>Thẻ ghi nhớ</h2></div>
+    <p class="list-note">Nhìn mặt thẻ, tự nhớ nghĩa rồi chạm để lật. Bấm “Nhớ rồi” thì thẻ được hẹn ôn lại đúng lúc sắp quên.</p>
+    <div class="fc-opts">
+      <div class="seg"><button data-fckind="word" aria-pressed="${state.fcKind === "word"}">Học từ</button><button data-fckind="sent" aria-pressed="${state.fcKind === "sent"}">Học câu</button></div>
+      <div class="seg"><button data-fcdir="zh" aria-pressed="${state.fcDir === "zh"}">Trung → Việt</button><button data-fcdir="vi" aria-pressed="${state.fcDir === "vi"}">Việt → Trung</button></div>
     </div>
     <div class="grid" style="padding-bottom:8px">${fcDeckCard("hsk1", "Thẻ HSK 1", "壹")}${fcDeckCard("hsk2", "Thẻ HSK 2", "贰")}${myWords.length ? fcDeckCard("mine", "Từ của tôi", "我") : ""}</div>
     <div class="answer"><select id="fc-lesson" class="field" aria-label="Thẻ theo bài hội thoại" style="font-family:var(--font-body)"><option value="">Hoặc chọn thẻ theo bài hội thoại...</option>${lessonOpts}</select></div>`;
@@ -1021,43 +1170,60 @@ function render() {
 
 function homeView() {
   const list = LESSONS.map((l, i) => [l, i]).filter(([l]) => state.level === "all" || l.level === state.level);
-  const cards = list.map(([l, i]) => {
+  const stepsOf = (l) => { const p = prog(l.id); return [p.listened, Object.keys(p.best || {}).length > 0, p.role, p.talk > 0]; };
+  const row = ([l, i]) => {
     const p = prog(l.id);
     const scores = Object.values(p.best || {});
     const avg = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
-    const steps = [p.listened, scores.length > 0, p.role, p.talk > 0];
-    return `<button class="card" data-open="${l.id}">
+    const steps = stepsOf(l), done = steps.filter(Boolean).length;
+    return `<button class="card lesson-row${done === 4 ? " done" : ""}" data-open="${l.id}">
       <div class="card-mark zh">${esc(l.title.slice(0, 1))}</div>
       <div class="card-body">
-        <div class="card-meta"><span>Bài ${i + 1}</span><span class="pill">${l.level}</span></div>
         <div class="card-title zh">${esc(l.title)}</div>
         <div class="card-vi">${esc(l.titleVi)}</div>
-        <div class="prog">${steps.map((s) => `<i class="${s ? "on" : ""}"></i>`).join("")}${avg != null ? `<span>Điểm nói TB ${avg}</span>` : ""}</div>
+        <div class="prog" aria-label="Đã xong ${done}/4 bước">${steps.map((s) => `<i class="${s ? "on" : ""}"></i>`).join("")}<span>${avg != null ? "Điểm nói " + avg : done ? done + "/4 bước" : "Bài " + (i + 1)}</span></div>
       </div>
+      <span class="card-chev" aria-hidden="true">${ICON.chev}</span>
     </button>`;
-  }).join("");
+  };
   const n = (lv) => LESSONS.filter((l) => l.level === lv).length;
-  const levels = [["all", `Tất cả (${LESSONS.length})`], ["HSK1", `HSK 1 (${n("HSK1")})`], ["HSK2", `HSK 2 (${n("HSK2")})`]];
+  const levels = [["all", "Tất cả"], ["HSK1", `HSK 1 · ${n("HSK1")}`], ["HSK2", `HSK 2 · ${n("HSK2")}`]];
   const due = dueChars().length;
-  const talk = `<ul class="steps" style="margin-top:16px"><li><b>1</b> Nghe hội thoại</li><li><b>2</b> Luyện nói từng câu</li><li><b>3</b> Đóng vai</li><li><b>4</b> Gọi điện với AI</li></ul>
-    <div class="levels">${levels.map(([id, name]) => `<button class="chip" aria-pressed="${state.level === id}" data-level="${id}">${name}</button>`).join("")}</div>
-    <div class="section-title">${list.length} bài hội thoại ${state.level === "all" ? "HSK 1–2" : state.level.replace("HSK", "HSK ")}</div>
-    <div class="grid">${cards}</div>`;
-  return `<div class="wrap">
-    <section class="hero">
-      <div class="brand"><div class="seal" aria-hidden="true">每天<br>说中文</div><div><div class="brand-name">Nói tiếng Trung mỗi ngày</div><div class="brand-sub zh">每天说中文 · Měitiān shuō Zhōngwén</div></div></div>
-      <h1>Học giao tiếp qua những cuộc trò chuyện <em>như ngoài đời</em></h1>
-      <p class="lead">Nghe hai nhân vật nói chuyện, đọc theo để được chấm điểm, đóng vai với AI, luyện đọc truyện, bài hát, phim, và tập viết để nhớ mặt chữ Hán.</p>
-    </section>
-    <div class="switch" role="tablist">
-      <button role="tab" aria-selected="${state.home === "talk"}" data-hometab="talk">Hội thoại<small>${LESSONS.length} bài HSK 1–2</small></button>
-      <button role="tab" aria-selected="${state.home === "call"}" data-hometab="call">Gọi AI<small>Luyện nói tự do</small></button>
-      <button role="tab" aria-selected="${state.home === "read"}" data-hometab="read">Luyện đọc<small>Truyện, bài hát, phim</small></button>
-      <button role="tab" aria-selected="${state.home === "write"}" data-hometab="write">Tập viết<small>${due ? due + " chữ cần ôn" : "Chữ Hán HSK 1–2"}</small></button>
+  const groups = ["HSK1", "HSK2"].map((lv) => [lv, list.filter(([l]) => l.level === lv)]).filter(([, g]) => g.length);
+  const doneAll = LESSONS.filter((l) => stepsOf(l).every(Boolean)).length;
+  const nextI = LESSONS.findIndex((l) => !stepsOf(l).every(Boolean));
+  const next = LESSONS[nextI < 0 ? 0 : nextI];
+  const nextDone = stepsOf(next).filter(Boolean).length;
+  const talk = `<button class="resume" data-open="${next.id}">
+      <div class="resume-mark zh" aria-hidden="true">${esc(next.title.slice(0, 1))}</div>
+      <div class="resume-body">
+        <div class="eyebrow">${nextDone ? "Học tiếp" : doneAll ? "Ôn lại" : "Bắt đầu"} · Bài ${LESSONS.indexOf(next) + 1}</div>
+        <div class="resume-title zh">${esc(next.title)}</div>
+        <div class="resume-vi">${esc(next.titleVi)}</div>
+      </div>
+      <span class="resume-go" aria-hidden="true">${ICON.play}</span>
+    </button>
+    <div class="overview">
+      <div><b>${doneAll}<small>/${LESSONS.length}</small></b><span>bài đã xong</span></div>
+      <div><b>${due}</b><span>chữ cần ôn</span></div>
+      <div><b>${allReads().length}</b><span>bài đọc</span></div>
     </div>
+    <div class="list-head"><h2>Bài hội thoại</h2>
+      <div class="seg">${levels.map(([id, name]) => `<button aria-pressed="${state.level === id}" data-level="${id}">${name}</button>`).join("")}</div>
+    </div>
+    <p class="list-note">Mỗi bài có 4 bước: nghe, luyện nói, đóng vai và gọi AI.</p>
+    ${groups.map(([lv, g]) => `<div class="section-title">${lv.replace("HSK", "HSK ")} <span>${g.length} bài</span></div><div class="grid">${g.map(row).join("")}</div>`).join("")}`;
+  const tabs = [["talk", "Hội thoại", ICON.chat], ["call", "Gọi AI", ICON.call], ["read", "Luyện đọc", ICON.book], ["write", "Tập viết", ICON.brush]];
+  return `<div class="wrap home">
+    <header class="appbar">
+      <div class="seal" aria-hidden="true">说</div>
+      <div class="appbar-name"><b>Nói tiếng Trung mỗi ngày</b><span class="zh">每天说中文 · Měitiān shuō Zhōngwén</span></div>
+    </header>
+    <nav class="switch" role="tablist" aria-label="Mục học">
+      ${tabs.map(([id, name, ic]) => `<button role="tab" aria-selected="${state.home === id}" data-hometab="${id}">${ic}<span>${name}</span>${id === "write" && due ? `<i class="badge">${due > 99 ? "99+" : due}</i>` : ""}</button>`).join("")}
+    </nav>
     ${window.HOSTED && !window.gemini.key() && state.home !== "call" ? keyCard() : ""}
-    ${state.home === "write" ? writeHome() : state.home === "call" ? callHome() : state.home === "read" ? readHome() : talk}
-    <div style="height:32px"></div>
+    <div class="home-body">${{ call: `<div class="list-head first"><h2>Gọi điện với AI</h2></div>`, read: `<div class="list-head first"><h2>Luyện đọc</h2></div>`, write: `<div class="list-head first"><h2>Tập viết chữ Hán</h2></div>` }[state.home] || ""}${state.home === "write" ? writeHome() : state.home === "call" ? callHome() : state.home === "read" ? readHome() : talk}</div>
   </div>`;
 }
 
@@ -1624,8 +1790,8 @@ function readHome() {
         <div class="prog"><i class="${p.read ? "on" : ""}"></i><i class="${sc.length ? "on" : ""}"></i>${avg != null ? `<span>Điểm đọc TB ${avg}</span>` : p.read ? "<span>Đã nghe cả bài</span>" : ""}</div>
       </div></button>`;
   }).join("");
-  return `<p class="muted" style="margin:16px 0 0">Đọc truyện, lời bài hát, thơ và cảnh phim: nghe giọng đọc mẫu từng câu, có pinyin và nghĩa tiếng Việt, rồi tự đọc to để được chấm điểm.</p>
-    <div class="levels">${types.map(([id, name]) => `<button class="chip" aria-pressed="${f === id}" data-rtype="${id}">${name}</button>`).join("")}</div>
+  return `<p class="list-note">Truyện, lời bài hát, thơ và cảnh phim. Nghe giọng mẫu từng câu, xem pinyin và nghĩa, rồi tự đọc to để được chấm điểm.</p>
+    <div class="levels scroller">${types.map(([id, name]) => `<button class="chip" aria-pressed="${f === id}" data-rtype="${id}">${name}</button>`).join("")}</div>
     <button class="card add-card" data-addread style="margin-top:16px;width:100%"><div class="card-mark">＋</div><div class="card-body"><div class="card-title" style="font-size:17px;font-weight:600">Thêm bài hát, phim, truyện bạn thích</div><div class="card-vi" style="white-space:normal">Dán lời bài hát hoặc phụ đề phim, web sẽ tạo bài đọc có pinyin, nghĩa và giọng đọc.</div></div></button>
     <div class="section-title">${list.length} bài đọc</div>
     <div class="grid">${cards || `<p class="muted">Chưa có bài nào ở mục này.</p>`}</div>`;
@@ -1842,7 +2008,7 @@ document.addEventListener("click", (e) => {
   const d = t.dataset;
   if (d.open) return openLesson(d.open);
   if ("home" in d) return goHome();
-  if (d.hometab) { state.home = d.hometab; store.set("home", state.home); return render(); }
+  if (d.hometab) { state.home = d.hometab; store.set("home", state.home); render(); return window.scrollTo(0, 0); }
   if (d.rdopen) return openRead(d.rdopen);
   if (d.fcdeck) return openFc(d.fcdeck);
   if (d.fckind) { state.fcKind = d.fckind; store.set("fcKind", d.fckind); return render(); }

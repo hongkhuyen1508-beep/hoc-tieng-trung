@@ -1,0 +1,582 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f6f5f0">
+<title>Gọi AI luyện nói tiếng Trung</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500&display=swap">
+<style>
+/* Một cột kiểu màn hình gọi điện, rộng tối đa 640px. */
+:root {
+  --paper: #f6f5f0; --surface: #ffffff; --ink: #1d1c1a; --muted: #6c6862; --line: #e5e2da;
+  --seal: #cf3b2b; --seal-ink: #ffffff; --seal-soft: #f8e3df;
+  --m: #2c6e63; --m-soft: #e3efec; --f: #a24470; --f-soft: #f5e5ed;
+  --good: #23784a; --good-soft: #e1f1e7; --ok: #a86b12; --ok-soft: #f6ecd9; --bad: #c0362a; --bad-soft: #f8e1de; --gold: #c39331;
+  --font-body: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-zh: "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #151513; --surface: #1f1e1b; --ink: #f1efe9; --muted: #a39e95; --line: #34322d;
+    --seal: #e5574a; --seal-ink: #1a0d0b; --seal-soft: #3a201d;
+    --m: #6cc1b1; --m-soft: #1c2f2b; --f: #e08ab0; --f-soft: #36202b;
+    --good: #5fcf8e; --good-soft: #193526; --ok: #e3ac4f; --ok-soft: #3a2d15; --bad: #f07a6e; --bad-soft: #3d1f1c; --gold: #e0b55a;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5; -webkit-tap-highlight-color: transparent; padding-top: env(safe-area-inset-top, 0px); }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid color-mix(in srgb, var(--seal) 55%, transparent); outline-offset: 2px; }
+.zh { font-family: var(--font-zh); }
+.muted { color: var(--muted); }
+.wrap { max-width: 640px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1 { font-size: clamp(24px, 6vw, 32px); line-height: 1.2; margin: 0; text-wrap: balance; }
+h1 em { font-style: normal; color: var(--seal); }
+.head { padding-block: 24px 4px; display: grid; gap: 8px; }
+.section-title { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 22px 0 10px; font-weight: 600; }
+.box { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 14px; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.field { flex: 1; min-width: 0; border: 1.5px solid var(--line); background: var(--paper); border-radius: 12px; padding: 11px 14px; outline: none; }
+.field:focus { border-color: var(--ink); }
+select.field { appearance: auto; }
+.btn { border: 0; border-radius: 999px; padding: 12px 20px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.btn svg { width: 20px; height: 20px; }
+.btn-primary { background: var(--seal); color: var(--seal-ink); }
+.btn-dark { background: var(--ink); color: var(--paper); }
+.btn-ghost { background: var(--surface); border: 1px solid var(--line); }
+.btn:disabled { opacity: .45; cursor: default; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--line); background: var(--surface); color: var(--muted); border-radius: 999px; padding: 7px 12px; font-size: 14px; font-weight: 500; }
+.chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.people { display: grid; gap: 8px; grid-template-columns: 1fr; }
+@media (min-width: 520px) { .people { grid-template-columns: 1fr 1fr; } }
+.person { display: flex; gap: 12px; align-items: center; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px; }
+.person[aria-pressed="true"] { border-color: var(--seal); box-shadow: inset 0 0 0 1.5px var(--seal); }
+.av { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-family: var(--font-zh); font-weight: 500; font-size: 19px; flex: none; }
+.av.male { background: var(--m); } .av.female { background: var(--f); }
+.pname { font-family: var(--font-zh); font-size: 18px; }
+.note { font-size: 14px; color: var(--muted); margin: 8px 0 0; }
+.callout { border-radius: 14px; padding: 12px 14px; background: var(--ok-soft); border: 1px solid color-mix(in srgb, var(--ok) 30%, transparent); font-size: 15px; }
+.callout.bad { background: var(--bad-soft); border-color: color-mix(in srgb, var(--bad) 30%, transparent); }
+.steps { margin: 6px 0 0; padding-left: 20px; font-size: 15px; display: grid; gap: 4px; }
+a { color: var(--seal); }
+
+/* Màn hình gọi */
+.call { min-height: 100svh; display: flex; flex-direction: column; }
+.call-top { display: flex; align-items: center; gap: 12px; padding-block: 14px 8px; }
+.call-top .who { flex: 1; min-width: 0; }
+.timer { font-variant-numeric: tabular-nums; font-size: 14px; color: var(--muted); }
+.orb-wrap { display: grid; place-items: center; padding-block: 8px 4px; }
+.orb { width: 120px; height: 120px; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-zh); font-size: 48px; color: #fff; position: relative; transition: transform .08s linear; }
+.orb.male { background: var(--m); } .orb.female { background: var(--f); }
+.orb::after { content: ""; position: absolute; inset: -10px; border-radius: 50%; border: 3px solid var(--gold); opacity: var(--glow, 0); transform: scale(calc(1 + var(--glow, 0) * .12)); transition: opacity .1s, transform .1s; }
+.state { text-align: center; font-weight: 600; margin-top: 10px; min-height: 24px; }
+.state small { display: block; font-weight: 400; color: var(--muted); font-size: 13px; }
+.meter { height: 6px; width: 140px; margin: 8px auto 0; border-radius: 3px; background: var(--line); overflow: hidden; }
+.meter i { display: block; height: 100%; width: 0; background: var(--good); transition: width .08s; }
+.toggles { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin: 12px 0 6px; }
+.log { flex: 1; display: flex; flex-direction: column; gap: 10px; padding-bottom: 200px; }
+.msg { max-width: 88%; border-radius: 18px; padding: 9px 13px; }
+.msg.ai { align-self: flex-start; background: var(--surface); border: 1px solid var(--line); border-bottom-left-radius: 6px; }
+.msg.me { align-self: flex-end; background: var(--seal-soft); border-bottom-right-radius: 6px; }
+.msg .zh { font-size: 19px; line-height: 1.45; overflow-wrap: anywhere; }
+.msg .py { font-size: 14px; color: color-mix(in srgb, var(--ink) 70%, transparent); margin-top: 2px; }
+.msg .vi { font-size: 14px; color: var(--muted); margin-top: 3px; }
+.msg .tools { display: flex; gap: 6px; margin-top: 6px; }
+.mini { border: 1px solid var(--line); background: var(--paper); border-radius: 999px; padding: 3px 10px; font-size: 13px; }
+.msg.live { opacity: .75; }
+.dock { position: fixed; left: 0; right: 0; bottom: 0; background: color-mix(in srgb, var(--paper) 94%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid var(--line); padding-bottom: max(12px, env(safe-area-inset-bottom, 0px)); }
+.dock .wrap { padding-top: 10px; display: grid; gap: 10px; }
+.sugs { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+.sug { flex: 0 0 auto; max-width: 80%; text-align: left; border: 1.5px dashed color-mix(in srgb, var(--gold) 60%, transparent); background: color-mix(in srgb, var(--gold) 8%, var(--surface)); border-radius: 14px; padding: 6px 12px; display: grid; }
+.sug .zh { font-size: 17px; } .sug small { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.controls { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; }
+.round { width: 56px; height: 56px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); display: grid; place-items: center; justify-self: center; }
+.round svg { width: 24px; height: 24px; }
+.round[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.hang { width: 68px; height: 68px; border-radius: 50%; border: 0; background: var(--bad); color: #fff; display: grid; place-items: center; }
+.hang svg { width: 30px; height: 30px; transform: rotate(135deg); }
+.ctl { display: grid; justify-items: center; gap: 2px; font-size: 12px; color: var(--muted); }
+.ptt { width: 100%; padding: 16px; border-radius: 18px; border: 0; background: var(--ink); color: var(--paper); font-weight: 700; font-size: 17px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.ptt.on { background: var(--seal); color: var(--seal-ink); }
+.typing i { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--muted); margin-right: 3px; animation: blink 1s infinite; }
+.typing i:nth-child(2) { animation-delay: .15s; } .typing i:nth-child(3) { animation-delay: .3s; }
+@keyframes blink { 50% { opacity: .2; } }
+
+/* Tổng kết */
+.score { display: flex; align-items: baseline; gap: 6px; }
+.score b { font-size: 46px; line-height: 1; font-variant-numeric: tabular-nums; }
+.c-good { color: var(--good); } .c-ok { color: var(--ok); } .c-bad { color: var(--bad); }
+.list { display: grid; gap: 8px; }
+.fix { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; }
+.good li { background: var(--good-soft); border-radius: 12px; padding: 8px 12px; list-style: none; }
+.good { margin: 0; padding: 0; display: grid; gap: 6px; }
+.words { display: grid; gap: 6px; }
+.words div { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.words b { font-family: var(--font-zh); font-weight: 500; font-size: 19px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script src="https://cdn.jsdelivr.net/npm/pinyin-pro@3.26.0/dist/index.js"></script>
+<script>
+const SCENES = [{"t":"打招呼","v":"Chào hỏi khi gặp lại bạn","lv":"HSK1","s":"Hai người bạn tình cờ gặp nhau trên đường vào buổi sáng.","c":[{"n":"李明","v":"Lý Minh","g":"male"},{"n":"王芳","v":"Vương Phương","g":"female"}],"x":"王芳：李明，早上好！\n李明：早上好，王芳！好久不见！\n王芳：是啊，好久不见。你最近怎么样？\n李明：还不错，就是工作有点儿忙。你呢？\n王芳：我也挺好的。你去哪儿啊？\n李明：我去公司。你呢？\n王芳：我去买东西。那我们改天再聊吧！\n李明：好，再见！"},{"t":"自我介绍","v":"Giới thiệu bản thân","lv":"HSK1","s":"Ngày đầu tiên ở lớp học tiếng Trung, hai bạn học làm quen với nhau.","c":[{"n":"阿南","v":"A Nam","g":"male"},{"n":"刘静","v":"Lưu Tĩnh","g":"female"}],"x":"刘静：你好！你是新来的同学吗？\n阿南：对，我是新来的。我叫阿南。\n刘静：阿南，你好！我叫刘静。你是哪国人？\n阿南：我是越南人，从河内来。\n刘静：越南啊！我很喜欢越南菜。你学汉语多长时间了？\n阿南：我学了半年，说得还不太好。\n刘静：哪里哪里，你说得很好！\n阿南：谢谢！认识你很高兴。\n刘静：认识你我也很高兴！"},{"t":"在咖啡店","v":"Gọi đồ uống ở quán cà phê","lv":"HSK1","s":"Tiểu Vương vào quán cà phê gọi một ly latte mang đi.","c":[{"n":"小王","v":"Tiểu Vương (khách)","g":"male"},{"n":"服务员","v":"Nhân viên","g":"female"}],"x":"服务员：欢迎光临！请问您想喝点儿什么？\n小王：嗯，我要一杯拿铁。\n服务员：好的。要大杯还是中杯？\n小王：中杯就行。少放点儿糖，谢谢。\n服务员：没问题。在这儿喝还是带走？\n小王：带走。一共多少钱？\n服务员：一共二十八块。您可以扫这个二维码。\n小王：好，付好了。\n服务员：请稍等，马上就好！"},{"t":"买水果","v":"Mua hoa quả và mặc cả","lv":"HSK1","s":"Chị Trần mua xoài ở sạp hoa quả và mặc cả với ông chủ.","c":[{"n":"陈小姐","v":"Chị Trần (khách)","g":"female"},{"n":"老板","v":"Ông chủ","g":"male"}],"x":"老板：来看看吧，今天的芒果特别甜！\n陈小姐：芒果多少钱一斤？\n老板：十二块一斤。\n陈小姐：太贵了！便宜一点儿吧。\n老板：那十块一斤，怎么样？\n陈小姐：八块吧，我买三斤。\n老板：唉，好吧好吧，九块，不能再少了。\n陈小姐：行！给你二十七块。\n老板：谢谢，欢迎下次再来！"},{"t":"问路","v":"Hỏi đường","lv":"HSK1","s":"Một du khách hỏi đường đến ga tàu điện ngầm.","c":[{"n":"游客","v":"Du khách","g":"male"},{"n":"路人","v":"Người đi đường","g":"female"}],"x":"游客：不好意思，请问地铁站怎么走？\n路人：你一直往前走，到第二个路口往右拐。\n游客：第二个路口往右拐，对吗？\n路人：对。地铁站就在银行旁边。\n游客：离这儿远吗？\n路人：不远，走路五分钟就到。\n游客：太好了，谢谢您！\n路人：不客气！"},{"t":"现在几点了？","v":"Hỏi giờ và ngày tháng","lv":"HSK1","s":"Buổi sáng, cậu con trai ngủ quên và hỏi mẹ mấy giờ rồi.","c":[{"n":"儿子","v":"Con trai","g":"male"},{"n":"妈妈","v":"Mẹ","g":"female"}],"x":"儿子：妈，现在几点了？\n妈妈：七点半了，你快起床吧！\n儿子：啊？七点半了！今天几号？\n妈妈：今天十月十六号，星期五。\n儿子：糟糕，我今天八点有考试！\n妈妈：别着急，吃点儿早饭再走。\n儿子：来不及了，我走了！\n妈妈：路上小心！"},{"t":"看家人的照片","v":"Xem ảnh gia đình","lv":"HSK1","s":"Hai đồng nghiệp xem tấm ảnh gia đình trên điện thoại trong giờ nghỉ trưa.","c":[{"n":"陈大伟","v":"Trần Đại Vĩ","g":"male"},{"n":"林小雨","v":"Lâm Tiểu Vũ","g":"female"}],"x":"林小雨：大伟，这是你家人的照片吗？\n陈大伟：是啊。这是我爸爸，这是我妈妈。\n林小雨：你妈妈好漂亮啊！那这个小朋友是谁？\n陈大伟：他是我儿子，今年五岁了。\n林小雨：哇，真可爱！你家有几口人？\n陈大伟：四口人：爸爸、妈妈、儿子和我。你呢？\n林小雨：我家三口人，爸爸、妈妈和我。\n陈大伟：你爸爸妈妈也在北京吗？\n林小雨：不在。我很想他们。\n陈大伟：那今天就给他们打个电话吧！"},{"t":"今天天气怎么样？","v":"Hôm nay thời tiết thế nào?","lv":"HSK1","s":"Hai bạn cùng phòng nói chuyện về thời tiết khi định ra ngoài mua đồ.","c":[{"n":"赵阳","v":"Triệu Dương","g":"male"},{"n":"刘静","v":"Lưu Tĩnh","g":"female"}],"x":"赵阳：刘静，今天天气怎么样？\n刘静：不太好，很冷，还下雨了。\n赵阳：下雨了？我想去商店买东西呢。\n刘静：今天太冷了，明天去吧。\n赵阳：明天天气好吗？\n刘静：我看了一下，明天不下雨，也不冷。\n赵阳：太好了！那我明天上午去。\n刘静：我也想去，我们一起去吧！\n赵阳：好啊！今天我们就在家喝茶吧。\n刘静：好主意！我去做饭。"},{"t":"去医院看医生","v":"Đi bệnh viện khám bệnh","lv":"HSK1","s":"Một cô gái thấy trong người không khỏe nên đến bệnh viện gặp bác sĩ.","c":[{"n":"张医生","v":"Bác sĩ Trương","g":"male"},{"n":"王小美","v":"Vương Tiểu Mỹ","g":"female"}],"x":"张医生：你好，请坐。你怎么了？\n王小美：医生，我不舒服，头很疼。\n张医生：几天了？\n王小美：两天了。昨天我没睡好。\n张医生：你每天喝多少水？\n王小美：不多……我不太喜欢喝水。\n张医生：不行啊。你要多喝水，多睡觉。\n王小美：好的。我要吃药吗？\n张医生：要。这个药早上吃一个，晚上吃一个。明天在家睡觉吧。\n王小美：好的，谢谢医生！"},{"t":"打电话请朋友吃饭","v":"Gọi điện mời bạn đi ăn","lv":"HSK1","s":"Một chàng trai gọi điện thoại mời bạn mình đi ăn trưa ngày mai.","c":[{"n":"李华","v":"Lý Hoa","g":"male"},{"n":"周小红","v":"Chu Tiểu Hồng","g":"female"}],"x":"周小红：喂，你好！\n李华：喂，小红，我是李华。你现在在哪儿呢？\n周小红：我在家呢。怎么了？\n李华：明天中午你有时间吗？我想请你吃饭。\n周小红：真的吗？好啊！去哪儿吃？\n李华：学校前面有一个中国饭馆，菜很好吃。\n周小红：太好了！我们几点见？\n李华：十二点，怎么样？\n周小红：好，十二点在饭馆前面见。\n李华：好，不见不散！"},{"t":"买衣服","v":"Mua quần áo","lv":"HSK1","s":"Một cô gái vào cửa hàng quần áo, hỏi cỡ và mặc cả giá.","c":[{"n":"老板","v":"Ông chủ cửa hàng","g":"male"},{"n":"林小姐","v":"Chị Lâm (khách)","g":"female"}],"x":"老板：你好！想买什么？\n林小姐：我想买一件衣服。\n老板：你看看这件，很漂亮！\n林小姐：很漂亮！嗯……有点儿小。有大一点儿的吗？\n老板：有，你看这件怎么样？\n林小姐：这件好！多少钱？\n老板：三百五十块。\n林小姐：啊？太贵了！能不能便宜一点儿？\n老板：好吧……三百块，怎么样？\n林小姐：好，我买了！谢谢你！"},{"t":"今天几号？","v":"Hôm nay là ngày mấy?","lv":"HSK1","s":"Hai người bạn hỏi nhau ngày tháng và phát hiện sắp đến sinh nhật.","c":[{"n":"张伟","v":"Trương Vĩ","g":"male"},{"n":"陈月","v":"Trần Nguyệt","g":"female"}],"x":"张伟：陈月，今天几号？星期几？\n陈月：十月十七号，星期五。怎么了？\n张伟：啊！明天是我妈妈的生日！我还没买东西呢。\n陈月：那你今天下午去买吧。\n张伟：下午我要工作……明天上午去吧。\n陈月：我的生日是十月二十号！\n张伟：二十号？是下个星期一吧？\n陈月：是啊！那天你请我吃饭吧！\n张伟：哈哈，好啊！"},{"t":"坐出租车","v":"Đi taxi","lv":"HSK2","s":"Chị Lâm đang vội, lên taxi đến khách sạn Bắc Kinh.","c":[{"n":"林小姐","v":"Chị Lâm (khách)","g":"female"},{"n":"司机","v":"Tài xế","g":"male"}],"x":"司机：您好，去哪儿？\n林小姐：师傅，去北京饭店。\n司机：好嘞！请系好安全带。\n林小姐：大概要多长时间？\n司机：现在有点儿堵车，大概二十分钟吧。\n林小姐：我有点儿急，能快一点儿吗？\n司机：放心，我走小路，很快就到。\n司机：到了！一共三十五块。\n林小姐：给您。谢谢师傅！"},{"t":"在饭馆点菜","v":"Gọi món ở nhà hàng","lv":"HSK2","s":"Anh Trương đến nhà hàng Tứ Xuyên và nhờ nhân viên gợi ý món.","c":[{"n":"张先生","v":"Anh Trương (khách)","g":"male"},{"n":"服务员","v":"Nhân viên","g":"female"}],"x":"服务员：您好，几位？\n张先生：两位。有菜单吗？\n服务员：有，给您。您想吃点儿什么？\n张先生：你们这儿什么菜最好吃？\n服务员：我们的宫保鸡丁和麻婆豆腐都很有名。\n张先生：好，就要这两个菜，再来两碗米饭。\n服务员：要辣一点儿的吗？\n张先生：不要太辣，微辣就好。\n服务员：好的，请稍等！\n张先生：服务员，买单！"},{"t":"约朋友看电影","v":"Hẹn bạn đi xem phim","lv":"HSK2","s":"Đại Vỹ rủ Tiểu Mỹ đi xem phim vào cuối tuần.","c":[{"n":"大伟","v":"Đại Vỹ","g":"male"},{"n":"小美","v":"Tiểu Mỹ","g":"female"}],"x":"大伟：小美，这个周末你有空吗？\n小美：星期六有事，星期天有空。怎么了？\n大伟：我们一起去看电影吧！\n小美：好啊！看什么电影？\n大伟：听说有一部新的喜剧片很好看。\n小美：太好了，我最喜欢看喜剧了！几点见？\n大伟：下午两点，在电影院门口见，怎么样？\n小美：没问题，不见不散！"},{"t":"谈爱好","v":"Nói về sở thích","lv":"HSK2","s":"Tiểu Vũ và A Kiệt nói chuyện về sở thích lúc rảnh rỗi.","c":[{"n":"阿杰","v":"A Kiệt","g":"male"},{"n":"小雨","v":"Tiểu Vũ","g":"female"}],"x":"小雨：阿杰，你平时喜欢做什么？\n阿杰：我喜欢踢足球，每个星期都踢两次。\n小雨：真厉害！我不太喜欢运动。\n阿杰：那你的爱好是什么？\n小雨：我喜欢听音乐，也喜欢做饭。\n阿杰：你会做中国菜吗？\n小雨：会一点儿。我包的饺子还不错哦！\n阿杰：真的吗？那下次请我吃吧！\n小雨：好啊，没问题！"},{"t":"朋友的生日","v":"Sinh nhật bạn","lv":"HSK2","s":"Lệ Lệ và Đại Vĩ bàn nhau chọn quà cho sinh nhật Tiểu Vương.","c":[{"n":"丽丽","v":"Lệ Lệ","g":"female"},{"n":"大伟","v":"Đại Vĩ","g":"male"}],"x":"丽丽：大伟，明天是小王的生日，你知道吗？\n大伟：知道啊！他晚上请我们去他家吃饭。\n丽丽：你准备送他什么礼物？\n大伟：我还没想好呢。你觉得送什么好？\n丽丽：他非常喜欢运动，送他一件运动衣服怎么样？\n大伟：好啊！那我们下午一起去商店看看吧。\n丽丽：行，三点在学校门口见。\n大伟：对了，我们要不要再买个蛋糕？\n丽丽：当然要！过生日怎么能没有蛋糕呢？\n大伟：哈哈，你说得对。他会非常高兴的！"},{"t":"周末去旅游","v":"Đi du lịch cuối tuần","lv":"HSK2","s":"Tiểu Tuyết rủ Trương Hoa đi Hàng Châu chơi hai ngày cuối tuần.","c":[{"n":"小雪","v":"Tiểu Tuyết","g":"female"},{"n":"张华","v":"Trương Hoa","g":"male"}],"x":"小雪：张华，这个周末你想做什么？\n张华：还没想好呢。你呢？\n小雪：我想去杭州旅游，你要不要一起去？\n张华：好啊！我们怎么去？坐火车还是坐飞机？\n小雪：坐火车吧，很快，一个多小时就到了。\n张华：那住在哪儿呢？宾馆贵不贵？\n小雪：不太贵。我已经在手机上看了，有一家离西湖很近。\n张华：太好了！那几天天气怎么样？\n小雪：都是晴天，不下雨。我们星期六早上就出发吧！\n张华：没问题，我现在就去买火车票！"},{"t":"考试前","v":"Trước kỳ thi","lv":"HSK2","s":"Hôm trước kỳ thi, Vương Cương nhờ bạn cùng lớp Tiểu Lâm giảng giúp một bài khó.","c":[{"n":"王刚","v":"Vương Cương","g":"male"},{"n":"小林","v":"Tiểu Lâm","g":"female"}],"x":"王刚：小林，明天就考试了，你准备得怎么样？\n小林：还可以吧。你呢？看起来有点儿累。\n王刚：别说了，我昨天晚上一点才睡觉。\n王刚：这个题我看了很多次，还是不懂。\n小林：哪个？给我看看。\n王刚：就是这个，第五题。\n小林：哦，这个我会。你先看这儿，再看问题。\n王刚：啊，我懂了！原来是这个意思。\n小林：下课以后我们一起复习吧？\n王刚：太好了！我请你喝咖啡。"},{"t":"早上跑步","v":"Chạy bộ buổi sáng","lv":"HSK2","s":"Sáng sớm ở công viên, Tiểu Mỹ gặp chú Trần hàng xóm đang chạy bộ.","c":[{"n":"小美","v":"Tiểu Mỹ","g":"female"},{"n":"陈叔叔","v":"Chú Trần (hàng xóm)","g":"male"}],"x":"小美：陈叔叔，早！您每天都来跑步吗？\n陈叔叔：早啊！是啊，我每天六点起床，跑半个小时。\n小美：怪不得您身体这么好！\n陈叔叔：哈哈，运动对身体好嘛。你也跑步吗？\n小美：我也想跑，但是早上起不来。\n小美：可是我觉得我有点儿胖了。\n陈叔叔：那明天和我一起跑吧！\n小美：好啊！就是我跑得很慢。\n陈叔叔：没关系，慢慢跑，每天跑一点儿就好。\n小美：那说好了，明天六点在这儿见！"},{"t":"在机场","v":"Ở sân bay","lv":"HSK2","s":"Chị Lưu làm thủ tục lên máy bay đi Thượng Hải ở quầy check-in.","c":[{"n":"工作人员","v":"Nhân viên sân bay","g":"male"},{"n":"刘小姐","v":"Chị Lưu (hành khách)","g":"female"}],"x":"工作人员：您好，请给我看一下您的护照。\n刘小姐：给您。我去上海。\n工作人员：好的。您的东西都在这儿吗？请放上来。\n刘小姐：就这一个。没问题吧？\n工作人员：十八公斤，可以。\n刘小姐：我想坐在窗户旁边，可以吗？\n工作人员：可以。这是您的登机牌，请在十五号门上飞机。\n刘小姐：飞机几点到上海？\n工作人员：十点半走，十二点就到了。现在还早，您可以先去喝杯咖啡。\n刘小姐：好的，谢谢您！"},{"t":"上班迟到了","v":"Đi làm muộn","lv":"HSK2","s":"Tiểu Lý đến công ty muộn, chị Vương đồng nghiệp báo giám đốc đang tìm.","c":[{"n":"王姐","v":"Chị Vương (đồng nghiệp)","g":"female"},{"n":"小李","v":"Tiểu Lý","g":"male"}],"x":"王姐：小李，你怎么现在才来？已经九点半了！\n小李：别说了！路上车太多，公共汽车走了一个小时。\n王姐：张经理来找过你。\n小李：啊？他说什么了吗？\n王姐：没说什么，就是让你来了以后去找他。\n小李：完了，这个月我已经迟到两次了。\n王姐：没事儿，我看他今天很高兴。\n小李：真的吗？那我现在就去。\n王姐：快去吧！下次早点儿出门。\n小李：知道了，谢谢王姐！"},{"t":"去朋友家吃饭","v":"Đến nhà bạn ăn cơm","lv":"HSK2","s":"Tiểu Vũ được Trương Minh mời đến nhà ăn tối.","c":[{"n":"张明","v":"Trương Minh (chủ nhà)","g":"male"},{"n":"小雨","v":"Tiểu Vũ (khách)","g":"female"}],"x":"张明：你来了！快进来吧！\n小雨：打扰了！这些水果是给你的。\n张明：你太客气了！请坐，喝茶还是喝咖啡？\n小雨：喝茶吧，谢谢。你家真漂亮啊！\n张明：哪里哪里。菜都准备好了，我们吃饭吧。\n小雨：好香啊！这些菜都是你做的吗？\n张明：是啊。你吃吃这个鱼，我最喜欢做鱼了。\n小雨：嗯，真好吃！比饭馆的还好吃！\n张明：哈哈，喜欢就多吃点儿！\n小雨：下次你来我家，我给你做越南菜！"},{"t":"看房子","v":"Thuê phòng","lv":"HSK2","s":"Anh Chu đi xem phòng cho thuê và mặc cả giá với bà Vương chủ nhà.","c":[{"n":"小周","v":"Anh Chu (người thuê)","g":"male"},{"n":"王阿姨","v":"Bà Vương (chủ nhà)","g":"female"}],"x":"小周：阿姨您好，我想看看这个房间。\n王阿姨：来，请进。房间不大，但是很新。\n小周：一个月多少钱？\n王阿姨：两千五。\n小周：有点儿贵啊。能便宜一点儿吗？\n王阿姨：你看，公共汽车站就在旁边，去哪儿都很近。\n小周：这儿附近有商店和饭馆吗？\n王阿姨：有啊，出门往右走就是商店，左边还有很多饭馆。\n小周：那两千四，可以吗？\n王阿姨：好吧，我看你人不错，就两千四！"}];
+
+/* ---------- Tiện ích ---------- */
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("goi-" + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("goi-" + k, JSON.stringify(v)); } catch {} },
+};
+const py = (t) => (window.pinyinPro && /[一-鿿]/.test(t) ? pinyinPro.pinyin(t) : "");
+const ICON = {
+  phone: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1L6.6 10.8Z"/></svg>',
+  mic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>',
+  micOff: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M3 3l18 18"/></svg>',
+  bulb: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3Z"/></svg>',
+};
+
+/* ---------- Nhân vật, chủ đề ---------- */
+const PERSONAS = [
+  { id: "xiaoyu", name: "小雨", py: "Xiǎoyǔ", vi: "Cô bạn Bắc Kinh vui tính", gender: "female", voice: "Kore",
+    style: "你是小雨，24岁，北京女孩，性格开朗、爱笑，喜欢吃好吃的、看电影、逛街。你是我的好朋友，说话亲切自然。",
+    topics: ["今天你做了什么", "喜欢吃的东西", "周末计划", "家人", "电影和音乐"] },
+  { id: "laoshi", name: "王老师", py: "Wáng lǎoshī", vi: "Cô giáo tiếng Trung kiên nhẫn", gender: "female", voice: "Aoede",
+    style: "你是王老师，专门教越南学生说中文，非常有耐心，说话清楚、慢，经常鼓励和表扬学生，会请学生跟读。",
+    topics: ["自我介绍", "为什么学中文", "你的工作", "今天的天气", "每天的习惯"] },
+  { id: "ajie", name: "阿杰", py: "Ājié", vi: "Anh bạn Thượng Hải mê thể thao", gender: "male", voice: "Puck",
+    style: "你是阿杰，27岁，上海男生，活泼幽默，喜欢运动和旅游，常常讲有意思的小故事。你是我的朋友。",
+    topics: ["运动", "去越南旅游", "今天晚上吃什么", "上班和下班", "爱好"] },
+  { id: "laoban", name: "老板", py: "lǎobǎn", vi: "Người bán hàng, phục vụ", gender: "male", voice: "Charon",
+    style: "你在中国做生意，可以是咖啡店店员、水果店老板、饭馆服务员、服装店老板或出租车司机，按照话题演对应的角色，热情地问客人要什么，说价格，可以讨价还价。",
+    topics: ["在咖啡店点饮料", "在市场买水果", "在饭馆点菜", "买衣服讲价", "打车回酒店"] },
+];
+const VOICES = [["Kore", "Nữ, rõ ràng"], ["Aoede", "Nữ, nhẹ nhàng"], ["Leda", "Nữ, trẻ trung"], ["Puck", "Nam, vui vẻ"], ["Charon", "Nam, trầm"], ["Fenrir", "Nam, mạnh mẽ"]];
+const LIVE_MODELS = ["gemini-3.8-live", "gemini-3.1-flash-live-preview", "gemini-2.5-flash-native-audio-preview-12-2025"];
+const TEXT_MODELS = ["gemini-flash-latest", "gemini-3.5-flash", "gemini-3.8-flash", "gemini-flash-lite-latest"];
+
+const state = {
+  view: store.get("key", "") ? "setup" : "key",
+  key: store.get("key", ""),
+  pid: store.get("pid", "xiaoyu"), topic: "", scene: null, level: store.get("level", "HSK1"),
+  voice: store.get("voice", ""), mode: store.get("mode", "free"),
+  showText: store.get("showText", true), showPy: store.get("showPy", true),
+};
+const persona = () => PERSONAS.find((p) => p.id === state.pid) || PERSONAS[0];
+// Mở từ web học: ?pid=...&level=...&topic=... hoặc ?scene=<số bài>.
+{
+  const q = new URLSearchParams(location.search);
+  if (PERSONAS.some((p) => p.id === q.get("pid"))) state.pid = q.get("pid");
+  if (/^HSK[12]$/.test(q.get("level") || "")) state.level = q.get("level");
+  if (q.get("topic")) state.topic = q.get("topic");
+  const sc = parseInt(q.get("scene"), 10);
+  if (sc >= 0 && sc < SCENES.length) { state.scene = sc; state.level = SCENES[sc].lv; }
+}
+
+/* ---------- Gọi Gemini dạng văn bản (gợi ý, dịch, tổng kết) ---------- */
+async function askText(prompt, json = true) {
+  let lastErr;
+  for (const m of [...new Set([store.get("textModel", TEXT_MODELS[0]), ...TEXT_MODELS])]) {
+    try {
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(state.key)}`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: json ? { responseMimeType: "application/json" } : {} }),
+      });
+      const d = await r.json();
+      if (!r.ok) { lastErr = new Error(d?.error?.message || r.status); if ([404, 429, 500, 503].includes(r.status)) continue; throw lastErr; }
+      store.set("textModel", m);
+      const text = d.candidates?.[0]?.content?.parts?.map((p) => p.text || "").join("") || "";
+      return json ? JSON.parse(text.replace(/^```(json)?|```$/g, "").trim()) : text;
+    } catch (e) { lastErr = e; }
+  }
+  throw lastErr;
+}
+
+/* ---------- Âm thanh: micro vào 16 kHz, giọng AI ra 24 kHz ---------- */
+const WORKLET = `
+class Mic extends AudioWorkletProcessor {
+  constructor() { super(); this.buf = []; this.ratio = sampleRate / 16000; this.pos = 0; }
+  process(inputs) {
+    const ch = inputs[0][0];
+    if (!ch) return true;
+    let sum = 0;
+    for (let i = 0; i < ch.length; i++) sum += ch[i] * ch[i];
+    // Hạ mẫu đơn giản về 16 kHz.
+    for (; this.pos < ch.length; this.pos += this.ratio) this.buf.push(ch[Math.floor(this.pos)]);
+    this.pos -= ch.length;
+    if (this.buf.length >= 1600) {
+      const out = new Int16Array(this.buf.length);
+      for (let i = 0; i < this.buf.length; i++) { const s = Math.max(-1, Math.min(1, this.buf[i])); out[i] = s < 0 ? s * 0x8000 : s * 0x7fff; }
+      this.port.postMessage({ pcm: out.buffer, level: Math.sqrt(sum / ch.length) }, [out.buffer]);
+      this.buf = [];
+    }
+    return true;
+  }
+}
+registerProcessor("mic", Mic);`;
+
+const b64 = (buf) => { let s = ""; const b = new Uint8Array(buf); for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000)); return btoa(s); };
+const unb64 = (s) => { const bin = atob(s); const b = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) b[i] = bin.charCodeAt(i); return b.buffer; };
+
+const call = { ws: null, ctx: null, stream: null, node: null, analyser: null, sources: [], nextTime: 0, start: 0, log: [], cur: { me: null, ai: null }, status: "", muted: false, talking: false, ready: false, modelIdx: 0, ended: false, sugs: [], sugBusy: false, error: "", timer: null };
+
+async function startCall() {
+  const p = persona();
+  Object.assign(call, { log: [], cur: { me: null, ai: null }, sugs: [], error: "", ended: false, ready: false, muted: false, modelIdx: LIVE_MODELS.indexOf(store.get("liveModel", LIVE_MODELS[0])) });
+  if (call.modelIdx < 0) call.modelIdx = 0;
+  state.view = "call"; call.status = "Đang mở micro..."; render();
+  try {
+    call.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    await call.ctx.resume();
+    call.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 } });
+  } catch (e) {
+    return failCall("Trang chưa được dùng micro. Hãy cho phép micro khi trình duyệt hỏi (hoặc bật trong Cài đặt của trình duyệt) rồi gọi lại.");
+  }
+  const url = URL.createObjectURL(new Blob([WORKLET], { type: "application/javascript" }));
+  await call.ctx.audioWorklet.addModule(url);
+  const src = call.ctx.createMediaStreamSource(call.stream);
+  call.node = new AudioWorkletNode(call.ctx, "mic");
+  src.connect(call.node);
+  // Nối vào đầu ra với âm lượng 0 để trình duyệt vẫn chạy bộ xử lý micro.
+  const mute = call.ctx.createGain(); mute.gain.value = 0; call.node.connect(mute).connect(call.ctx.destination);
+  call.out = call.ctx.createGain(); call.analyser = call.ctx.createAnalyser(); call.analyser.fftSize = 256;
+  call.out.connect(call.analyser); call.analyser.connect(call.ctx.destination);
+  call.node.port.onmessage = (e) => onMic(e.data);
+  call.start = Date.now();
+  clearInterval(call.timer); call.timer = setInterval(tick, 100);
+  connect();
+}
+
+function systemPrompt() {
+  const p = persona(), sc = state.scene != null ? SCENES[state.scene] : null;
+  const lv = state.level === "HSK1" ? "HSK1（只用最简单的词和短句）" : "HSK2（简单的日常词汇）";
+  let s = `${p.style}
+我是越南人，正在学中文，水平是${lv}。我们现在在打电话练习口语。
+${sc ? `今天练习课文里的情景：「${sc.t}」（${sc.v}）。情景：${sc.s}\n你演「${sc.c[0].n}」或者「${sc.c[1].n}」中我没有演的那个人，课文对话如下，可以参考，但可以自由聊：\n${sc.x}` : `话题：${state.topic || p.topics[0]}`}
+
+请遵守：
+1. 只说中文（除非我要求翻译）。每次只说1到2个短句，语速慢一点，发音清楚，像真人打电话一样自然、热情、有感情，可以用"嗯、啊、哦、哈哈、真的吗"。
+2. 每次说完都问我一个简单的问题，让我继续说下去。
+3. 我说错的时候，先自然地回应，然后简单地说："更好的说法是……"，再请我说一遍。不要讲太长的语法。
+4. 我听不懂、说"什么"或者说越南语的时候，用更简单的中文再说一遍，必要时用越南语简单解释。
+5. 我说"翻译"的时候，用越南语翻译你刚才说的话。
+6. 电话一开始，你先热情地打招呼，然后开始话题。`;
+  return s;
+}
+
+function connect() {
+  const model = LIVE_MODELS[call.modelIdx];
+  call.status = "Đang gọi..."; render();
+  const ws = new WebSocket(`wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${encodeURIComponent(state.key)}`);
+  call.ws = ws; call.ready = false;
+  ws.onopen = () => {
+    ws.send(JSON.stringify({ setup: {
+      model: "models/" + model,
+      generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: state.voice || persona().voice } } } },
+      systemInstruction: { parts: [{ text: systemPrompt() }] },
+      inputAudioTranscription: {}, outputAudioTranscription: {},
+      realtimeInputConfig: { automaticActivityDetection: { silenceDurationMs: 900 } },
+    } }));
+  };
+  ws.onmessage = async (ev) => {
+    let msg;
+    try { msg = JSON.parse(typeof ev.data === "string" ? ev.data : await ev.data.text()); } catch { return; }
+    onServer(msg);
+  };
+  ws.onclose = (ev) => {
+    if (call.ws !== ws || call.ended) return;
+    if (!call.ready) {
+      // Mô hình chưa mở cho khóa này: thử mô hình tiếp theo.
+      if (/model|not found|not supported|unsupported/i.test(ev.reason) && call.modelIdx < LIVE_MODELS.length - 1) { call.modelIdx++; return connect(); }
+      return failCall(explain(ev.reason || "Không kết nối được (mã " + ev.code + ")."));
+    }
+    failCall(explain(ev.reason || "Cuộc gọi bị ngắt."), true);
+  };
+}
+function explain(reason) {
+  if (/api key|API_KEY|permission|unauth/i.test(reason)) return "Khóa API chưa đúng hoặc chưa được bật Gemini API. Kiểm tra lại khóa ở mục Cài đặt. (" + reason + ")";
+  if (/quota|exhaust|rate/i.test(reason)) return "Đã dùng hết lượt miễn phí trong lúc này. Đợi một lát rồi gọi lại. (" + reason + ")";
+  if (/location|region|country/i.test(reason)) return "Google chưa mở Gemini API ở nơi bạn đang dùng. (" + reason + ")";
+  return reason;
+}
+
+function onServer(msg) {
+  if (msg.setupComplete) {
+    call.ready = true; store.set("liveModel", LIVE_MODELS[call.modelIdx]);
+    call.status = "";
+    // Để AI chào trước như một cuộc gọi thật.
+    call.ws.send(JSON.stringify({ clientContent: { turns: [{ role: "user", parts: [{ text: "（电话接通了，请你先打招呼。）" }] }], turnComplete: true } }));
+    render(); return;
+  }
+  if (msg.goAway) { call.status = "Cuộc gọi sắp hết thời gian, hãy chào tạm biệt."; renderState(); }
+  const sc = msg.serverContent;
+  if (!sc) return;
+  if (sc.interrupted) { stopPlayback(); finish("ai"); }
+  if (sc.inputTranscription?.text) addText("me", sc.inputTranscription.text);
+  if (sc.outputTranscription?.text) { finish("me"); addText("ai", sc.outputTranscription.text); }
+  for (const part of sc.modelTurn?.parts || []) {
+    if (part.inlineData?.data && /audio/.test(part.inlineData.mimeType || "audio")) { finish("me"); play(part.inlineData.data, part.inlineData.mimeType); }
+  }
+  if (sc.turnComplete) { finish("me"); finish("ai"); }
+}
+
+function play(data, mime) {
+  const rate = +((mime || "").match(/rate=(\d+)/)?.[1] || 24000);
+  const pcm = new Int16Array(unb64(data));
+  const buf = call.ctx.createBuffer(1, pcm.length, rate);
+  const ch = buf.getChannelData(0);
+  for (let i = 0; i < pcm.length; i++) ch[i] = pcm[i] / 32768;
+  const s = call.ctx.createBufferSource();
+  s.buffer = buf; s.connect(call.out);
+  const t = Math.max(call.ctx.currentTime + 0.03, call.nextTime);
+  s.start(t); call.nextTime = t + buf.duration;
+  call.sources.push(s);
+  s.onended = () => { call.sources = call.sources.filter((x) => x !== s); };
+}
+function stopPlayback() { for (const s of call.sources) { try { s.stop(); } catch {} } call.sources = []; call.nextTime = 0; }
+const aiSpeaking = () => call.sources.length > 0;
+
+function onMic({ pcm, level }) {
+  const live = call.ready && !call.muted && (state.mode === "free" || call.talking);
+  const m = $("#mic-meter"); if (m) m.style.width = live ? Math.min(100, level * 600) + "%" : "0%";
+  if (!live || call.ws?.readyState !== 1) return;
+  call.ws.send(JSON.stringify({ realtimeInput: { audio: { mimeType: "audio/pcm;rate=16000", data: b64(pcm) } } }));
+}
+function pttDown() { if (!call.ready) return; call.talking = true; stopPlayback(); $("#ptt")?.classList.add("on"); }
+function pttUp() {
+  if (!call.talking) return;
+  call.talking = false; $("#ptt")?.classList.remove("on");
+  if (call.ws?.readyState === 1) call.ws.send(JSON.stringify({ realtimeInput: { audioStreamEnd: true } }));
+}
+
+function tick() {
+  const t = $("#timer"); if (t) { const s = Math.floor((Date.now() - call.start) / 1000); t.textContent = `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`; }
+  const orb = $("#orb");
+  if (orb && call.analyser) {
+    const d = new Uint8Array(call.analyser.frequencyBinCount); call.analyser.getByteTimeDomainData(d);
+    let sum = 0; for (const v of d) sum += ((v - 128) / 128) ** 2;
+    const lv = Math.min(1, Math.sqrt(sum / d.length) * 5);
+    orb.style.setProperty("--glow", lv.toFixed(2)); orb.style.transform = `scale(${1 + lv * 0.06})`;
+  }
+  renderState();
+}
+function renderState() {
+  const el = $("#state"); if (!el) return;
+  const txt = call.status || (aiSpeaking() ? `${persona().name} đang nói...<small>Bạn có thể nói chen vào bất cứ lúc nào</small>` : call.muted ? "Micro đang tắt<small>Bấm nút micro để nói tiếp</small>" : state.mode === "ptt" ? (call.talking ? "Đang nghe bạn nói..." : "Bấm giữ nút bên dưới để nói") : "Đang nghe, bạn cứ nói<small>Nói xong, dừng một chút để AI trả lời</small>");
+  if (el.dataset.t !== txt) { el.innerHTML = txt; el.dataset.t = txt; }
+}
+
+function addText(who, text) {
+  let m = call.cur[who];
+  if (!m) { m = { who, text: "", live: true }; call.cur[who] = m; call.log.push(m); }
+  m.text += text;
+  renderLog();
+}
+function finish(who) {
+  const m = call.cur[who]; if (!m) return;
+  m.live = false; m.text = m.text.trim(); call.cur[who] = null;
+  if (who === "ai") call.sugs = [];
+  renderLog();
+}
+function renderLog() {
+  const el = $("#log"); if (!el) return;
+  const atBottom = window.innerHeight + window.scrollY >= document.body.scrollHeight - 80;
+  el.innerHTML = call.log.filter((m) => m.text.trim()).map((m, i) => {
+    const show = state.showText || m.peek || m.who === "me";
+    const body = show ? `<div class="zh">${esc(m.text)}</div>${state.showPy && /[一-鿿]/.test(m.text) ? `<div class="py">${esc(py(m.text))}</div>` : ""}${m.vi ? `<div class="vi">${esc(m.vi)}</div>` : ""}` : `<button class="mini" data-peek="${call.log.indexOf(m)}">Chạm để xem chữ</button>`;
+    const tools = m.who === "ai" && !m.live ? `<div class="tools">${show && !m.vi ? `<button class="mini" data-tr="${call.log.indexOf(m)}">Dịch</button>` : ""}</div>` : "";
+    return `<div class="msg ${m.who} ${m.live ? "live" : ""}">${body}${tools}</div>`;
+  }).join("") || `<p class="muted" style="text-align:center">Lời thoại sẽ hiện ở đây.</p>`;
+  if (atBottom) window.scrollTo(0, document.body.scrollHeight);
+  const s = $("#sugs");
+  if (s) s.innerHTML = call.sugBusy ? `<span class="muted typing"><i></i><i></i><i></i> Đang nghĩ gợi ý...</span>` : call.sugs.map((x) => `<div class="sug"><span class="zh">${esc(x.zh)}</span><small>${esc(x.pinyin || "")}</small><small>${esc(x.vi || "")}</small></div>`).join("");
+}
+const transcript = () => call.log.filter((m) => m.text).map((m) => (m.who === "ai" ? persona().name : "Người học") + ": " + m.text).join("\n");
+
+async function suggest() {
+  if (call.sugBusy) return;
+  call.sugBusy = true; renderLog();
+  try {
+    const d = await askText(`Đây là cuộc gọi luyện nói tiếng Trung (trình độ ${state.level}) giữa người học Việt Nam và ${persona().name}:
+${transcript() || "(chưa có lời thoại)"}
+
+Hãy đưa ra 3 câu tiếng Trung ngắn, tự nhiên, mức ${state.level}, mà người học có thể nói tiếp ngay bây giờ. Chỉ trả về JSON: {"suggestions":[{"zh":"","pinyin":"pinyin có dấu","vi":"nghĩa tiếng Việt"}]}`);
+    call.sugs = (d.suggestions || []).slice(0, 3);
+  } catch (e) { call.sugs = [{ zh: "", vi: "Chưa lấy được gợi ý: " + e.message }]; }
+  call.sugBusy = false; renderLog();
+}
+async function translate(i) {
+  const m = call.log[i]; if (!m) return;
+  m.vi = "Đang dịch..."; renderLog();
+  try { m.vi = (await askText(`Dịch câu tiếng Trung sau sang tiếng Việt tự nhiên, chỉ trả về bản dịch: ${m.text}`, false)).trim(); }
+  catch (e) { m.vi = "Chưa dịch được: " + e.message; }
+  renderLog();
+}
+
+function teardown() {
+  clearInterval(call.timer);
+  try { call.ws && call.ws.close(); } catch {}
+  call.ws = null;
+  stopPlayback();
+  try { call.stream?.getTracks().forEach((t) => t.stop()); } catch {}
+  try { call.ctx?.close(); } catch {}
+  call.ctx = null;
+}
+function failCall(text, dropped = false) {
+  teardown(); call.ended = true;
+  call.error = text; state.view = call.log.some((m) => m.who === "me" && m.text) ? "summary" : "setup";
+  if (state.view === "summary") summarize(); else render();
+}
+function hangUp() {
+  call.ended = true; teardown();
+  finish("me"); finish("ai");
+  if (call.log.some((m) => m.who === "me" && m.text)) { state.view = "summary"; summarize(); } else { state.view = "setup"; render(); }
+}
+async function summarize() {
+  call.summary = null; call.sumBusy = true; render();
+  try {
+    call.summary = await askText(`Bạn là giáo viên tiếng Trung. Đây là cuộc gọi luyện nói của người Việt (trình độ ${state.level}) với ${persona().name}. Lời của người học được máy nhận dạng từ giọng nói nên có thể có lỗi nhận dạng; chỉ góp ý những lỗi chắc chắn.
+${transcript()}
+
+Đánh giá ngắn gọn, thân thiện, bằng tiếng Việt. Chỉ trả về JSON:
+{"score": số 0-100 cho khả năng giao tiếp, "overall_vi": "1-2 câu nhận xét, khích lệ", "good_vi": ["tối đa 3 điểm tốt"], "fixes": [{"wrong": "câu người học nói", "right": "câu đúng", "right_pinyin": "pinyin có dấu", "why_vi": "giải thích ngắn"}], "words": [{"zh": "", "pinyin": "", "vi": ""}]}
+fixes tối đa 4. words: 4-8 từ hữu ích trong cuộc gọi.`);
+  } catch (e) { call.sumError = e.message; }
+  call.sumBusy = false; render();
+}
+
+/* ---------- Giao diện ---------- */
+function render() {
+  const app = $("#app");
+  app.innerHTML = { key: keyView, setup: setupView, call: callView, summary: summaryView }[state.view]();
+  if (state.view === "call") renderLog();
+  window.scrollTo(0, state.view === "call" ? document.body.scrollHeight : 0);
+}
+
+function keyView() {
+  return `<div class="wrap"><section class="head"><h1>Gọi điện luyện nói tiếng Trung <em>bằng giọng nói</em></h1>
+    <p class="muted" style="margin:0">Nói chuyện trực tiếp với AI như gọi điện thật: bạn nói, AI nghe và trả lời bằng giọng người, có thể nói chen ngang.</p></section>
+    <div class="section-title">Bước đầu: lấy khóa miễn phí của Google</div>
+    <div class="box">
+      <ol class="steps">
+        <li>Mở <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> và đăng nhập bằng tài khoản Gmail.</li>
+        <li>Bấm <b>Create API key</b> (Tạo khóa API), rồi bấm sao chép khóa.</li>
+        <li>Quay lại đây, dán khóa vào ô bên dưới.</li>
+      </ol>
+      <form class="row" style="margin-top:12px" id="key-form"><input class="field" id="key-in" autocomplete="off" spellcheck="false" placeholder="Dán khóa API vào đây" value="${esc(state.key)}"><button class="btn btn-primary" type="submit">Lưu</button></form>
+      <p class="note">Khóa chỉ được lưu trên máy của bạn. Bản miễn phí có giới hạn số lượt dùng mỗi ngày, và Google có thể dùng nội dung cuộc gọi để cải thiện sản phẩm, nên đừng nói thông tin riêng tư.</p>
+    </div></div>`;
+}
+
+function setupView() {
+  const p = persona();
+  return `<div class="wrap"><section class="head"><h1>Gọi điện luyện nói <em>như người thật</em></h1>
+    ${/\/goi-ai\/?$/.test(location.pathname) ? `<a href="../" style="font-weight:600;text-decoration:none">← Về web học</a>` : ""}
+    <p class="muted" style="margin:0">Chọn người, chọn chủ đề rồi bấm gọi. Nên đeo tai nghe để AI không nghe nhầm tiếng của chính nó.</p></section>
+    ${call.error ? `<div class="callout bad" style="margin-top:14px">${esc(call.error)}</div>` : ""}
+    <div class="section-title">1. Gọi cho ai?</div>
+    <div class="people">${PERSONAS.map((x) => `<button class="person" data-pid="${x.id}" aria-pressed="${x.id === p.id && state.scene == null}"><div class="av ${x.gender}">${esc(x.name[0])}</div><div><div class="pname">${esc(x.name)} <span class="muted" style="font-size:13px;font-family:var(--font-body)">${esc(x.py)}</span></div><div class="muted" style="font-size:14px">${esc(x.vi)}</div></div></button>`).join("")}</div>
+    <div class="section-title">2. Nói chuyện gì?</div>
+    <div class="chips">${p.topics.map((t) => `<button class="chip" data-topic="${esc(t)}" aria-pressed="${state.scene == null && state.topic === t}"><span class="zh">${esc(t)}</span></button>`).join("")}</div>
+    <div class="row" style="margin-top:10px"><input class="field" id="topic-in" placeholder="Hoặc gõ chủ đề khác (tiếng Việt hay tiếng Trung đều được)" value="${esc(state.scene == null && !p.topics.includes(state.topic) ? state.topic : "")}"></div>
+    <div class="row" style="margin-top:10px"><select class="field" id="scene-in" aria-label="Luyện theo bài hội thoại"><option value="">Hoặc luyện theo một bài hội thoại trên web...</option>${SCENES.map((s, i) => `<option value="${i}" ${state.scene === i ? "selected" : ""}>${s.lv} · ${esc(s.t)} · ${esc(s.v)}</option>`).join("")}</select></div>
+    <div class="section-title">3. Trình độ và giọng</div>
+    <div class="chips">${["HSK1", "HSK2"].map((lv) => `<button class="chip" data-level="${lv}" aria-pressed="${state.level === lv}">${lv === "HSK1" ? "HSK 1 · rất đơn giản" : "HSK 2 · dài hơn"}</button>`).join("")}</div>
+    <div class="row" style="margin-top:10px"><select class="field" id="voice-in" aria-label="Giọng AI"><option value="">Giọng mặc định của ${esc(p.name)}</option>${VOICES.map(([v, d]) => `<option value="${v}" ${state.voice === v ? "selected" : ""}>${v} · ${d}</option>`).join("")}</select></div>
+    <div class="section-title">4. Cách nói</div>
+    <div class="chips"><button class="chip" data-mode="free" aria-pressed="${state.mode === "free"}">Rảnh tay, nói tự do</button><button class="chip" data-mode="ptt" aria-pressed="${state.mode === "ptt"}">Bấm giữ để nói (khi ồn)</button></div>
+    <div style="margin:24px 0 12px"><button class="btn btn-primary" style="width:100%;padding:16px;font-size:18px" data-start>${ICON.phone}Gọi ${esc(state.scene != null ? "theo bài " + SCENES[state.scene].t : p.name)}</button></div>
+    <p class="note" style="text-align:center;margin-bottom:28px"><button class="mini" data-changekey>Đổi khóa API</button></p>
+  </div>`;
+}
+
+function callView() {
+  const p = persona(), sc = state.scene != null ? SCENES[state.scene] : null;
+  return `<div class="call"><div class="wrap" style="width:100%">
+    <div class="call-top"><div class="who"><div class="pname">${esc(p.name)} <span class="muted" style="font-size:14px;font-family:var(--font-body)">${esc(p.py)}</span></div><div class="muted" style="font-size:13px">${esc(sc ? sc.t + " · " + sc.v : state.topic || p.topics[0])}</div></div><div class="timer" id="timer">00:00</div></div>
+    <div class="orb-wrap"><div class="orb ${p.gender}" id="orb">${esc(p.name[0])}</div></div>
+    <div class="state" id="state"></div>
+    <div class="meter" aria-hidden="true"><i id="mic-meter"></i></div>
+    <div class="toggles">
+      <button class="chip" data-tog="showText" aria-pressed="${state.showText}">Hiện chữ</button>
+      <button class="chip" data-tog="showPy" aria-pressed="${state.showPy}">Pinyin</button>
+    </div>
+    <div class="log" id="log"></div>
+  </div>
+  <div class="dock"><div class="wrap">
+    <div class="sugs" id="sugs"></div>
+    ${state.mode === "ptt" ? `<button class="ptt" id="ptt">Bấm giữ để nói</button>` : ""}
+    <div class="controls">
+      <div class="ctl"><button class="round" data-sug aria-label="Gợi ý câu trả lời">${ICON.bulb}</button>Gợi ý</div>
+      <div class="ctl"><button class="hang" data-hang aria-label="Kết thúc cuộc gọi">${ICON.phone}</button>Kết thúc</div>
+      <div class="ctl"><button class="round" data-mute aria-pressed="${call.muted}" aria-label="Tắt micro">${call.muted ? ICON.micOff : ICON.mic}</button>${call.muted ? "Bật micro" : "Tắt micro"}</div>
+    </div>
+  </div></div></div>`;
+}
+
+function summaryView() {
+  const back = `<div style="display:flex;gap:8px;margin:20px 0 32px"><button class="btn btn-primary" data-start>${ICON.phone}Gọi lại</button><button class="btn btn-ghost" data-setup>Xong</button></div>`;
+  let body;
+  if (call.sumBusy) body = `<p class="muted typing" style="margin-top:20px"><i></i><i></i><i></i> Cô giáo AI đang xem lại cuộc gọi...</p>`;
+  else if (!call.summary) body = `<div class="callout bad" style="margin-top:16px">Chưa tổng kết được: ${esc(call.sumError || "")}</div>`;
+  else {
+    const s = call.summary, score = Math.max(0, Math.min(100, Math.round(+s.score || 0))), tone = score >= 85 ? "good" : score >= 60 ? "ok" : "bad";
+    body = `<div class="box" style="margin-top:16px;display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center"><div class="score"><b class="c-${tone}">${score}</b><span class="muted">/100</span></div><p style="margin:0">${esc(s.overall_vi)}</p></div>
+      ${(s.good_vi || []).length ? `<div class="section-title">Bạn làm tốt</div><ul class="good">${s.good_vi.map((g) => `<li>✓ ${esc(g)}</li>`).join("")}</ul>` : ""}
+      ${(s.fixes || []).length ? `<div class="section-title">Nên sửa</div><div class="list">${s.fixes.map((f) => `<div class="fix"><div class="zh c-bad" style="text-decoration:line-through">${esc(f.wrong)}</div><div class="zh c-good" style="font-size:19px">${esc(f.right)}</div><div class="muted">${esc(f.right_pinyin)}</div><div style="font-size:14px;margin-top:4px">${esc(f.why_vi)}</div></div>`).join("")}</div>` : ""}
+      ${(s.words || []).length ? `<div class="section-title">Từ nên nhớ</div><div class="box words">${s.words.map((w) => `<div><b>${esc(w.zh)}</b><span>${esc(w.pinyin)}</span><span class="muted">${esc(w.vi)}</span></div>`).join("")}</div>` : ""}`;
+  }
+  const log = call.log.filter((m) => m.text).map((m) => `<div class="msg ${m.who}"><div class="zh">${esc(m.text)}</div></div>`).join("");
+  return `<div class="wrap"><section class="head"><h1>Tổng kết cuộc gọi</h1>${call.error ? `<p class="muted" style="margin:0">${esc(call.error)}</p>` : ""}</section>${body}
+    ${log ? `<div class="section-title">Lời thoại</div><div class="log" style="padding-bottom:0">${log}</div>` : ""}${back}</div>`;
+}
+
+/* ---------- Sự kiện ---------- */
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("button"); if (!t) return;
+  const d = t.dataset;
+  if (d.pid) { state.pid = d.pid; state.scene = null; state.topic = ""; store.set("pid", d.pid); return render(); }
+  if (d.topic) { state.topic = d.topic; state.scene = null; return render(); }
+  if (d.level) { state.level = d.level; store.set("level", d.level); return render(); }
+  if (d.mode) { state.mode = d.mode; store.set("mode", d.mode); return render(); }
+  if ("start" in d) {
+    const typed = $("#topic-in")?.value.trim(); if (typed) { state.topic = typed; state.scene = null; }
+    call.error = ""; return startCall();
+  }
+  if ("changekey" in d) { state.view = "key"; return render(); }
+  if ("setup" in d) { call.error = ""; state.view = "setup"; return render(); }
+  if ("hang" in d) return hangUp();
+  if ("mute" in d) { call.muted = !call.muted; t.setAttribute("aria-pressed", call.muted); t.innerHTML = call.muted ? ICON.micOff : ICON.mic; t.nextSibling.textContent = call.muted ? "Bật micro" : "Tắt micro"; return renderState(); }
+  if ("sug" in d) return suggest();
+  if (d.tog) { state[d.tog] = !state[d.tog]; store.set(d.tog, state[d.tog]); t.setAttribute("aria-pressed", state[d.tog]); return renderLog(); }
+  if (d.peek != null) { call.log[+d.peek].peek = true; return renderLog(); }
+  if (d.tr != null) return translate(+d.tr);
+});
+document.addEventListener("change", (e) => {
+  if (e.target.id === "scene-in") { state.scene = e.target.value === "" ? null : +e.target.value; if (state.scene != null) state.level = SCENES[state.scene].lv; render(); }
+  if (e.target.id === "voice-in") { state.voice = e.target.value; store.set("voice", state.voice); }
+});
+document.addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (e.target.id === "key-form") {
+    const k = $("#key-in").value.trim(); if (!k) return;
+    state.key = k; store.set("key", k); state.view = "setup"; render();
+  }
+});
+// Bấm giữ để nói: dùng pointer để chạy được cả trên điện thoại và máy tính.
+document.addEventListener("pointerdown", (e) => { if (e.target.id === "ptt") { e.preventDefault(); e.target.setPointerCapture?.(e.pointerId); pttDown(); } });
+document.addEventListener("pointerup", (e) => { if (e.target.id === "ptt") pttUp(); });
+document.addEventListener("pointercancel", () => pttUp());
+document.addEventListener("visibilitychange", () => { if (document.hidden && state.view === "call" && call.ctx) call.ctx.suspend(); else if (!document.hidden && call.ctx) call.ctx.resume(); });
+render();
+</script>
+</body>
+</html>

@@ -353,6 +353,8 @@ textarea.field { font-family: var(--font-zh); line-height: 1.6; resize: vertical
 .sumlist li { background: var(--good-soft); border-radius: 12px; padding: 8px 12px; font-size: 15px; }
 .fix { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; }
 .vocab .chip:disabled { opacity: .6; }
+.keylink { font-size: 14px; }
+.keylink summary { font-weight: 600; }
 
 /* ================= Giao diện mới (ghi đè) ================= */
 body { font-size: 15px; letter-spacing: -0.005em; }
@@ -503,6 +505,16 @@ a { color: var(--seal); }
 window.HOSTED = true;
 (() => {
   const KEY = "goi-key";
+  // Giữ khóa lâu dài: lưu cả trong localStorage và cookie; nhận khóa từ link riêng (#k=...).
+  const ckGet = () => { const m = document.cookie.match(/(?:^|; )goikey=([^;]*)/); return m ? decodeURIComponent(m[1]) : ""; };
+  const ckSet = (k) => { try { document.cookie = "goikey=" + encodeURIComponent(k) + "; max-age=34560000; path=/; samesite=lax" + (location.protocol === "https:" ? "; secure" : ""); } catch {} };
+  (() => {
+    const fromUrl = (new URLSearchParams(location.hash.slice(1)).get("k") || new URLSearchParams(location.search).get("k") || "").trim();
+    let cur = ""; try { cur = JSON.parse(localStorage.getItem("goi-key") || '""'); } catch {}
+    const k = fromUrl || cur || ckGet();
+    if (k) { try { localStorage.setItem("goi-key", JSON.stringify(k)); } catch {} ckSet(k); }
+    try { navigator.storage?.persist?.(); } catch {}
+  })();
   const getKey = () => { try { return JSON.parse(localStorage.getItem(KEY) || '""'); } catch { return ""; } };
   // Mô hình nào đang quá tải thì thử mô hình kế tiếp; nhớ mô hình chạy được lần trước.
   const MODELS = ["gemini-flash-latest", "gemini-3.5-flash", "gemini-3.8-flash", "gemini-flash-lite-latest"];
@@ -536,7 +548,8 @@ window.HOSTED = true;
   };
   window.gemini = {
     key: getKey,
-    setKey: (k) => { try { localStorage.setItem(KEY, JSON.stringify(k)); } catch {} },
+    setKey: (k) => { try { localStorage.setItem(KEY, JSON.stringify(k)); } catch {} ckSet(k); },
+    link: () => location.origin + location.pathname.replace(/goi-ai\/?$/, "") + "#k=" + encodeURIComponent(getKey()),
     video: async (url, prompt) => parse(await call([{ role: "user", parts: [{ file_data: { file_uri: url } }, { text: prompt }] }], true)),
   };
   window.claude = { use: async (name) => (name === "sample" && getKey() ? sample : null) };
@@ -1441,11 +1454,24 @@ function keyCard() {
 }
 
 /* Gọi bằng giọng nói thật chạy ở trang riêng (trang này không được dùng micro). */
+// Link riêng có sẵn khóa: mở link này hoặc biểu tượng trên màn hình chính thì không phải nhập lại khóa.
+function linkCard() {
+  const link = window.gemini.link();
+  return `<details class="voices keylink" style="margin-top:10px"><summary>Không muốn nhập lại khóa AI?</summary>
+    <p style="margin:8px 0">Khóa đã được lưu trên máy này. Nếu trình duyệt tự xóa dữ liệu, hãy dùng link riêng dưới đây, nó có sẵn khóa của bạn:</p>
+    <div class="answer"><input id="mylink" readonly value="${esc(link)}" aria-label="Link riêng" style="font-family:var(--font-body);font-size:14px"><button class="btn btn-dark" type="button" data-copylink>Sao chép</button></div>
+    <ol style="margin:10px 0 0;padding-left:20px;display:grid;gap:4px">
+      <li>Mở link riêng bằng Safari (iPhone) hoặc Chrome (Android), không mở trong Zalo, Messenger hay app Claude.</li>
+      <li>iPhone: bấm nút Chia sẻ rồi chọn “Thêm vào MH chính”. Android: bấm ⋮ rồi chọn “Thêm vào màn hình chính”.</li>
+      <li>Từ nay mở web bằng biểu tượng đó, khóa luôn có sẵn.</li>
+    </ol>
+    <p class="muted" style="margin:8px 0 0;font-size:13px">Đừng gửi link này cho người khác vì nó chứa khóa của bạn.</p></details>`;
+}
 function voiceCard(q, label) {
   if (window.HOSTED) {
     if (!window.gemini.key()) return "";
     return `<div class="callout" style="margin-top:16px;background:var(--surface);border-color:var(--line)"><b>Gọi bằng giọng nói thật, rảnh tay</b>Bạn nói thẳng vào micro, AI trả lời bằng giọng người và nghe được khi bạn nói chen ngang, giống Doubao. Nên đeo tai nghe.
-      <div class="bar" style="margin-top:10px"><a class="btn btn-primary" href="goi-ai/?${esc(new URLSearchParams(q).toString())}" style="text-decoration:none">${ICON.phone}${esc(label)}</a>${q.pid ? `<button class="btn btn-ghost" data-keyedit>Đổi khóa AI</button>` : ""}</div></div>`;
+      <div class="bar" style="margin-top:10px"><a class="btn btn-primary" href="goi-ai/?${esc(new URLSearchParams(q).toString())}" style="text-decoration:none">${ICON.phone}${esc(label)}</a>${q.pid ? `<button class="btn btn-ghost" data-keyedit>Đổi khóa AI</button>` : ""}</div></div>${q.pid ? linkCard() : ""}`;
   }
   const url = store.get("voiceUrl", "");
   if (url && !state.voiceEdit) {
@@ -2079,6 +2105,12 @@ document.addEventListener("click", (e) => {
   if ("continue" in d) return runRole(state.shown);
   if ("retry" in d) { delete state.results[state.shown - 1]; render(); return; }
   if (d.talkrole) return startLessonCall(d.talkrole);
+  if ("copylink" in d) {
+    const inp = $("#mylink"), b = e.target.closest("button");
+    const done = () => { b.textContent = "Đã chép"; setTimeout(() => (b.textContent = "Sao chép"), 1500); };
+    navigator.clipboard?.writeText(inp.value).then(done, () => { inp.select(); document.execCommand?.("copy"); done(); }) ?? (inp.select(), done());
+    return;
+  }
   if ("keyedit" in d) { state.keyEdit = true; return render(); }
   if ("voiceedit" in d) { state.voiceEdit = true; return render(); }
   if (d.persona) { state.cs.pid = d.persona; state.cs.topic = ""; return render(); }

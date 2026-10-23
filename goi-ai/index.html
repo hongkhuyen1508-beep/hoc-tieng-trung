@@ -136,6 +136,16 @@ const store = {
   get(k, d) { try { const v = localStorage.getItem("goi-" + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
   set(k, v) { try { localStorage.setItem("goi-" + k, JSON.stringify(v)); } catch {} },
 };
+// Giữ khóa lâu dài: lưu cả trong localStorage và cookie; nhận khóa từ link riêng (#k=...).
+const ckGet = () => { const m = document.cookie.match(/(?:^|; )goikey=([^;]*)/); return m ? decodeURIComponent(m[1]) : ""; };
+const ckSet = (k) => { try { document.cookie = "goikey=" + encodeURIComponent(k) + "; max-age=34560000; path=/; samesite=lax" + (location.protocol === "https:" ? "; secure" : ""); } catch {} };
+(() => {
+const fromUrl = (new URLSearchParams(location.hash.slice(1)).get("k") || new URLSearchParams(location.search).get("k") || "").trim();
+let cur = ""; try { cur = JSON.parse(localStorage.getItem("goi-key") || '""'); } catch {}
+const k = fromUrl || cur || ckGet();
+if (k) { try { localStorage.setItem("goi-key", JSON.stringify(k)); } catch {} ckSet(k); }
+try { navigator.storage?.persist?.(); } catch {}
+})();
 const py = (t) => (window.pinyinPro && /[一-鿿]/.test(t) ? pinyinPro.pinyin(t) : "");
 const ICON = {
   phone: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1L6.6 10.8Z"/></svg>',
@@ -568,7 +578,7 @@ document.addEventListener("submit", (e) => {
   e.preventDefault();
   if (e.target.id === "key-form") {
     const k = $("#key-in").value.trim(); if (!k) return;
-    state.key = k; store.set("key", k); state.view = "setup"; render();
+    state.key = k; store.set("key", k); ckSet(k); state.view = "setup"; render();
   }
 });
 // Bấm giữ để nói: dùng pointer để chạy được cả trên điện thoại và máy tính.

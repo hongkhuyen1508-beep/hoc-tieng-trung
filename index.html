@@ -228,6 +228,10 @@ textarea.field { font-family: var(--font-zh); line-height: 1.6; resize: vertical
 .rl-vi { font-size: 14px; color: var(--muted); }
 .rl-who { font-size: 13px; font-weight: 600; font-family: var(--font-zh); }
 .rl-who.male { color: var(--m); } .rl-who.female { color: var(--f); }
+.rd-text.no-py .rl-py, .rd-text.no-vi .rl-vi { display: none; }
+.rl { scroll-margin-top: 330px; }
+.sync-bar { align-items: center; gap: 6px; }
+.sync-bar .chip { font-size: 13px; padding: 5px 10px; }
 .rd-text.verse .rl { text-align: center; justify-items: center; }
 .rd-text.verse .rl-zh { font-size: 26px; letter-spacing: .06em; }
 .switch button { border: 0; background: transparent; border-radius: 12px; padding: 10px 8px; font-weight: 600; font-size: 15px; line-height: 1.25; }
@@ -867,6 +871,7 @@ function render() {
   app.innerHTML = state.view === "home" ? homeView() : state.view === "write" ? writeView() : state.view === "call" ? callView() : state.view === "read" ? readView() : state.view === "addread" ? addReadView() : lessonView();
   if (state.view === "lesson") renderVoicePicker();
   if (state.view === "write") mountWriter();
+  if (state.view === "read") ytAttach();
 }
 
 function homeView() {
@@ -1357,7 +1362,7 @@ const ytOf = (r) => ytLinks[r.id] || r.yt || "";
 function mediaOf(u) {
   u = String(u || "").trim();
   const id = ytId(u);
-  if (id) return { kind: "yt", embed: `https://www.youtube-nocookie.com/embed/${id}?playsinline=1&rel=0`, open: "https://www.youtube.com/watch?v=" + id, name: "YouTube" };
+  if (id) return { kind: "yt", embed: `https://www.youtube.com/embed/${id}?playsinline=1&rel=0&enablejsapi=1${/^https?:/.test(location.origin) ? "&origin=" + encodeURIComponent(location.origin) : ""}`, open: "https://www.youtube.com/watch?v=" + id, name: "YouTube" };
   const tt = u.match(/tiktok\.com\/.*video\/(\d+)/);
   if (tt) return { kind: "tt", embed: `https://www.tiktok.com/embed/v2/${tt[1]}`, open: u, name: "TikTok" };
   if (/^https?:\/\/\S+\.(mp3|m4a|aac|ogg|opus|wav|m3u8)(\?\S*)?$/i.test(u) || /^https?:\/\/\S*(stream|icecast|radio)\S*\/[^\s.]*$/i.test(u)) return { kind: "audio", embed: u, open: u, name: "radio" };
@@ -1378,10 +1383,11 @@ function ytBox(r) {
   if (m && !state.ytEdit) {
     const blocked = !m.embed || state.blocked[m.kind];
     const player = blocked ? "" : m.kind === "audio" ? `<audio class="radio" controls preload="none" src="${esc(m.embed)}"></audio>`
-      : `<div class="yt-frame ${m.kind === "tt" ? "tall" : ""}"><iframe src="${esc(m.embed)}" title="Video ${m.name}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe></div>`;
+      : `<div class="yt-frame ${m.kind === "tt" ? "tall" : ""}"><iframe ${m.kind === "yt" ? "data-sync" : ""} src="${esc(m.embed)}" title="Video ${m.name}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe></div>`;
     return `<div class="yt ${player && m.kind === "yt" ? "has-frame" : ""}">
       ${player}
       <div class="bar" style="margin:8px 0 0">${openBtn(m.open, "Mở trong " + m.name)}<button class="btn btn-ghost" data-ytedit>Đổi link</button></div>
+      ${m.kind === "yt" && !blocked ? syncBar(r) : ""}
       ${blocked ? `<p class="muted" style="font-size:14px;margin:8px 0 0">${m.embed ? "Trang này không phát được nguồn này ngay bên trong." : "Nguồn này chỉ mở được ở trang riêng."} Bấm “Mở trong ${m.name}” để nghe, rồi quay lại đây đọc lời.</p>` : ""}
     </div>`;
   }
@@ -1390,6 +1396,71 @@ function ytBox(r) {
     <div class="bar" style="margin:10px 0 0">${openBtn("https://www.youtube.com/results?search_query=" + q, "YouTube")}${openBtn("https://www.tiktok.com/search?q=" + q, "TikTok", "btn-ghost")}${state.ytEdit ? `<button class="btn btn-ghost" data-ytcancel>Hủy</button>` : ""}</div>
     <form class="answer" data-ytform style="margin-top:4px"><input id="yt-in" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Dán link YouTube, TikTok hoặc radio" value="${esc(url)}" aria-label="Link nguồn nghe" style="font-family:var(--font-body);font-size:16px"><button class="btn btn-dark" type="submit">Lưu</button></form>
   </div>`;
+}
+/* Lời chạy theo video YouTube (kiểu karaoke): đọc thời gian video qua postMessage, tô sáng câu đang phát. */
+let ytTimes = store.get("ytt", {});
+const timesOf = (r) => { const t = ytTimes[r.id]; return Array.isArray(t) && t.length === r.lines.length ? t : null; };
+const ytOffset = (r) => +(store.get("ytoff", {})[r.id] || 0);
+const ytSync = { win: null, t: 0, cur: -1, tries: 0 };
+state.follow = store.get("follow", true);
+function syncBar(r) {
+  if (timesOf(r)) return `<div class="chips sync-bar" style="margin:8px 0 0">
+    <span class="muted" style="font-size:13px">Lời chạy theo video · chạm câu để tua tới</span>
+    <button class="chip" data-follow aria-pressed="${state.follow}">Tự cuộn</button>
+    <button class="chip" data-ytoff="-0.5" aria-label="Lời hiện sớm hơn">Lời sớm hơn</button><button class="chip" data-ytoff="0.5" aria-label="Lời hiện muộn hơn">Lời muộn hơn</button>
+    ${window.HOSTED ? `<button class="chip" data-ytsync>Đồng bộ lại</button>` : ""}</div>`;
+  if (!window.HOSTED) return "";
+  return `<div class="bar" style="margin:8px 0 0"><button class="btn btn-ghost" data-ytsync ${state.syncBusy ? "disabled" : ""}>${state.syncBusy ? `<span class="dots"><i></i><i></i><i></i></span> AI đang dò thời gian từng câu...` : "🎤 Cho lời chạy theo video"}</button></div>
+    ${state.syncError ? `<p class="c-bad" style="font-size:14px;margin:6px 0 0">${esc(state.syncError)}</p>` : ""}`;
+}
+function ytAttach() {
+  const f = document.querySelector(".yt-frame iframe[data-sync]");
+  ytSync.win = f ? f.contentWindow : null; ytSync.cur = -1;
+  if (!f) return;
+  // YouTube chỉ gửi thời gian sau khi trang báo "listening"; gửi lại vài lần cho chắc.
+  const hello = () => f.contentWindow?.postMessage(JSON.stringify({ event: "listening", id: 1, channel: "widget" }), "*");
+  f.addEventListener("load", () => { hello(); let n = 0; const iv = setInterval(() => { hello(); if (++n > 5) clearInterval(iv); }, 800); });
+}
+const ytCmd = (func, args = []) => ytSync.win?.postMessage(JSON.stringify({ event: "command", func, args }), "*");
+window.addEventListener("message", (e) => {
+  if (!/^https:\/\/www\.youtube(-nocookie)?\.com$/.test(e.origin || "")) return;
+  let d; try { d = typeof e.data === "string" ? JSON.parse(e.data) : e.data; } catch { return; }
+  const ct = d?.info?.currentTime;
+  if (typeof ct === "number") { ytSync.t = ct; ytHighlight(); }
+});
+function ytHighlight() {
+  const r = state.view === "read" && state.rtab === "read" ? R() : null, times = r && timesOf(r);
+  if (!times) return;
+  const t = ytSync.t - ytOffset(r);
+  let k = -1; times.forEach((s, i) => { if (s <= t) k = i; });
+  if (k === ytSync.cur) return;
+  document.querySelectorAll(".rl.now").forEach((x) => x.classList.remove("now"));
+  ytSync.cur = k;
+  const el = document.getElementById("rl-" + k);
+  if (!el) return;
+  el.classList.add("now");
+  if (state.follow) el.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+const parseSec = (v) => typeof v === "number" ? v : /^\d+(:\d+){1,2}(\.\d+)?$/.test(String(v || "").trim()) ? String(v).trim().split(":").reduce((a, x) => a * 60 + +x, 0) : parseFloat(v);
+function setTimes(r, arr) {
+  const ts = arr.map(parseSec);
+  if (ts.length !== r.lines.length || ts.some((x) => !isFinite(x))) return false;
+  for (let i = 1; i < ts.length; i++) if (ts[i] < ts[i - 1]) ts[i] = ts[i - 1];
+  ytTimes[r.id] = ts; store.set("ytt", ytTimes); return true;
+}
+async function ytSyncLines() {
+  const r = R(), id = ytId(ytOf(r));
+  if (!id || !window.HOSTED) return;
+  state.syncBusy = true; state.syncError = ""; render();
+  try {
+    const d = await window.gemini.video("https://www.youtube.com/watch?v=" + id, `Đây là lời tiếng Trung của video, đánh số theo thứ tự:
+${r.lines.map((l, i) => `${i + 1}. ${l.zh}`).join("\n")}
+
+Hãy nghe video và cho biết thời điểm (tính bằng giây từ đầu video, có thể lẻ 0.1 giây) mà mỗi câu BẮT ĐẦU được nói hoặc hát. Nếu một câu không xuất hiện, ước lượng theo câu trước và sau.
+Trả về JSON: {"t": [số giây của câu 1, câu 2, ...]} với đúng ${r.lines.length} số, tăng dần.`);
+    if (!setTimes(r, d.t || [])) throw new Error("Thời gian AI trả về chưa khớp với số câu");
+  } catch (e) { state.syncError = "Chưa dò được thời gian: " + e.message; }
+  state.syncBusy = false; render();
 }
 const rdGender = (r, ln) => (r.cast || []).find((c) => c.n === ln.who)?.g || r.g || "female";
 
@@ -1435,17 +1506,25 @@ async function rdAudio(r, i, word) {
     return playSrc("data:audio/mpeg;base64," + b, say, state.slow && !word ? 0.8 : 1);
   } catch { return say(); }
 }
+function rdRefresh() {
+  if (state.view !== "read" || state.rtab !== "read") return render();
+  document.querySelectorAll(".rl.now").forEach((x) => x.classList.remove("now"));
+  if (state.rplaying != null) document.getElementById("rl-" + state.rplaying)?.classList.add("now");
+  const b = $("[data-rdall]"); if (b) b.innerHTML = state.rplayAll ? ICON.stop + "Dừng" : ICON.play + "Nghe cả bài";
+}
 async function rdPlayLine(i) {
-  state.rplayAll = false; state.rplaying = i; render();
-  await rdAudio(R(), i);
-  if (state.rplaying === i && !state.rplayAll) { state.rplaying = null; render(); }
+  const r = R(), times = state.rtab === "read" && ytSync.win && timesOf(r);
+  if (times) { ytCmd("seekTo", [Math.max(0, times[i] + ytOffset(r) - 0.2), true]); ytCmd("playVideo"); ytSync.cur = -2; return; }
+  state.rplayAll = false; state.rplaying = i; rdRefresh();
+  await rdAudio(r, i);
+  if (state.rplaying === i && !state.rplayAll) { state.rplaying = null; rdRefresh(); }
 }
 async function rdPlayAll() {
-  if (state.rplayAll) { stopSpeaking(); state.rplayAll = false; state.rplaying = null; return render(); }
-  const r = R(); state.rplayAll = true;
+  if (state.rplayAll) { stopSpeaking(); state.rplayAll = false; state.rplaying = null; return rdRefresh(); }
+  const r = R(); state.rplayAll = true; ytCmd("pauseVideo");
   for (let i = 0; i < r.lines.length; i++) {
     if (!state.rplayAll || state.rd !== r) return;
-    state.rplaying = i; render();
+    state.rplaying = i; rdRefresh();
     document.getElementById("rl-" + i)?.scrollIntoView({ behavior: "smooth", block: "center" });
     await rdAudio(r, i);
     if (!state.rplayAll) return;
@@ -1453,7 +1532,7 @@ async function rdPlayAll() {
   }
   state.rplayAll = false; state.rplaying = null;
   const p = rdProg(r.id); p.read = true; rdSave(r.id, p);
-  render();
+  rdRefresh();
 }
 
 function readView() {
@@ -1484,12 +1563,12 @@ function readView() {
 }
 function rdReadTab() {
   const r = R(), verse = r.type === "poem" || r.type === "song";
-  return `${ytBox(r)}<div class="bar"><button class="btn btn-primary" data-rdall>${state.rplayAll ? ICON.stop + "Dừng" : ICON.play + "Nghe cả bài"}</button><span class="muted" style="font-size:14px">Chạm vào câu nào để nghe câu đó.</span></div>
-    <div class="rd-text ${verse ? "verse" : ""}">${r.lines.map((ln, i) => `<button class="rl ${state.rplaying === i ? "now" : ""}" id="rl-${i}" data-rplay="${i}">
+  return `${ytBox(r)}<div class="bar"><button class="btn btn-primary" data-rdall>${state.rplayAll ? ICON.stop + "Dừng" : ICON.play + "Nghe cả bài"}</button><span class="muted" style="font-size:14px">${timesOf(r) && mediaOf(ytOf(r))?.kind === "yt" ? "Nút này đọc bằng giọng AI." : "Chạm vào câu nào để nghe câu đó."}</span></div>
+    <div class="rd-text ${verse ? "verse" : ""} ${state.showPy ? "" : "no-py"} ${state.showVi ? "" : "no-vi"}">${r.lines.map((ln, i) => `<button class="rl ${state.rplaying === i ? "now" : ""}" id="rl-${i}" data-rplay="${i}">
       ${ln.who ? `<span class="rl-who ${rdGender(r, ln)}">${esc(ln.who)}</span>` : ""}
       <span class="rl-zh zh">${esc(ln.zh)}</span>
-      ${state.showPy && ln.pinyin ? `<span class="rl-py">${esc(ln.pinyin)}</span>` : ""}
-      ${state.showVi && ln.vi ? `<span class="rl-vi">${esc(ln.vi)}</span>` : ""}
+      ${ln.pinyin ? `<span class="rl-py">${esc(ln.pinyin)}</span>` : ""}
+      ${ln.vi ? `<span class="rl-vi">${esc(ln.vi)}</span>` : ""}
     </button>`).join("")}</div>
     ${r.mine ? `<p class="hint" style="margin-top:12px">${ICON.speaker}<span>Bài bạn tự thêm được đọc bằng giọng có sẵn trên máy.</span></p>` : ""}`;
 }
@@ -1549,13 +1628,15 @@ async function transcribeYouTube(a, title, yt) {
   try {
     const d = await window.gemini.video("https://www.youtube.com/watch?v=" + ytId(yt), `Hãy nghe phần tiếng Trung (tiếng nói hoặc lời hát) trong video này và chép lại bằng chữ Hán giản thể, để người Việt luyện đọc.
 Tách thành các câu ngắn theo đúng thứ tự, tối đa 40 câu (nếu video dài, lấy 40 câu đầu). Bỏ qua phần không phải tiếng Trung.
-Trả về JSON: {"title": "tên bài bằng chữ Hán", "title_pinyin": "", "title_vi": "", "type": "song|film|story|other", "level": "HSK1|HSK2|HSK3|HSK4+", "intro_vi": "1 câu giới thiệu", "lines": [{"zh": "", "pinyin": "pinyin có dấu", "vi": "dịch tiếng Việt tự nhiên"}], "words": [{"zh": "", "pinyin": "", "vi": ""}]}
+Trả về JSON: {"title": "tên bài bằng chữ Hán", "title_pinyin": "", "title_vi": "", "type": "song|film|story|other", "level": "HSK1|HSK2|HSK3|HSK4+", "intro_vi": "1 câu giới thiệu", "lines": [{"t": số giây từ đầu video khi câu này BẮT ĐẦU, "zh": "", "pinyin": "pinyin có dấu", "vi": "dịch tiếng Việt tự nhiên"}], "words": [{"zh": "", "pinyin": "", "vi": ""}]}
 "words": 6 đến 10 từ đáng học nhất. Nếu video không có tiếng Trung, trả về "lines": [].`);
     const lines = (d.lines || []).filter((x) => x && /[一-鿿]/.test(x.zh || "")).slice(0, 40).map((x) => ({ zh: x.zh.trim(), pinyin: x.pinyin || (window.pinyinPro ? pinyinPro.pinyin(x.zh) : ""), vi: x.vi || "" }));
     if (!lines.length) throw new Error("empty");
     const r = { yt, id: "u" + Date.now(), mine: true, type: RTYPE[d.type] ? d.type : a.type || "song", level: /^HSK/.test(d.level || "") ? d.level : "", title: title || d.title || lines[0].zh.slice(0, 12),
       titlePy: title ? "" : d.title_pinyin || "", titleVi: d.title_vi || "", intro: d.intro_vi || "", g: "female", lines, words: (d.words || []).filter((w) => w && w.zh).slice(0, 12) };
     if (!r.titlePy && window.pinyinPro) r.titlePy = pinyinPro.pinyin(r.title);
+    const raw = (d.lines || []).filter((x) => x && /[一-鿿]/.test(x.zh || "")).slice(0, 40);
+    if (raw.every((x) => x.t != null)) setTimes(r, raw.map((x) => x.t));
     myReads.push(r); store.set("myreads", myReads);
     state.add = { type: a.type }; state.rtype = "other";
     openRead(r.id);
@@ -1621,6 +1702,9 @@ document.addEventListener("click", (e) => {
   if (d.rtype) { state.rtype = d.rtype; return render(); }
   if ("addread" in d) { stopSpeaking(); state.view = "addread"; state.add = state.add || { type: "song" }; render(); return window.scrollTo(0, 0); }
   if (d.addtype) { Object.assign(state.add, { type: d.addtype, title: $("#add-title")?.value || "", yt: $("#add-yt")?.value || "", text: $("#add-text")?.value || "" }); return render(); }
+  if ("ytsync" in d) return ytSyncLines();
+  if ("follow" in d) { state.follow = !state.follow; store.set("follow", state.follow); t.setAttribute("aria-pressed", state.follow); return; }
+  if (d.ytoff) { const o = store.get("ytoff", {}); o[R().id] = +((+(o[R().id] || 0)) + +d.ytoff).toFixed(1); store.set("ytoff", o); ytSync.cur = -2; ytHighlight(); return; }
   if ("ytedit" in d) { state.ytEdit = true; return render(); }
   if ("ytcancel" in d) { state.ytEdit = false; return render(); }
   if (d.rtab) { stopSpeaking(); state.rplayAll = false; state.rplaying = null; state.rtab = d.rtab; state.rres = null; return render(); }
@@ -1646,6 +1730,9 @@ document.addEventListener("click", (e) => {
     state[d.toggle] = !state[d.toggle];
     if (d.toggle !== "vocab") store.set(d.toggle, state[d.toggle]);
     if (state.view === "call") { stopSpeaking(); state.call.speaking = null; }
+    if (state.view === "read" && state.rtab === "read" && (d.toggle === "showPy" || d.toggle === "showVi")) {
+      t.setAttribute("aria-pressed", state[d.toggle]); $(".rd-text")?.classList.toggle(d.toggle === "showPy" ? "no-py" : "no-vi", !state[d.toggle]); return;
+    }
     return render();
   }
   if (d.say != null) {
@@ -1704,6 +1791,7 @@ document.addEventListener("submit", (e) => {
   if (e.target.matches("[data-ytform]")) {
     const u = ($("#yt-in")?.value || "").trim();
     if (u && !mediaOf(u)) { alert("Link chưa đúng. Hãy dán cả đường link bắt đầu bằng https://"); return; }
+    if (u !== ytOf(R())) { delete ytTimes[R().id]; store.set("ytt", ytTimes); }
     if (u) ytLinks[R().id] = u; else delete ytLinks[R().id];
     store.set("yt", ytLinks); state.ytEdit = false; return render();
   }

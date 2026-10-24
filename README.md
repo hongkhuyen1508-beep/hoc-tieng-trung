@@ -7,3 +7,6 @@ Các phần dùng AI chạy bằng khóa Gemini miễn phí của Google (lấy 
 - `index.html`: web học
 - `goi-ai/`: trang gọi điện bằng giọng nói
 - `audio/`, `words/`, `rd/`: giọng đọc tạo sẵn; `hanzi/`: nét chữ Hán (hanzi-writer-data)
+
+## Nguồn phát âm
+Phát âm từ vựng HSK dùng bản thu của người bản xứ Yue Tan (dự án Shtooka, qua https://github.com/hugolpz/audio-cmn), giấy phép CC BY-SA.

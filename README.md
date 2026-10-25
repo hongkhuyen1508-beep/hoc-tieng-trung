@@ -6,6 +6,7 @@ Các phần dùng AI chạy bằng khóa Gemini miễn phí của Google (lấy 
 
 - `index.html`: web học
 - `goi-ai/`: trang gọi điện bằng giọng nói
+- `sudoku/`: Sudoku Bé Vui, sudoku bằng hình cho bé (2x2 đến 9x9), nghe tiếng Việt, Anh hoặc Trung; giọng AI Gemini dùng chung khóa với web học
 - `audio/`, `words/`, `rd/`: giọng đọc tạo sẵn; `hanzi/`: nét chữ Hán (hanzi-writer-data)
 
 ## Nguồn phát âm

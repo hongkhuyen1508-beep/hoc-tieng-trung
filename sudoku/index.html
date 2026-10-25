@@ -94,6 +94,10 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
 }
 .theme b { font-size: 1.9rem; line-height: 1.2; display: flex; gap: 2px; }
 .theme[aria-pressed="true"] { border-color: var(--sun); background: var(--sun-soft); }
+.langs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.lang { border: 3px solid transparent; border-radius: 18px; background: var(--surface); box-shadow: var(--shadow); padding: 10px 4px; display: grid; justify-items: center; gap: 2px; font-weight: 800; }
+.lang b { font-size: 1.7rem; line-height: 1.2; }
+.lang[aria-pressed="true"] { border-color: var(--sun); background: var(--sun-soft); }
 .home-actions { display: grid; gap: 12px; }
 .corner { display: flex; justify-content: flex-end; }
 
@@ -126,6 +130,9 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
   font-weight: 700; line-height: 1.35; box-shadow: var(--shadow);
 }
 .coach .face { font-size: 1.8rem; }
+.coach .ctext { display: grid; gap: 2px; min-width: 0; }
+.coach #coachText { font-size: 1.1rem; }
+.coach small { color: var(--soft-ink); font-weight: 600; font-size: .9rem; }
 .coach.warn { background: var(--berry-soft); }
 .coach.yay { background: var(--sun-soft); }
 .board-wrap { display: grid; place-items: center; position: relative; }
@@ -233,6 +240,8 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
   </div>
   <div class="label">Chọn hình bé thích</div>
   <div class="themes" id="themes"></div>
+  <div class="label">Bé nghe tiếng</div>
+  <div class="langs" id="langs"></div>
 </section>
 
 <!-- Bản đồ màn -->
@@ -252,7 +261,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
     <div class="title"><h2 id="playTitle"></h2><small id="playSub"></small></div>
     <button class="btn icon-btn" id="soundBtn" aria-label="Bật tắt âm thanh">🔊</button>
   </div>
-  <div class="coach" id="coach"><span class="face" id="coachFace">🦉</span><span id="coachText"></span></div>
+  <div class="coach" id="coach"><span class="face" id="coachFace">🦉</span><span class="ctext"><span id="coachText"></span><small id="coachSub" hidden></small></span></div>
   <div class="board-wrap" id="boardWrap"><div class="board" id="board"></div></div>
   <div class="tray" id="tray"></div>
   <div class="actions">
@@ -274,6 +283,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
     <h3>Cài đặt</h3>
     <div class="toggle"><span>Âm thanh<small>Tiếng "ting" khi đúng, nhạc khi thắng</small></span><button class="switch" role="switch" id="setSound" aria-label="Âm thanh"></button></div>
     <div class="toggle"><span>Giọng đọc<small id="voiceNote">Đọc tên hình và hướng dẫn bằng tiếng Việt</small></span><button class="switch" role="switch" id="setVoice" aria-label="Giọng đọc"></button></div>
+    <div class="toggle"><span>Đọc chậm<small>Đọc chậm và rõ hơn cho bé nhỏ</small></span><button class="switch" role="switch" id="setSlow" aria-label="Đọc chậm"></button></div>
     <div class="toggle"><span>Báo trùng ngay<small>Hình đặt trùng sẽ rung và nhảy ra. Tắt đi để bé tự kiểm tra khi điền xong.</small></span><button class="switch" role="switch" id="setWarn" aria-label="Báo trùng ngay"></button></div>
     <div class="toggle"><span>Mở khóa tất cả màn<small>Bé chơi được mọi cấp mà không cần đủ sao</small></span><button class="switch" role="switch" id="setUnlock" aria-label="Mở khóa tất cả màn"></button></div>
   </div>
@@ -323,12 +333,48 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
   'use strict';
 
   // ---------- Dữ liệu ----------
+  // Mỗi hình: [hình, tiếng Việt, tiếng Anh, chữ Hán, pinyin]
   const THEMES = {
-    animals: { name: 'Con vật', pre: 'con', items: [['🐶','chó'],['🐱','mèo'],['🐰','thỏ'],['🐻','gấu'],['🐼','gấu trúc'],['🐸','ếch'],['🐷','heo'],['🐵','khỉ'],['🦁','sư tử']] },
-    fruits:  { name: 'Trái cây', pre: 'quả', items: [['🍎','táo'],['🍌','chuối'],['🍇','nho'],['🍓','dâu'],['🍊','cam'],['🍉','dưa hấu'],['🍍','dứa'],['🍒','anh đào'],['🥝','kiwi']] },
-    vehicles:{ name: 'Xe cộ', pre: 'chiếc', items: [['🚗','ô tô'],['🚌','xe buýt'],['🚲','xe đạp'],['🚀','tên lửa'],['✈️','máy bay'],['🚂','tàu hỏa'],['🚁','trực thăng'],['⛵','thuyền buồm'],['🚜','máy cày']] },
-    sea:     { name: 'Biển', pre: 'con', items: [['🐠','cá'],['🐙','bạch tuộc'],['🐳','cá voi'],['🦀','cua'],['🐢','rùa'],['🦈','cá mập'],['🐬','cá heo'],['🦑','mực'],['🦞','tôm hùm']] },
-    colors:  { name: 'Màu sắc', pre: 'màu', dot: true, items: [['#e5484d','đỏ'],['#f5c518','vàng'],['#3fb950','xanh lá'],['#3b82f6','xanh dương'],['#9b5de5','tím'],['#f97316','cam'],['#f472b6','hồng'],['#8b5a2b','nâu'],['#14b8a6','xanh ngọc']] },
+    animals: { name: 'Con vật', say: { vi: 'Con vật', en: 'Animals', zh: '动物' }, pre: 'con', items: [
+      ['🐶','chó','dog','小狗','xiǎo gǒu'],['🐱','mèo','cat','小猫','xiǎo māo'],['🐰','thỏ','rabbit','兔子','tùzi'],['🐻','gấu','bear','熊','xióng'],['🐼','gấu trúc','panda','熊猫','xióngmāo'],
+      ['🐸','ếch','frog','青蛙','qīngwā'],['🐷','heo','pig','小猪','xiǎo zhū'],['🐵','khỉ','monkey','猴子','hóuzi'],['🦁','sư tử','lion','狮子','shīzi']] },
+    fruits:  { name: 'Trái cây', say: { vi: 'Trái cây', en: 'Fruits', zh: '水果' }, pre: 'quả', items: [
+      ['🍎','táo','apple','苹果','píngguǒ'],['🍌','chuối','banana','香蕉','xiāngjiāo'],['🍇','nho','grapes','葡萄','pútao'],['🍓','dâu','strawberry','草莓','cǎoméi'],['🍊','cam','orange','橙子','chéngzi'],
+      ['🍉','dưa hấu','watermelon','西瓜','xīguā'],['🍍','dứa','pineapple','菠萝','bōluó'],['🍒','anh đào','cherry','樱桃','yīngtáo'],['🥝','kiwi','kiwi','猕猴桃','míhóutáo']] },
+    vehicles:{ name: 'Xe cộ', say: { vi: 'Xe cộ', en: 'Vehicles', zh: '交通工具' }, pre: 'chiếc', items: [
+      ['🚗','ô tô','car','汽车','qìchē'],['🚌','xe buýt','bus','公交车','gōngjiāochē'],['🚲','xe đạp','bike','自行车','zìxíngchē'],['🚀','tên lửa','rocket','火箭','huǒjiàn'],['✈️','máy bay','plane','飞机','fēijī'],
+      ['🚂','tàu hỏa','train','火车','huǒchē'],['🚁','trực thăng','helicopter','直升机','zhíshēngjī'],['⛵','thuyền buồm','boat','帆船','fānchuán'],['🚜','máy cày','tractor','拖拉机','tuōlājī']] },
+    sea:     { name: 'Biển', say: { vi: 'Biển', en: 'Sea animals', zh: '海洋动物' }, pre: 'con', items: [
+      ['🐠','cá','fish','小鱼','xiǎo yú'],['🐙','bạch tuộc','octopus','章鱼','zhāngyú'],['🐳','cá voi','whale','鲸鱼','jīngyú'],['🦀','cua','crab','螃蟹','pángxiè'],['🐢','rùa','turtle','乌龟','wūguī'],
+      ['🦈','cá mập','shark','鲨鱼','shāyú'],['🐬','cá heo','dolphin','海豚','hǎitún'],['🦑','mực','squid','鱿鱼','yóuyú'],['🦞','tôm hùm','lobster','龙虾','lóngxiā']] },
+    colors:  { name: 'Màu sắc', say: { vi: 'Màu sắc', en: 'Colors', zh: '颜色' }, pre: 'màu', dot: true, items: [
+      ['#e5484d','đỏ','red','红色','hóngsè'],['#f5c518','vàng','yellow','黄色','huángsè'],['#3fb950','xanh lá','green','绿色','lǜsè'],['#3b82f6','xanh dương','blue','蓝色','lánsè'],['#9b5de5','tím','purple','紫色','zǐsè'],
+      ['#f97316','cam','orange','橙色','chéngsè'],['#f472b6','hồng','pink','粉色','fěnsè'],['#8b5a2b','nâu','brown','棕色','zōngsè'],['#14b8a6','xanh ngọc','teal','青色','qīngsè']] },
+  };
+  const LANGS = [['vi', '🇻🇳', 'Tiếng Việt'], ['en', '🇬🇧', 'English'], ['zh', '🇨🇳', '中文']];
+  // Câu bé nghe: mỗi câu có bản Việt, Anh, Trung (kèm pinyin). Câu ngắn để bé dễ nghe.
+  const PH = {
+    rule:    { vi: 'Mỗi hàng, mỗi cột, mỗi hình chỉ một lần.', en: 'One of each picture in every row and column.', zh: '每一行、每一列，每种图案只有一个。', py: 'Měi yì háng, měi yí liè, měi zhǒng tú\'àn zhǐ yǒu yí ge.' },
+    ruleBox: { vi: 'Mỗi hàng, mỗi cột, mỗi ô vuông lớn, mỗi hình chỉ một lần.', en: 'One of each picture in every row, column and big square.', zh: '每一行、每一列、每个大方块，每种图案只有一个。', py: 'Měi yì háng, měi yí liè, měi ge dà fāngkuài, měi zhǒng tú\'àn zhǐ yǒu yí ge.' },
+    newRule: { vi: 'Luật mới: ô vuông lớn cũng chỉ có mỗi hình một lần!', en: 'New rule: one of each picture in every big square too!', zh: '新规则：每个大方块里，每种图案也只有一个！', py: 'Xīn guīzé: měi ge dà fāngkuài lǐ, měi zhǒng tú\'àn yě zhǐ yǒu yí ge!' },
+    pick:    { vi: 'Ô này là hình gì nhỉ?', en: 'What goes here?', zh: '这里放什么呢？', py: 'Zhèlǐ fàng shénme ne?' },
+    erase:   { vi: 'Chạm vào hình muốn xóa.', en: 'Tap a picture to take it away.', zh: '点一下，把图案拿走。', py: 'Diǎn yíxià, bǎ tú\'àn ná zǒu.' },
+    almost:  { vi: 'Sắp xong rồi! Có hai hình giống nhau, tìm lại nhé.', en: 'Almost done! Two pictures are the same. Look again!', zh: '快好了！有两个一样的，再找找看。', py: 'Kuài hǎo le! Yǒu liǎng ge yíyàng de, zài zhǎozhao kàn.' },
+    hint:    { vi: 'Thử ô đang sáng nhé!', en: 'Try the shiny box!', zh: '试试亮亮的格子！', py: 'Shìshi liàngliàng de gézi!' },
+    wrong:   { vi: 'Ô sáng này chưa đúng.', en: 'This box is not right yet.', zh: '这个格子还不对哦。', py: 'Zhège gézi hái bú duì o.' },
+    all3:    { vi: 'Con tự làm hết, không cần gợi ý!', en: 'You did it all by yourself!', zh: '你自己全做完了！', py: 'Nǐ zìjǐ quán zuò wán le!' },
+    retry:   { vi: 'Chơi lại không dùng gợi ý để được 3 sao nhé.', en: 'Play again with no hints to get 3 stars.', zh: '不用提示再玩一次，就有三颗星！', py: 'Bú yòng tíshì zài wán yí cì, jiù yǒu sān kē xīng!' },
+  };
+  const PRAISE = [
+    { vi: 'Giỏi quá!', en: 'Great job!', zh: '太棒了！', py: 'Tài bàng le!' },
+    { vi: 'Tuyệt vời!', en: 'Wonderful!', zh: '真厉害！', py: 'Zhēn lìhai!' },
+    { vi: 'Con làm được rồi!', en: 'You did it!', zh: '你做到了！', py: 'Nǐ zuò dào le!' },
+    { vi: 'Hoan hô!', en: 'Hooray!', zh: '好极了！', py: 'Hǎo jí le!' },
+  ];
+  const UNIT = {
+    row: { vi: 'Hàng này', en: 'row', zh: '这一行', py: 'Zhè yì háng' },
+    col: { vi: 'Cột này', en: 'column', zh: '这一列', py: 'Zhè yí liè' },
+    box: { vi: 'Ô vuông này', en: 'square', zh: '这个方块', py: 'Zhège fāngkuài' },
   };
   const LEVELS = [
     { name: 'Làm quen', icon: '🌱', n: 2, br: 1, bc: 1, box: false, holes: [1, 3], desc: 'Lưới 2x2, 2 hình' },
@@ -339,11 +385,10 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
     { name: 'Siêu sao', icon: '🦁', n: 9, br: 3, bc: 3, box: true,  holes: [30, 48], desc: 'Sudoku 9x9' },
   ];
   const STAGES = 10, UNLOCK_NEXT = 5;
-  const PRAISE = ['Giỏi quá!', 'Tuyệt vời!', 'Bé siêu ghê!', 'Hoan hô!', 'Đúng rồi!'];
 
   // ---------- Lưu trữ ----------
   const KEY = 'sudoku-be-v1';
-  let store = { theme: 'animals', progress: {}, sound: true, voice: true, warn: true, unlockAll: false };
+  let store = { theme: 'animals', lang: 'vi', progress: {}, sound: true, voice: true, slow: true, warn: true, unlockAll: false };
   try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s) store = Object.assign(store, s); } catch (e) {}
   function save() { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {} }
   const starsOf = (L, S) => store.progress[L + '-' + S] || 0;
@@ -372,20 +417,56 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
     boing() { tone(320, 0, .35, 'triangle', .22, 140); },
     win() { [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, i * .11, .35, 'triangle', .2)); },
   };
-  let viVoice = null;
+  // Chọn giọng nghe tự nhiên nhất mà máy có: ưu tiên giọng "Natural/Online/Google/Premium", giọng nữ, đúng vùng (zh-CN, en-US).
+  const VOICE_PREF = { vi: /^vi/i, en: /^en/i, zh: /^(zh|cmn)/i };
+  const REGION = { vi: /vi-VN/i, en: /en-(US|GB)/i, zh: /(zh|cmn)-(CN|Hans)/i };
+  const voices = {};
+  function scoreVoice(v, lang) {
+    let s = 0;
+    if (REGION[lang].test(v.lang.replace('_', '-'))) s += 4;
+    if (/natural|neural|online|premium|enhanced/i.test(v.name)) s += 6;
+    if (/google/i.test(v.name)) s += 3;
+    if (/female|woman|hoaimy|linh|an\b|xiaoxiao|xiaoyi|ting-?ting|meijia|samantha|aria|jenny|ava|zira|siri/i.test(v.name)) s += 2;
+    if (/compact|espeak/i.test(v.name)) s -= 5;
+    return s;
+  }
   function findVoice() {
-    try { viVoice = speechSynthesis.getVoices().find(v => /^vi/i.test(v.lang)) || null; } catch (e) { viVoice = null; }
+    let all = [];
+    try { all = speechSynthesis.getVoices(); } catch (e) {}
+    LANGS.forEach(([l]) => {
+      const list = all.filter(v => VOICE_PREF[l].test(v.lang));
+      voices[l] = list.sort((a, b) => scoreVoice(b, l) - scoreVoice(a, l))[0] || null;
+    });
     const note = document.getElementById('voiceNote');
-    if (note) note.textContent = viVoice ? 'Đọc tên hình và hướng dẫn bằng tiếng Việt' : 'Máy này chưa có giọng đọc tiếng Việt nên bé sẽ không nghe được giọng đọc.';
+    if (note) note.textContent = voices[store.lang] ? 'Giọng đang dùng: ' + voices[store.lang].name : 'Máy này chưa có giọng đọc ' + LANGS.find(x => x[0] === store.lang)[2] + ', nên bé chỉ thấy chữ, không nghe được.';
   }
   try { findVoice(); speechSynthesis.onvoiceschanged = findVoice; } catch (e) {}
-  function say(text) {
-    if (!store.voice || !viVoice) return;
+  const RATE = { vi: .95, en: .9, zh: .85 };
+  function say(text, lang) {
+    lang = lang || store.lang;
+    const v = voices[lang];
+    if (!store.voice || !v || !text) return;
     try {
       speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text); u.voice = viVoice; u.lang = viVoice.lang; u.rate = .9; u.pitch = 1.15;
-      speechSynthesis.speak(u);
+      const u = new SpeechSynthesisUtterance(text); u.voice = v; u.lang = v.lang;
+      u.rate = RATE[lang] * (store.slow ? .85 : 1); u.pitch = 1.05; u.volume = 1;
+      // Đợi một nhịp sau khi dừng câu cũ, tránh bị nuốt chữ đầu trên một số máy
+      setTimeout(() => { try { speechSynthesis.speak(u); } catch (e) {} }, 60);
     } catch (e) {}
+  }
+  // Hiện câu lên khung lời nhắn và đọc to theo ngôn ngữ bé chọn
+  function talk(p, face, mood, extraVi) {
+    const l = store.lang;
+    $('coachText').textContent = p[l];
+    const sub = [];
+    if (l === 'zh' && p.py) sub.push(p.py);
+    if (l !== 'vi') sub.push(p.vi + (extraVi ? ' ' + extraVi : ''));
+    else if (extraVi) $('coachText').textContent += ' ' + extraVi;
+    $('coachSub').textContent = sub.join(' · ');
+    $('coachSub').hidden = !sub.length;
+    $('coachFace').textContent = face || '🦉';
+    $('coach').className = 'coach' + (mood ? ' ' + mood : '');
+    say(p[l]);
   }
 
   // ---------- Sinh đề ----------
@@ -396,13 +477,13 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
 
   function makeUnits(lv) {
     const n = lv.n, units = [];
-    for (let r = 0; r < n; r++) units.push({ kind: 'hàng', cells: [...Array(n)].map((_, c) => r * n + c) });
-    for (let c = 0; c < n; c++) units.push({ kind: 'cột', cells: [...Array(n)].map((_, r) => r * n + c) });
+    for (let r = 0; r < n; r++) units.push({ kind: 'row', cells: [...Array(n)].map((_, c) => r * n + c) });
+    for (let c = 0; c < n; c++) units.push({ kind: 'col', cells: [...Array(n)].map((_, r) => r * n + c) });
     if (lv.box) {
       for (let R = 0; R < n; R += lv.br) for (let C = 0; C < n; C += lv.bc) {
         const cells = [];
         for (let r = R; r < R + lv.br; r++) for (let c = C; c < C + lv.bc; c++) cells.push(r * n + c);
-        units.push({ kind: 'ô vuông', cells });
+        units.push({ kind: 'box', cells });
       }
     }
     const unitsOf = [...Array(n * n)].map(() => []);
@@ -469,6 +550,13 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
     return theme().dot ? '<span class="dot" style="--c:' + it[0] + '"></span>' : '<span class="emo">' + it[0] + '</span>';
   }
   const symName = v => theme().pre + ' ' + theme().items[game.symbols[v - 1]][1];
+  // Tên hình theo 3 thứ tiếng; en kèm "a/an" để ghép câu (màu thì không cần)
+  function nameP(v) {
+    const it = theme().items[game.symbols[v - 1]];
+    const art = theme().dot ? '' : /^[aeiou]/.test(it[2]) ? 'an ' : 'a ';
+    return { vi: theme().pre + ' ' + it[1], en: it[2], enA: art + it[2], zh: it[3], py: it[4] };
+  }
+  const cap1 = t => t.charAt(0).toUpperCase() + t.slice(1);
   const plainSym = idx => theme().dot ? '●' : theme().items[idx][0];
 
   // ---------- Màn hình ----------
@@ -501,7 +589,12 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
       (th.dot ? th.items.slice(0, 3).map(i => '<i style="display:inline-block;width:.8em;height:.8em;border-radius:50%;background:' + i[0] + '"></i>').join('') : th.items.slice(0, 2).map(i => i[0]).join('')) +
       '</b>' + th.name + '</button>').join('');
     $('themes').querySelectorAll('.theme').forEach(b => b.addEventListener('click', () => {
-      store.theme = b.dataset.themeKey; save(); sfx.tap(); say(THEMES[store.theme].name); renderHome();
+      store.theme = b.dataset.themeKey; save(); sfx.tap(); say(THEMES[store.theme].say[store.lang]); renderHome();
+    }));
+    $('langs').innerHTML = LANGS.map(([k, flag, label]) => '<button class="lang" data-lang="' + k + '" aria-pressed="' + (store.lang === k) + '"><b>' + flag + '</b>' + label + '</button>').join('');
+    $('langs').querySelectorAll('.lang').forEach(b => b.addEventListener('click', () => {
+      store.lang = b.dataset.lang; save(); sfx.tap(); findVoice(); renderHome();
+      say({ vi: 'Xin chào!', en: 'Hello!', zh: '你好！' }[store.lang]);
     }));
   }
   function nextStage() {
@@ -538,21 +631,18 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
     show('play');
     $('playTitle').textContent = LEVELS[L].icon + ' ' + LEVELS[L].name;
     $('playSub').textContent = 'Màn ' + (S + 1) + ' / ' + STAGES;
-    coachRule();
     if (S === 0 && L <= 2) {
       // Màn đầu mỗi cấp: tay chỉ vào ô dễ nhất
       game.hintCell = easiestCell(); game.handOnly = true;
     }
     render();
-    say(game.lv.box ? 'Mỗi hàng, mỗi cột và mỗi ô vuông lớn chỉ có mỗi hình một lần' : 'Mỗi hàng và mỗi cột chỉ có mỗi hình một lần');
+    coachRule(true);
   }
-  function coach(text, face, mood) {
-    $('coachText').textContent = text; $('coachFace').textContent = face || '🦉';
-    $('coach').className = 'coach' + (mood ? ' ' + mood : '');
-  }
-  function coachRule() {
-    if (game.L === 2 && game.S === 0) coach('Luật mới: mỗi ô vuông lớn cũng chỉ có mỗi hình một lần!', '🦉', 'yay');
-    else coach(game.lv.box ? 'Mỗi hàng, mỗi cột và mỗi ô vuông lớn chỉ có mỗi hình một lần.' : 'Mỗi hàng và mỗi cột chỉ có mỗi hình một lần.', '🦉');
+  // Nhắc luật; chỉ đọc to khi mới vào màn để bé không phải nghe lặp lại
+  function coachRule(speak) {
+    const p = game.L === 2 && game.S === 0 ? PH.newRule : game.lv.box ? PH.ruleBox : PH.rule;
+    if (speak) talk(p, '🦉', game.L === 2 && game.S === 0 ? 'yay' : '');
+    else { const keep = store.voice; store.voice = false; talk(p, '🦉', ''); store.voice = keep; }
   }
 
   function clashCells() {
@@ -629,17 +719,17 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
   $('board').addEventListener('click', e => {
     const b = e.target.closest('.cell'); if (!b || game.won) return;
     const i = +b.dataset.i;
-    if (game.givens[i]) { sfx.tap(); say(symName(game.givens[i])); sel = game.givens[i]; focus = null; render(); return; }
+    if (game.givens[i]) { sfx.tap(); showName(game.givens[i]); sel = game.givens[i]; focus = null; render(); return; }
     if (sel === 0) { erase(i); return; }
     if (sel) { place(i, game.cur[i] === sel ? 0 : sel); return; }
     if (game.cur[i]) { erase(i); return; }
     sfx.tap(); focus = focus === i ? null : i; render();
-    if (focus != null) coach('Con chọn hình nào cho ô này?', '🦉');
+    if (focus != null) talk(PH.pick, '🦉');
   });
   $('tray').addEventListener('click', e => {
     const b = e.target.closest('.sym'); if (!b || game.won) return;
     const v = +b.dataset.v;
-    say(symName(v));
+    showName(v);
     if (focus != null && !game.cur[focus]) { const f = focus; focus = null; place(f, v); return; }
     sfx.tap(); sel = sel === v ? null : v; focus = null; render();
   });
@@ -647,7 +737,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
     if (game.won) return;
     if (focus != null && game.cur[focus] && !game.givens[focus]) { erase(focus); return; }
     sfx.tap(); sel = sel === 0 ? null : 0; focus = null; render();
-    coach(sel === 0 ? 'Chạm vào hình bé muốn xóa.' : 'Mỗi hàng, mỗi cột chỉ có mỗi hình một lần.', '🧽');
+    if (sel === 0) talk(PH.erase, '🧽'); else coachRule();
   });
   function erase(i) {
     if (game.givens[i] || !game.cur[i]) return;
@@ -663,24 +753,27 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
     const bad = game.U.unitsOf[i].map(u => ({ u, other: u.cells.filter(j => j !== i && game.cur[j] === v) })).find(x => x.other.length);
     if (bad && store.warn) {
       game.mistakes++; sfx.boing();
-      coach(cap(bad.u.kind) + ' này đã có ' + symName(v) + ' rồi. Thử chỗ khác nhé!', '🙈', 'warn');
-      say(cap(bad.u.kind) + ' này đã có ' + symName(v) + ' rồi');
+      const un = UNIT[bad.u.kind], nm = nameP(v);
+      talk({ vi: un.vi + ' có ' + nm.vi + ' rồi!', en: 'This ' + un.en + ' has ' + nm.enA + ' already!', zh: un.zh + '已经有' + nm.zh + '了！', py: un.py + ' yǐjīng yǒu ' + nm.py + ' le!' }, '🙈', 'warn');
       game.showClash = true;
       render({ shake: [i].concat(bad.other) });
       setTimeout(() => { if (game.cur[i] === v) { game.cur[i] = 0; game.showClash = false; render(); } }, 900);
       return;
     }
-    sfx.ting(); coachRule();
+    sfx.ting(); if ($('coach').classList.contains('warn')) coachRule();
     render({ pop: i });
     checkDone();
   }
-  const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+  function showName(v) {
+    const nm = nameP(v), it = theme().items[game.symbols[v - 1]];
+    talk({ vi: cap1(nm.vi), en: cap1(nm.en), zh: nm.zh, py: nm.py }, theme().dot ? '🎨' : it[0]);
+  }
 
   function checkDone() {
     if (game.cur.some(v => !v)) return;
     if (clashCells().size) {
       game.showClash = true; game.mistakes++; sfx.boing(); render();
-      coach('Gần xong rồi! Có hình bị trùng, bé tìm lại nhé.', '🔍', 'warn'); say('Gần xong rồi! Có hình bị trùng, bé tìm lại nhé');
+      talk(PH.almost, '🔍', 'warn');
       return;
     }
     win();
@@ -693,12 +786,12 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
     if (target == null) return;
     if (game.hintCell === target && !game.handOnly) {
       game.cur[target] = game.sol[target]; game.hints++; game.hintCell = null; sel = null; focus = null; game.showClash = false;
-      sfx.ting(); coach('Đây rồi: ' + symName(game.sol[target]) + '!', '💡', 'yay'); say(symName(game.sol[target]));
+      sfx.ting(); const nm = nameP(game.sol[target]); talk({ vi: cap1(nm.vi) + '!', en: cap1(nm.en) + '!', zh: nm.zh + '！', py: nm.py + '!' }, '💡', 'yay');
       render({ pop: target }); checkDone(); return;
     }
     game.hintCell = target; game.handOnly = false; focus = null; sfx.tap();
-    if (wrong >= 0) { coach('Ô sáng này chưa đúng. Bấm Gợi ý lần nữa để sửa.', '💡', 'warn'); say('Ô này chưa đúng'); }
-    else { coach('Thử ô đang sáng nhé! Bấm Gợi ý lần nữa để xem đáp án.', '💡', 'yay'); say('Thử ô đang sáng nhé'); }
+    if (wrong >= 0) talk(PH.wrong, '💡', 'warn', '(Bấm Gợi ý lần nữa để sửa.)');
+    else talk(PH.hint, '💡', 'yay', '(Bấm Gợi ý lần nữa để xem đáp án.)');
     render();
   });
   $('resetBtn').addEventListener('click', () => {
@@ -718,10 +811,11 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
     sel = null; focus = null; render();
     sfx.win();
     const p = PRAISE[Math.floor(Math.random() * PRAISE.length)];
-    $('winTitle').textContent = p; say(p);
+    $('winTitle').textContent = p[store.lang]; say(p[store.lang]);
     $('winStars').innerHTML = [1, 2, 3].map(k => '<span class="' + (k <= stars ? '' : 'off') + '">⭐</span>').join('');
     $('parade').innerHTML = game.symbols.slice(0, Math.min(game.n, 6)).map((s, k) => '<span style="animation-delay:' + (k * .12) + 's">' + (theme().dot ? '<i style="display:inline-block;width:1em;height:1em;border-radius:50%;background:' + theme().items[s][0] + '"></i>' : theme().items[s][0]) + '</span>').join('');
-    $('winNote').textContent = stars === 3 ? 'Bé tự làm hết, không cần gợi ý!' : 'Chơi lại không dùng gợi ý để được 3 sao nhé.';
+    const wn = stars === 3 ? PH.all3 : PH.retry, l = store.lang;
+    $('winNote').textContent = (l === 'zh' ? p.py + ' ' : '') + wn[l] + (l === 'zh' ? ' ' + wn.py : '') + (l !== 'vi' ? ' (' + wn.vi + ')' : '');
     const nxt = nextAfter(game.L, game.S);
     $('nextBtn').hidden = !nxt;
     setTimeout(() => { $('winBox').hidden = false; confetti(); }, 450);
@@ -767,10 +861,10 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
     $('statsPanel').innerHTML = '<h3>Bé đã chơi</h3><div class="stat-row"><span>Màn đã xong</span><span>' + done + ' / ' + LEVELS.length * STAGES + '</span></div>' +
       '<div class="stat-row"><span>Tổng số sao</span><span>⭐ ' + total + '</span></div>' +
       LEVELS.map((lv, L) => '<div><div class="stat-row"><span>' + lv.icon + ' ' + lv.name + '</span><span>' + doneCount(L) + '/' + STAGES + '</span></div><div class="meter"><i style="width:' + doneCount(L) * 10 + '%"></i></div></div>').join('');
-    [['setSound', 'sound'], ['setVoice', 'voice'], ['setWarn', 'warn'], ['setUnlock', 'unlockAll']].forEach(([id, k]) => $(id).setAttribute('aria-checked', String(!!store[k])));
+    [['setSound', 'sound'], ['setVoice', 'voice'], ['setSlow', 'slow'], ['setWarn', 'warn'], ['setUnlock', 'unlockAll']].forEach(([id, k]) => $(id).setAttribute('aria-checked', String(!!store[k])));
     $('confirmReset').hidden = true; $('resetAll').hidden = false;
   }
-  [['setSound', 'sound'], ['setVoice', 'voice'], ['setWarn', 'warn'], ['setUnlock', 'unlockAll']].forEach(([id, k]) =>
+  [['setSound', 'sound'], ['setVoice', 'voice'], ['setSlow', 'slow'], ['setWarn', 'warn'], ['setUnlock', 'unlockAll']].forEach(([id, k]) =>
     $(id).addEventListener('click', () => { store[k] = !store[k]; save(); $(id).setAttribute('aria-checked', String(store[k])); $('soundBtn').textContent = store.sound || store.voice ? '🔊' : '🔇'; }));
   $('resetAll').addEventListener('click', () => { $('confirmReset').hidden = false; $('resetAll').hidden = true; });
   $('resetNo').addEventListener('click', () => { $('confirmReset').hidden = true; $('resetAll').hidden = false; });

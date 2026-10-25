@@ -209,6 +209,16 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
 .meter i { display: block; height: 100%; background: var(--sun); }
 .btn.danger { color: var(--berry); }
 .note { color: var(--soft-ink); font-size: .95rem; line-height: 1.45; margin: 0; }
+.keyrow { display: flex; gap: 8px; flex-wrap: wrap; }
+.field {
+  flex: 1 1 180px; min-width: 0; min-height: 52px; border-radius: 14px; border: 2px solid var(--line); background: var(--given);
+  color: var(--ink); font: inherit; padding: 0 14px; user-select: text; -webkit-user-select: text;
+}
+.field:focus { outline: 3px solid var(--sun); outline-offset: 1px; }
+.aivoices { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.aivoices button { border: 3px solid transparent; border-radius: 14px; background: var(--given); padding: 10px 6px; font-weight: 800; line-height: 1.2; }
+.aivoices button small { display: block; color: var(--soft-ink); font-weight: 600; }
+.aivoices button[aria-pressed="true"] { border-color: var(--sun); background: var(--sun-soft); }
 
 .confetti { position: fixed; inset: 0; pointer-events: none; z-index: 30; overflow: hidden; }
 .confetti span { position: absolute; top: -50px; font-size: 2rem; animation: fall linear forwards; }
@@ -286,6 +296,16 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
     <div class="toggle"><span>Đọc chậm<small>Đọc chậm và rõ hơn cho bé nhỏ</small></span><button class="switch" role="switch" id="setSlow" aria-label="Đọc chậm"></button></div>
     <div class="toggle"><span>Báo trùng ngay<small>Hình đặt trùng sẽ rung và nhảy ra. Tắt đi để bé tự kiểm tra khi điền xong.</small></span><button class="switch" role="switch" id="setWarn" aria-label="Báo trùng ngay"></button></div>
     <div class="toggle"><span>Mở khóa tất cả màn<small>Bé chơi được mọi cấp mà không cần đủ sao</small></span><button class="switch" role="switch" id="setUnlock" aria-label="Mở khóa tất cả màn"></button></div>
+  </div>
+  <div class="panel">
+    <h3>Giọng AI như người thật</h3>
+    <p class="note">Dùng giọng đọc AI của Google (Gemini), nghe tự nhiên như cô giáo thật, đọc được cả tiếng Việt, tiếng Anh và tiếng Trung. Cần khóa Gemini miễn phí (lấy ở aistudio.google.com/apikey). Mỗi câu chỉ tạo một lần rồi lưu trong máy, lần sau phát ngay, không cần mạng.</p>
+    <div class="toggle"><span>Dùng giọng AI<small id="aiStatus"></small></span><button class="switch" role="switch" id="setAi" aria-label="Dùng giọng AI"></button></div>
+    <div class="keyrow"><input id="aiKeyInput" class="field" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Dán khóa Gemini (AIza...)" aria-label="Khóa Gemini"><button class="btn" id="aiKeySave">Lưu khóa</button></div>
+    <div class="label">Chọn giọng</div>
+    <div class="aivoices" id="aiVoices"></div>
+    <div class="row"><button class="btn" id="aiTest">▶ Nghe thử</button><button class="btn" id="aiPrefetch">⬇ Tạo sẵn giọng</button></div>
+    <p class="note" id="aiProgress">Tạo sẵn giọng cho bộ hình và tiếng đang chọn để bé chơi không phải chờ.</p>
   </div>
   <div class="panel">
     <h3>Cách chơi gợi ý cho bé</h3>
@@ -388,7 +408,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
 
   // ---------- Lưu trữ ----------
   const KEY = 'sudoku-be-v1';
-  let store = { theme: 'animals', lang: 'vi', progress: {}, sound: true, voice: true, slow: true, warn: true, unlockAll: false };
+  let store = { theme: 'animals', lang: 'vi', progress: {}, sound: true, voice: true, slow: true, warn: true, unlockAll: false, ai: true, aiVoice: 'Leda', aiKey: '', aiModel: '' };
   try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s) store = Object.assign(store, s); } catch (e) {}
   function save() { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {} }
   const starsOf = (L, S) => store.progress[L + '-' + S] || 0;
@@ -442,10 +462,140 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
   }
   try { findVoice(); speechSynthesis.onvoiceschanged = findVoice; } catch (e) {}
   const RATE = { vi: .95, en: .9, zh: .85 };
+
+  // ---------- Giọng AI như người thật (Gemini của Google) ----------
+  // Mỗi câu chỉ tạo một lần rồi lưu trong máy (IndexedDB); lần sau phát ngay, không cần mạng.
+  // Câu chưa có sẵn thì đọc bằng giọng của máy trước, đồng thời tạo giọng AI cho lần sau.
+  const AI_VOICES = [['Leda', 'Trẻ trung'], ['Sulafat', 'Ấm áp'], ['Aoede', 'Nhẹ nhàng'], ['Puck', 'Vui nhộn (nam)']];
+  const AI_STYLE = {
+    vi: 'Đọc bằng tiếng Việt giọng miền Bắc, chậm rãi, dịu dàng và vui tươi như cô giáo mầm non nói với bé: ',
+    en: 'Say slowly, warmly and cheerfully, like a kind preschool teacher talking to a little child: ',
+    zh: '用标准普通话，慢慢地、温柔又开心地，像幼儿园老师对小朋友说话那样读：',
+  };
+  const aiKey = () => { if (store.aiKey) return store.aiKey; try { return JSON.parse(localStorage.getItem('goi-key') || '""'); } catch (e) { return ''; } };
+  let aiDead = '', aiPauseUntil = 0;
+  const aiOn = () => store.ai && !!aiKey() && !aiDead;
+  const ck = (text, lang) => store.aiVoice + '|' + lang + '|' + text;
+  const mem = new Map();
+  const idb = (() => {
+    let dbp = null;
+    const open = () => dbp = dbp || new Promise((res, rej) => {
+      const r = indexedDB.open('sudoku-be-audio', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('a');
+      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+    });
+    return {
+      get: k => open().then(d => new Promise(res => { const q = d.transaction('a').objectStore('a').get(k); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); })).catch(() => null),
+      set: (k, v) => open().then(d => new Promise(res => { const t = d.transaction('a', 'readwrite'); t.objectStore('a').put(v, k); t.oncomplete = res; t.onerror = res; })).catch(() => {}),
+    };
+  })();
+  async function cached(k) {
+    if (mem.has(k)) return mem.get(k);
+    const b = await idb.get(k); if (b) mem.set(k, b); return b;
+  }
+  // Tìm mô hình đọc (TTS) mà khóa này dùng được, ưu tiên bản flash
+  async function aiModel() {
+    if (store.aiModel) return store.aiModel;
+    let names = [];
+    try {
+      const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key=' + encodeURIComponent(aiKey()));
+      const d = await r.json();
+      if (!r.ok) throw Object.assign(new Error(d.error && d.error.message || 'HTTP ' + r.status), { status: r.status });
+      names = (d.models || []).filter(m => /tts/i.test(m.name) && (m.supportedGenerationMethods || []).includes('generateContent')).map(m => m.name.replace(/^models\//, ''));
+    } catch (e) { if (e.status) throw e; }
+    names.sort((a, b) => (/flash/.test(b) - /flash/.test(a)) || (/preview/.test(a) - /preview/.test(b)));
+    store.aiModel = names[0] || 'gemini-2.5-flash-preview-tts'; save();
+    return store.aiModel;
+  }
+  function pcmToWav(b64, rate) {
+    const pcm = Uint8Array.from(atob(b64), c => c.charCodeAt(0)), buf = new ArrayBuffer(44 + pcm.length), v = new DataView(buf);
+    const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+    w(0, 'RIFF'); v.setUint32(4, 36 + pcm.length, true); w(8, 'WAVE'); w(12, 'fmt '); v.setUint32(16, 16, true);
+    v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true);
+    v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, pcm.length, true);
+    new Uint8Array(buf, 44).set(pcm);
+    return new Blob([buf], { type: 'audio/wav' });
+  }
+  async function aiMake(text, lang) {
+    const model = await aiModel();
+    const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + encodeURIComponent(aiKey()), {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: AI_STYLE[lang] + text }] }],
+        generationConfig: { responseModalities: ['AUDIO'], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: store.aiVoice } } } },
+      }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw Object.assign(new Error(d.error && d.error.message || 'HTTP ' + r.status), { status: r.status });
+    const part = ((d.candidates && d.candidates[0] && d.candidates[0].content || {}).parts || []).find(p => p.inlineData);
+    if (!part) throw new Error('Google không trả về âm thanh');
+    const rate = +((part.inlineData.mimeType || '').match(/rate=(\d+)/) || [0, 24000])[1];
+    return pcmToWav(part.inlineData.data, rate);
+  }
+  // Hàng đợi tạo giọng: làm lần lượt từng câu, gặp giới hạn của Google thì chờ rồi làm tiếp
+  const queue = [], queued = new Set();
+  let running = false, onAiProgress = null;
+  function aiQueue(text, lang, front) {
+    if (!aiOn() || !text) return;
+    const k = ck(text, lang);
+    if (queued.has(k)) return;
+    queued.add(k);
+    (front ? queue.unshift : queue.push).call(queue, { text, lang, k, tries: 0 });
+    runQueue();
+  }
+  async function runQueue() {
+    if (running) return; running = true;
+    while (queue.length && aiOn()) {
+      const wait = aiPauseUntil - Date.now();
+      if (wait > 0) { aiStatus('Google đang giới hạn lượt dùng, đợi ' + Math.ceil(wait / 1000) + ' giây rồi làm tiếp...'); await new Promise(r => setTimeout(r, Math.min(wait, 5000))); continue; }
+      const job = queue[0];
+      if (await cached(job.k)) { queue.shift(); queued.delete(job.k); onAiProgress && onAiProgress(); continue; }
+      try {
+        const blob = await aiMake(job.text, job.lang);
+        mem.set(job.k, blob); await idb.set(job.k, blob);
+        queue.shift(); queued.delete(job.k); aiStatus('');
+        onAiProgress && onAiProgress();
+      } catch (e) {
+        if (e.status === 429 || e.status === 503 || e.status === 500) {
+          job.tries++; aiPauseUntil = Date.now() + Math.min(60000, 15000 * job.tries);
+          if (job.tries > 4) { queue.shift(); queued.delete(job.k); }
+        } else if (e.status === 400 || e.status === 401 || e.status === 403) {
+          aiDead = 'Khóa Gemini không dùng được: ' + e.message; aiStatus(aiDead);
+        } else if (e.status === 404) {
+          store.aiModel = ''; save(); job.tries++; if (job.tries > 2) { aiDead = 'Không tìm thấy mô hình đọc của Google cho khóa này.'; aiStatus(aiDead); }
+        } else {
+          aiDead = 'Trang này không kết nối được tới Google. Hãy mở Sudoku Bé Vui trên web của bạn (cùng chỗ với web học tiếng Trung).'; aiStatus(aiDead);
+        }
+      }
+    }
+    running = false;
+  }
+  function aiStatus(msg) {
+    const el = document.getElementById('aiStatus'); if (!el) return;
+    el.textContent = msg || (aiDead ? aiDead : !aiKey() ? 'Chưa có khóa Gemini.' : store.aiKey ? 'Đã có khóa Gemini.' : 'Đang dùng chung khóa Gemini của web học tiếng Trung.');
+  }
+  const player = new Audio();
+  let sayTok = 0;
   function say(text, lang) {
     lang = lang || store.lang;
+    if (!store.voice || !text) return;
+    const tok = ++sayTok;
+    try { player.pause(); speechSynthesis.cancel(); } catch (e) {}
+    if (!aiOn()) { deviceSay(text, lang); return; }
+    const k = ck(text, lang), hit = mem.get(k);
+    const play = blob => {
+      if (tok !== sayTok) return;
+      try { if (player.src) URL.revokeObjectURL(player.src); player.src = URL.createObjectURL(blob); player.play().catch(() => deviceSay(text, lang)); } catch (e) { deviceSay(text, lang); }
+    };
+    if (hit) { play(hit); return; }
+    cached(k).then(b => {
+      if (tok !== sayTok) return;
+      if (b) play(b); else { deviceSay(text, lang); aiQueue(text, lang, true); }
+    });
+  }
+  function deviceSay(text, lang) {
     const v = voices[lang];
-    if (!store.voice || !v || !text) return;
+    if (!v) return;
     try {
       speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text); u.voice = v; u.lang = v.lang;
@@ -637,6 +787,17 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
     }
     render();
     coachRule(true);
+    prefetchGame();
+  }
+  // Tạo sẵn giọng AI cho tên các hình trong màn và các câu hay gặp
+  function prefetchGame() {
+    if (!aiOn()) return;
+    for (let v = 1; v <= game.n; v++) aiQueue(nameLine(v)[store.lang], store.lang);
+    allPhrases().forEach(t => aiQueue(t, store.lang));
+  }
+  function allPhrases() {
+    const l = store.lang;
+    return Object.values(PH).map(p => p[l]).concat(PRAISE.map(p => p[l]));
   }
   // Nhắc luật; chỉ đọc to khi mới vào màn để bé không phải nghe lặp lại
   function coachRule(speak) {
@@ -764,9 +925,11 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
     render({ pop: i });
     checkDone();
   }
+  // Câu đọc tên một hình (dùng chung cho chạm hình và gợi ý, để giọng AI chỉ phải tạo một lần)
+  function nameLine(v) { const nm = nameP(v); return { vi: cap1(nm.vi), en: cap1(nm.en), zh: nm.zh, py: nm.py }; }
   function showName(v) {
-    const nm = nameP(v), it = theme().items[game.symbols[v - 1]];
-    talk({ vi: cap1(nm.vi), en: cap1(nm.en), zh: nm.zh, py: nm.py }, theme().dot ? '🎨' : it[0]);
+    const it = theme().items[game.symbols[v - 1]];
+    talk(nameLine(v), theme().dot ? '🎨' : it[0]);
   }
 
   function checkDone() {
@@ -786,7 +949,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
     if (target == null) return;
     if (game.hintCell === target && !game.handOnly) {
       game.cur[target] = game.sol[target]; game.hints++; game.hintCell = null; sel = null; focus = null; game.showClash = false;
-      sfx.ting(); const nm = nameP(game.sol[target]); talk({ vi: cap1(nm.vi) + '!', en: cap1(nm.en) + '!', zh: nm.zh + '！', py: nm.py + '!' }, '💡', 'yay');
+      sfx.ting(); talk(nameLine(game.sol[target]), '💡', 'yay');
       render({ pop: target }); checkDone(); return;
     }
     game.hintCell = target; game.handOnly = false; focus = null; sfx.tap();
@@ -863,7 +1026,46 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
       LEVELS.map((lv, L) => '<div><div class="stat-row"><span>' + lv.icon + ' ' + lv.name + '</span><span>' + doneCount(L) + '/' + STAGES + '</span></div><div class="meter"><i style="width:' + doneCount(L) * 10 + '%"></i></div></div>').join('');
     [['setSound', 'sound'], ['setVoice', 'voice'], ['setSlow', 'slow'], ['setWarn', 'warn'], ['setUnlock', 'unlockAll']].forEach(([id, k]) => $(id).setAttribute('aria-checked', String(!!store[k])));
     $('confirmReset').hidden = true; $('resetAll').hidden = false;
+    renderAi();
   }
+  function renderAi() {
+    $('setAi').setAttribute('aria-checked', String(!!store.ai));
+    $('aiKeyInput').value = store.aiKey || '';
+    $('aiVoices').innerHTML = AI_VOICES.map(([id, label]) => '<button data-voice="' + id + '" aria-pressed="' + (store.aiVoice === id) + '">' + id + '<small>' + label + '</small></button>').join('');
+    aiStatus();
+  }
+  $('setAi').addEventListener('click', () => { store.ai = !store.ai; save(); aiDead = ''; renderAi(); });
+  $('aiKeySave').addEventListener('click', () => {
+    store.aiKey = $('aiKeyInput').value.trim(); store.aiModel = ''; aiDead = ''; save(); renderAi();
+    aiStatus(store.aiKey ? 'Đã lưu khóa. Bấm Nghe thử để kiểm tra.' : '');
+  });
+  $('aiVoices').addEventListener('click', e => {
+    const b = e.target.closest('[data-voice]'); if (!b) return;
+    store.aiVoice = b.dataset.voice; save(); renderAi(); $('aiTest').click();
+  });
+  $('aiTest').addEventListener('click', () => {
+    const t = { vi: 'Chào con! Mình cùng chơi sudoku nhé!', en: 'Hello! Let\'s play sudoku together!', zh: '小朋友你好！我们一起玩数独吧！' }[store.lang];
+    if (!aiOn()) { aiStatus(); deviceSay(t, store.lang); return; }
+    aiStatus('Đang tạo giọng, chờ vài giây...');
+    const k = ck(t, store.lang);
+    cached(k).then(b => {
+      if (b) { say(t); return; }
+      onAiProgress = () => { cached(k).then(x => { if (x) { onAiProgress = null; say(t); aiStatus(); } }); };
+      aiQueue(t, store.lang, true);
+    });
+  });
+  $('aiPrefetch').addEventListener('click', () => {
+    if (!aiOn()) { aiStatus(); return; }
+    const l = store.lang, th = theme();
+    const list = th.items.map(it => ({ vi: cap1(th.pre + ' ' + it[1]), en: cap1(it[2]), zh: it[3] }[l])).concat(allPhrases(), [th.say[l]]);
+    let done = 0;
+    const tick = () => Promise.all(list.map(t => cached(ck(t, l)))).then(r => {
+      done = r.filter(Boolean).length;
+      $('aiProgress').textContent = done >= list.length ? 'Xong! Đã có đủ ' + list.length + ' câu cho bộ ' + th.name + ' (' + LANGS.find(x => x[0] === l)[2] + ').' : 'Đang tạo giọng: ' + done + ' / ' + list.length + ' câu...';
+    });
+    onAiProgress = tick; tick();
+    list.forEach(t => aiQueue(t, l));
+  });
   [['setSound', 'sound'], ['setVoice', 'voice'], ['setSlow', 'slow'], ['setWarn', 'warn'], ['setUnlock', 'unlockAll']].forEach(([id, k]) =>
     $(id).addEventListener('click', () => { store[k] = !store[k]; save(); $(id).setAttribute('aria-checked', String(store[k])); $('soundBtn').textContent = store.sound || store.voice ? '🔊' : '🔇'; }));
   $('resetAll').addEventListener('click', () => { $('confirmReset').hidden = false; $('resetAll').hidden = true; });

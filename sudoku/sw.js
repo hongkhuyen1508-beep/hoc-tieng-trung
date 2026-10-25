@@ -1,5 +1,5 @@
 // Lưu sẵn trang để bé chơi được khi không có mạng
-const CACHE = 'sudoku-be-v1';
+const CACHE = 'sudoku-be-v2';
 const FILES = ['./', 'index.html', 'manifest.webmanifest', 'icon.svg'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener('activate', e => {
@@ -8,6 +8,8 @@ self.addEventListener('activate', e => {
 });
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  // Chỉ lưu trang này và phông chữ; không đụng tới lời gọi AI của Google
+  if (new URL(e.request.url).origin !== location.origin && !/fonts\.(googleapis|gstatic)\.com/.test(e.request.url)) return;
   e.respondWith(fetch(e.request).then(r => {
     const copy = r.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); return r;
   }).catch(() => caches.match(e.request)));

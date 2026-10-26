@@ -7,7 +7,7 @@ Các phần dùng AI chạy bằng khóa Gemini miễn phí của Google (lấy 
 - `index.html`: web học
 - `goi-ai/`: trang gọi điện bằng giọng nói
 - `sudoku/`: Sudoku Bé Vui, sudoku bằng hình cho bé (2x2 đến 9x9), nghe tiếng Việt, Anh hoặc Trung; giọng AI Gemini dùng chung khóa với web học
-- `toan-tu-duy/`: Bé Tư Duy, câu đố tư duy và toán cho bé 3–7 tuổi (đếm hình, tìm quy luật, hình nào khác, nhiều hay ít, cộng trừ, số còn thiếu, đoán bóng, to và nhỏ); đọc câu hỏi bằng tiếng Việt, giọng AI dùng chung khóa Gemini
+- `toan-tu-duy/`: Bé Tư Duy (Little Thinkers), câu đố tư duy và toán cho bé 3–7 tuổi (đếm hình, tìm quy luật, hình nào khác, nhiều hay ít, cộng trừ, số còn thiếu, đoán bóng, to và nhỏ); mặc định tiếng Anh, có thể chọn tiếng Việt; giọng AI dùng chung khóa Gemini
 - `audio/`, `words/`, `rd/`: giọng đọc tạo sẵn; `hanzi/`: nét chữ Hán (hanzi-writer-data)
 
 ## Nguồn phát âm

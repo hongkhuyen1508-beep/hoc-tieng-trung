@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="vi">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -7,7 +7,7 @@
 <link rel="icon" href="icon.svg">
 <link rel="apple-touch-icon" href="icon.svg">
 <meta name="theme-color" content="#4f63d2">
-<title>Bé Tư Duy</title>
+<title>Little Thinkers</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -81,6 +81,10 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
 }
 .age b { font-size: 1.6rem; line-height: 1.25; }
 .age[aria-pressed="true"] { border-color: var(--sun); background: var(--sun-soft); }
+.langs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.lang { border: 3px solid transparent; border-radius: 18px; background: var(--surface); box-shadow: var(--shadow); padding: 10px 4px; display: flex; justify-content: center; align-items: center; gap: 8px; font-weight: 800; }
+.lang b { font-size: 1.5rem; line-height: 1.2; }
+.lang[aria-pressed="true"] { border-color: var(--sun); background: var(--sun-soft); }
 .games { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 .game {
   border: 0; border-radius: 22px; background: var(--surface); box-shadow: var(--shadow); padding: 14px 10px 12px;
@@ -182,24 +186,25 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
 <div class="wrap" id="home">
   <div class="hero">
     <div class="mascot" aria-hidden="true">🦉</div>
-    <h1>Bé Tư Duy</h1>
-    <p>Đếm, so sánh, tìm quy luật, đoán bóng. Chơi vui, không thua!</p>
+    <h1 data-t="title"></h1>
+    <p data-t="tagline"></p>
   </div>
-  <div class="label">Bé mấy tuổi?</div>
+  <div class="langs" id="langs"></div>
+  <div class="label" data-t="ageQ"></div>
   <div class="ages" id="ages"></div>
-  <div class="label">Chọn trò chơi</div>
+  <div class="label" data-t="pickGame"></div>
   <div class="games" id="games"></div>
   <details class="parents">
-    <summary>👪 Dành cho bố mẹ</summary>
+    <summary data-t="parents"></summary>
     <div class="body">
-      <label class="toggle">Âm thanh vui <input type="checkbox" id="optSound"></label>
-      <label class="toggle">Đọc câu hỏi to <input type="checkbox" id="optVoice"></label>
-      <label class="toggle">Giọng AI như người thật <input type="checkbox" id="optAi"></label>
-      <p class="note">Giọng AI dùng Gemini của Google, đọc tự nhiên như cô giáo. Cần khóa Gemini miễn phí (lấy ở aistudio.google.com/apikey). Nếu đã lưu khóa ở web học tiếng Trung hoặc Sudoku Bé Vui thì trang này tự dùng chung. Mỗi câu chỉ tạo một lần rồi lưu trong máy.</p>
-      <div class="keyrow"><input id="aiKeyInput" class="field" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Dán khóa Gemini (AIza...)" aria-label="Khóa Gemini"><button class="btn" id="aiKeySave">Lưu khóa</button></div>
+      <label class="toggle"><span data-t="optSound"></span> <input type="checkbox" id="optSound"></label>
+      <label class="toggle"><span data-t="optVoice"></span> <input type="checkbox" id="optVoice"></label>
+      <label class="toggle"><span data-t="optAi"></span> <input type="checkbox" id="optAi"></label>
+      <p class="note" data-t="aiNote"></p>
+      <div class="keyrow"><input id="aiKeyInput" class="field" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" data-tp="keyPh"><button class="btn" id="aiKeySave" data-t="saveKey"></button></div>
       <p class="note" id="aiStatus"></p>
-      <p class="note">Mỗi lượt có 8 câu. Bé trả lời sai thì thử lại, sai 2 lần sẽ có gợi ý. Sao: ít sai thì được 3 sao. Độ khó theo tuổi chọn ở trên.</p>
-      <button class="btn" id="resetBtn">Xóa số sao đã đạt</button>
+      <p class="note" data-t="howNote"></p>
+      <button class="btn" id="resetBtn" data-t="reset"></button>
     </div>
   </details>
 </div>
@@ -207,9 +212,9 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
 <!-- Màn chơi -->
 <div class="wrap" id="play" hidden>
   <div class="topbar">
-    <button class="btn icon-btn" id="backBtn" aria-label="Về trang chủ">🏠</button>
+    <button class="btn icon-btn" id="backBtn" data-ta="home">🏠</button>
     <div class="dots" id="dots"></div>
-    <button class="btn icon-btn" id="sayBtn" aria-label="Nghe lại câu hỏi">🔊</button>
+    <button class="btn icon-btn" id="sayBtn" data-ta="replay">🔊</button>
   </div>
   <div class="ask" id="ask"><span class="face" id="face">🦉</span><p id="askText"></p></div>
   <div class="board" id="board"></div>
@@ -218,12 +223,12 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
 
 <div class="overlay" id="winBox" hidden>
   <div class="winbox">
-    <h2 id="winTitle">Giỏi quá!</h2>
+    <h2 id="winTitle"></h2>
     <div class="winstars" id="winStars"></div>
     <p class="note" id="winNote"></p>
     <div class="acts">
-      <button class="btn big" id="againBtn">▶ Chơi tiếp</button>
-      <button class="btn" id="homeBtn">🏠 Chọn trò khác</button>
+      <button class="btn big" id="againBtn" data-t="again"></button>
+      <button class="btn" id="homeBtn" data-t="other"></button>
     </div>
   </div>
 </div>
@@ -232,31 +237,70 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
 (() => {
   const $ = id => document.getElementById(id);
 
-  // ---------- Hình và tên gọi ----------
-  // Mỗi nhóm có tên để giải thích khi bé tìm hình khác nhóm
+  // ---------- Hình và tên gọi (tiếng Việt và tiếng Anh) ----------
+  // Mỗi nhóm có tên để giải thích khi bé tìm hình khác nhóm: one/many là tên tiếng Anh số ít/số nhiều
   const CATS = {
-    thu:  { name: 'con thú', fam: 'vat', items: [['🐶', 'con chó'], ['🐱', 'con mèo'], ['🐰', 'con thỏ'], ['🐻', 'con gấu'], ['🐼', 'gấu trúc'], ['🦁', 'sư tử'], ['🐯', 'con hổ'], ['🐮', 'con bò'], ['🐷', 'con lợn'], ['🐘', 'con voi'], ['🦒', 'hươu cao cổ'], ['🐒', 'con khỉ'], ['🐴', 'con ngựa']] },
-    chim: { name: 'loài chim', fam: 'vat', items: [['🐔', 'con gà'], ['🦆', 'con vịt'], ['🦉', 'con cú'], ['🦜', 'con vẹt'], ['🐤', 'gà con'], ['🦢', 'thiên nga'], ['🦩', 'hồng hạc']] },
-    bien: { name: 'con vật dưới nước', fam: 'vat', items: [['🐠', 'con cá'], ['🐙', 'bạch tuộc'], ['🦀', 'con cua'], ['🐬', 'cá heo'], ['🐳', 'cá voi'], ['🦈', 'cá mập'], ['🦐', 'con tôm']] },
-    qua:  { name: 'trái cây', fam: 'an', items: [['🍎', 'quả táo'], ['🍌', 'quả chuối'], ['🍇', 'chùm nho'], ['🍓', 'quả dâu'], ['🍊', 'quả cam'], ['🍉', 'dưa hấu'], ['🍍', 'quả dứa'], ['🍒', 'quả anh đào'], ['🍐', 'quả lê'], ['🥭', 'quả xoài']] },
-    rau:  { name: 'rau củ', fam: 'an', items: [['🥕', 'cà rốt'], ['🥦', 'súp lơ xanh'], ['🌽', 'bắp ngô'], ['🍆', 'cà tím'], ['🥒', 'dưa chuột'], ['🧅', 'củ hành'], ['🥔', 'khoai tây']] },
-    xe:   { name: 'xe cộ', fam: 'xe', items: [['🚗', 'ô tô'], ['🚌', 'xe buýt'], ['🚓', 'xe cảnh sát'], ['🚑', 'xe cứu thương'], ['🚒', 'xe cứu hỏa'], ['🚜', 'máy cày'], ['🚲', 'xe đạp'], ['✈️', 'máy bay'], ['🚀', 'tên lửa'], ['🚂', 'tàu hỏa'], ['🛵', 'xe máy']] },
+    thu:  { vi: 'con thú', one: 'a land animal', many: 'land animals', fam: 'vat', items: [['🐶', 'con chó', 'dog'], ['🐱', 'con mèo', 'cat'], ['🐰', 'con thỏ', 'rabbit'], ['🐻', 'con gấu', 'bear'], ['🐼', 'gấu trúc', 'panda'], ['🦁', 'sư tử', 'lion'], ['🐯', 'con hổ', 'tiger'], ['🐮', 'con bò', 'cow'], ['🐷', 'con lợn', 'pig'], ['🐘', 'con voi', 'elephant'], ['🦒', 'hươu cao cổ', 'giraffe'], ['🐒', 'con khỉ', 'monkey'], ['🐴', 'con ngựa', 'horse']] },
+    chim: { vi: 'loài chim', one: 'a bird', many: 'birds', fam: 'vat', items: [['🐔', 'con gà', 'chicken'], ['🦆', 'con vịt', 'duck'], ['🦉', 'con cú', 'owl'], ['🦜', 'con vẹt', 'parrot'], ['🐤', 'gà con', 'chick'], ['🦢', 'thiên nga', 'swan'], ['🦩', 'hồng hạc', 'flamingo']] },
+    bien: { vi: 'con vật dưới nước', one: 'a water animal', many: 'water animals', fam: 'vat', items: [['🐠', 'con cá', 'fish'], ['🐙', 'bạch tuộc', 'octopus'], ['🦀', 'con cua', 'crab'], ['🐬', 'cá heo', 'dolphin'], ['🐳', 'cá voi', 'whale'], ['🦈', 'cá mập', 'shark'], ['🦐', 'con tôm', 'shrimp']] },
+    qua:  { vi: 'trái cây', one: 'a fruit', many: 'fruits', fam: 'an', items: [['🍎', 'quả táo', 'apple'], ['🍌', 'quả chuối', 'banana'], ['🍇', 'chùm nho', 'bunch of grapes'], ['🍓', 'quả dâu', 'strawberry'], ['🍊', 'quả cam', 'orange'], ['🍉', 'dưa hấu', 'watermelon'], ['🍍', 'quả dứa', 'pineapple'], ['🍒', 'quả anh đào', 'cherry'], ['🍐', 'quả lê', 'pear'], ['🥭', 'quả xoài', 'mango']] },
+    rau:  { vi: 'rau củ', one: 'a vegetable', many: 'vegetables', fam: 'an', items: [['🥕', 'cà rốt', 'carrot'], ['🥦', 'súp lơ xanh', 'broccoli'], ['🌽', 'bắp ngô', 'corn'], ['🍆', 'cà tím', 'eggplant'], ['🥒', 'dưa chuột', 'cucumber'], ['🧅', 'củ hành', 'onion'], ['🥔', 'khoai tây', 'potato']] },
+    xe:   { vi: 'xe cộ', one: 'a vehicle', many: 'vehicles', fam: 'xe', items: [['🚗', 'ô tô', 'car'], ['🚌', 'xe buýt', 'bus'], ['🚓', 'xe cảnh sát', 'police car'], ['🚑', 'xe cứu thương', 'ambulance'], ['🚒', 'xe cứu hỏa', 'fire truck'], ['🚜', 'máy cày', 'tractor'], ['🚲', 'xe đạp', 'bicycle'], ['✈️', 'máy bay', 'airplane'], ['🚀', 'tên lửa', 'rocket'], ['🚂', 'tàu hỏa', 'train'], ['🛵', 'xe máy', 'scooter']] },
   };
-  const ALL = Object.entries(CATS).flatMap(([c, v]) => v.items.map(([e, n]) => ({ e, n, c })));
+  const ALL = Object.entries(CATS).flatMap(([c, v]) => v.items.map(([e, n, en]) => ({ e, n, en, c })));
   // Hình dễ đếm (rõ, không quá giống nhau)
   const COUNTABLE = ['🍎', '🐶', '🐱', '🍌', '⭐', '🎈', '🌸', '🐟', '🦆', '🍓', '🚗', '🐰', '🍊', '🐤', '⚽'];
   const NAME = Object.assign({ '⭐': 'ngôi sao', '🎈': 'quả bóng bay', '🌸': 'bông hoa', '🐟': 'con cá', '⚽': 'quả bóng' }, Object.fromEntries(ALL.map(x => [x.e, x.n])));
+  // Tên tiếng Anh của hình dùng để đếm: [số ít, số nhiều]
+  const COUNT_EN = { '🍎': ['apple', 'apples'], '🐶': ['dog', 'dogs'], '🐱': ['cat', 'cats'], '🍌': ['banana', 'bananas'], '⭐': ['star', 'stars'], '🎈': ['balloon', 'balloons'], '🌸': ['flower', 'flowers'], '🐟': ['fish', 'fish'], '🦆': ['duck', 'ducks'], '🍓': ['strawberry', 'strawberries'], '🚗': ['car', 'cars'], '🐰': ['rabbit', 'rabbits'], '🍊': ['orange', 'oranges'], '🐤': ['chick', 'chicks'], '⚽': ['ball', 'balls'] };
+  const many = (e, n) => COUNT_EN[e][n === 1 ? 0 : 1];
 
-  const AGES = [['🐣', '3–4 tuổi'], ['🐥', '4–5 tuổi'], ['🦊', '5–6 tuổi'], ['🦁', '6–7 tuổi']];
+  const AGES = ['🐣', '🐥', '🦊', '🦁'];
   const ROUND = 8;
-  const PRAISE = ['Giỏi quá!', 'Đúng rồi!', 'Tuyệt vời!', 'Bé thông minh quá!', 'Chính xác!', 'Hoan hô!'];
-  const TRY = ['Chưa đúng, bé thử lại nhé!', 'Gần đúng rồi, thử lần nữa nào!', 'Bé nhìn kỹ lại nhé!'];
+
+  // ---------- Chữ trên trang theo ngôn ngữ (mặc định tiếng Anh) ----------
+  const LANGS = [['en', '🇬🇧', 'English'], ['vi', '🇻🇳', 'Tiếng Việt']];
+  const TX = {
+    en: {
+      title: 'Little Thinkers', tagline: 'Count, compare, find patterns, guess shadows. Fun, and no losing!',
+      ageQ: 'How old is your child?', pickGame: 'Choose a game', age: i => ['3–4', '4–5', '5–6', '6–7'][i] + ' yrs', ageSay: i => 'Age ' + ['3 to 4', '4 to 5', '5 to 6', '6 to 7'][i],
+      parents: '👪 For parents', optSound: 'Fun sounds', optVoice: 'Read questions aloud', optAi: 'Lifelike AI voice',
+      aiNote: 'The AI voice uses Google Gemini and sounds like a real teacher. It needs a free Gemini key (get one at aistudio.google.com/apikey). If you already saved a key in the Chinese learning site or Sudoku Bé Vui, this page shares it. Each sentence is made once and then kept on this device.',
+      keyPh: 'Paste your Gemini key (AIza...)', saveKey: 'Save key',
+      howNote: 'Each round has 8 questions. A wrong answer can be tried again, and after 2 tries the right answer glows. Fewer mistakes earn 3 stars. Difficulty follows the age chosen above.',
+      reset: 'Clear earned stars', resetQ: 'Clear all the stars your child has earned?', home: 'Back to home', replay: 'Hear the question again',
+      again: '▶ Play again', other: '🏠 Pick another game', stars: n => n + ' stars', hello: "Hello! Let's play together!",
+      praise: ['Great job!', "That's right!", 'Awesome!', 'So clever!', 'Correct!', 'Hooray!'],
+      tryAgain: ['Not quite, try again!', 'Almost! Have another go!', 'Look carefully and try again!'],
+      winTitle: ['Great job!', 'Awesome!', 'Hooray!'], winAll: n => 'You got all ' + n + ' right!', winSome: n => 'You finished ' + n + ' questions. Play again to get 3 stars!',
+      noKey: v => 'No Gemini key yet, using the device voice' + (v ? '.' : " (this device has no English voice)."), ownKey: 'Gemini key saved.', sharedKey: 'Using the Gemini key saved on another page.',
+      aiLimit: s => 'Google is limiting requests, waiting ' + s + ' seconds...', aiBad: m => 'This Gemini key does not work: ' + m, aiNoModel: 'No Google voice model found for this key.', aiOffline: 'This page cannot reach Google, so it uses the device voice.',
+    },
+    vi: {
+      title: 'Bé Tư Duy', tagline: 'Đếm, so sánh, tìm quy luật, đoán bóng. Chơi vui, không thua!',
+      ageQ: 'Bé mấy tuổi?', pickGame: 'Chọn trò chơi', age: i => ['3–4', '4–5', '5–6', '6–7'][i] + ' tuổi', ageSay: i => 'Bé ' + ['3–4', '4–5', '5–6', '6–7'][i] + ' tuổi',
+      parents: '👪 Dành cho bố mẹ', optSound: 'Âm thanh vui', optVoice: 'Đọc câu hỏi to', optAi: 'Giọng AI như người thật',
+      aiNote: 'Giọng AI dùng Gemini của Google, đọc tự nhiên như cô giáo. Cần khóa Gemini miễn phí (lấy ở aistudio.google.com/apikey). Nếu đã lưu khóa ở web học tiếng Trung hoặc Sudoku Bé Vui thì trang này tự dùng chung. Mỗi câu chỉ tạo một lần rồi lưu trong máy.',
+      keyPh: 'Dán khóa Gemini (AIza...)', saveKey: 'Lưu khóa',
+      howNote: 'Mỗi lượt có 8 câu. Bé trả lời sai thì thử lại, sai 2 lần sẽ có gợi ý. Sao: ít sai thì được 3 sao. Độ khó theo tuổi chọn ở trên.',
+      reset: 'Xóa số sao đã đạt', resetQ: 'Xóa hết số sao bé đã đạt?', home: 'Về trang chủ', replay: 'Nghe lại câu hỏi',
+      again: '▶ Chơi tiếp', other: '🏠 Chọn trò khác', stars: n => n + ' sao', hello: 'Xin chào bé, mình cùng chơi nhé!',
+      praise: ['Giỏi quá!', 'Đúng rồi!', 'Tuyệt vời!', 'Bé thông minh quá!', 'Chính xác!', 'Hoan hô!'],
+      tryAgain: ['Chưa đúng, bé thử lại nhé!', 'Gần đúng rồi, thử lần nữa nào!', 'Bé nhìn kỹ lại nhé!'],
+      winTitle: ['Giỏi quá!', 'Tuyệt vời!', 'Hoan hô bé!'], winAll: n => 'Bé trả lời đúng cả ' + n + ' câu!', winSome: n => 'Bé làm xong ' + n + ' câu rồi. Chơi lại để được 3 sao nhé!',
+      noKey: v => 'Chưa có khóa Gemini, đang dùng giọng của máy' + (v ? '.' : ' (máy này chưa có giọng tiếng Việt).'), ownKey: 'Đã có khóa Gemini.', sharedKey: 'Đang dùng chung khóa Gemini đã lưu ở trang khác.',
+      aiLimit: s => 'Google đang giới hạn lượt dùng, đợi ' + s + ' giây rồi làm tiếp...', aiBad: m => 'Khóa Gemini không dùng được: ' + m, aiNoModel: 'Không tìm thấy mô hình đọc của Google cho khóa này.', aiOffline: 'Trang này không kết nối được tới Google, nên dùng giọng của máy.',
+    },
+  };
 
   // ---------- Lưu trữ ----------
   const KEY = 'be-tu-duy-v1';
-  let store = { age: 1, best: {}, sound: true, voice: true, ai: true, aiVoice: 'Leda', aiKey: '', aiModel: '' };
+  let store = { lang: 'en', age: 1, best: {}, sound: true, voice: true, ai: true, aiVoice: 'Leda', aiKey: '', aiModel: '' };
   try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s) store = Object.assign(store, s); } catch (e) {}
   function save() { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {} }
+  const L = () => TX[store.lang] ? store.lang : 'en';
+  const t = k => TX[L()][k];
+  const vien = (vi, en) => L() === 'vi' ? vi : en;
 
   // ---------- Ngẫu nhiên ----------
   const R = () => Math.random();
@@ -300,19 +344,21 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
   };
 
   // ---------- Giọng đọc của máy ----------
-  let viVoice = null;
+  // Chọn giọng nghe tự nhiên nhất mà máy có cho từng ngôn ngữ
+  const voices = {};
   function findVoice() {
     let all = [];
-    try { all = speechSynthesis.getVoices().filter(v => /^vi/i.test(v.lang)); } catch (e) {}
-    const score = v => (/natural|neural|online|premium|enhanced/i.test(v.name) ? 6 : 0) + (/google/i.test(v.name) ? 3 : 0) + (/hoaimy|linh|an\b|female/i.test(v.name) ? 2 : 0);
-    viVoice = all.sort((a, b) => score(b) - score(a))[0] || null;
+    try { all = speechSynthesis.getVoices(); } catch (e) {}
+    const score = v => (/natural|neural|online|premium|enhanced/i.test(v.name) ? 6 : 0) + (/google/i.test(v.name) ? 3 : 0) + (/hoaimy|linh|an\b|female|samantha|aria|jenny|ava|zira/i.test(v.name) ? 2 : 0) + (/en-US/i.test(v.lang.replace('_', '-')) ? 1 : 0) - (/compact|espeak/i.test(v.name) ? 5 : 0);
+    ['vi', 'en'].forEach(l => { voices[l] = all.filter(v => new RegExp('^' + l, 'i').test(v.lang)).sort((a, b) => score(b) - score(a))[0] || null; });
   }
   try { findVoice(); speechSynthesis.onvoiceschanged = findVoice; } catch (e) {}
   function deviceSay(text) {
-    if (!viVoice) return;
+    const v = voices[L()];
+    if (!v) return;
     try {
       speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text); u.voice = viVoice; u.lang = viVoice.lang; u.rate = .85; u.pitch = 1.05;
+      const u = new SpeechSynthesisUtterance(text); u.voice = v; u.lang = v.lang; u.rate = .85; u.pitch = 1.05;
       // Đợi một nhịp sau khi dừng câu cũ, tránh bị nuốt chữ đầu trên một số máy
       setTimeout(() => { try { speechSynthesis.speak(u); } catch (e) {} }, 60);
     } catch (e) {}
@@ -320,7 +366,10 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
 
   // ---------- Giọng AI như người thật (Gemini của Google), giống Sudoku Bé Vui ----------
   // Câu chưa có sẵn thì đọc bằng giọng của máy trước, đồng thời tạo giọng AI để lần sau phát ngay.
-  const AI_STYLE = 'Đọc bằng tiếng Việt giọng miền Bắc, chậm rãi, dịu dàng và vui tươi như cô giáo mầm non nói với bé: ';
+  const AI_STYLE = {
+    vi: 'Đọc bằng tiếng Việt giọng miền Bắc, chậm rãi, dịu dàng và vui tươi như cô giáo mầm non nói với bé: ',
+    en: 'Say slowly, warmly and cheerfully, like a kind preschool teacher talking to a little child: ',
+  };
   const aiKey = () => {
     if (store.aiKey) return store.aiKey;
     try { const k = JSON.parse(localStorage.getItem('goi-key') || '""'); if (k) return k; } catch (e) {}
@@ -328,7 +377,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
   };
   let aiDead = '', aiPauseUntil = 0;
   const aiOn = () => store.ai && !!aiKey() && !aiDead;
-  const ck = text => store.aiVoice + '|vi|' + text;
+  const ck = text => store.aiVoice + '|' + L() + '|' + text;
   const mem = new Map();
   const idb = (() => {
     let dbp = null;
@@ -368,12 +417,12 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
     new Uint8Array(buf, 44).set(pcm);
     return new Blob([buf], { type: 'audio/wav' });
   }
-  async function aiMake(text) {
+  async function aiMake(text, lang) {
     const model = await aiModel();
     const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + encodeURIComponent(aiKey()), {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: AI_STYLE + text }] }],
+        contents: [{ parts: [{ text: AI_STYLE[lang] + text }] }],
         generationConfig: { responseModalities: ['AUDIO'], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: store.aiVoice } } } },
       }),
     });
@@ -392,18 +441,18 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
     const k = ck(text);
     if (queued.has(k)) return;
     queued.add(k);
-    (front ? queue.unshift : queue.push).call(queue, { text, k, tries: 0 });
+    (front ? queue.unshift : queue.push).call(queue, { text, k, lang: L(), tries: 0 });
     runQueue();
   }
   async function runQueue() {
     if (running) return; running = true;
     while (queue.length && aiOn()) {
       const wait = aiPauseUntil - Date.now();
-      if (wait > 0) { aiStatus('Google đang giới hạn lượt dùng, đợi ' + Math.ceil(wait / 1000) + ' giây rồi làm tiếp...'); await new Promise(r => setTimeout(r, Math.min(wait, 5000))); continue; }
+      if (wait > 0) { aiStatus(t('aiLimit')(Math.ceil(wait / 1000))); await new Promise(r => setTimeout(r, Math.min(wait, 5000))); continue; }
       const job = queue[0];
       if (await cached(job.k)) { queue.shift(); queued.delete(job.k); continue; }
       try {
-        const blob = await aiMake(job.text);
+        const blob = await aiMake(job.text, job.lang);
         mem.set(job.k, blob); await idb.set(job.k, blob);
         queue.shift(); queued.delete(job.k); aiStatus('');
       } catch (e) {
@@ -411,11 +460,11 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
           job.tries++; aiPauseUntil = Date.now() + Math.min(60000, 15000 * job.tries);
           if (job.tries > 4) { queue.shift(); queued.delete(job.k); }
         } else if (e.status === 400 || e.status === 401 || e.status === 403) {
-          aiDead = 'Khóa Gemini không dùng được: ' + e.message; aiStatus(aiDead);
+          aiDead = t('aiBad')(e.message); aiStatus(aiDead);
         } else if (e.status === 404) {
-          store.aiModel = ''; save(); job.tries++; if (job.tries > 2) { aiDead = 'Không tìm thấy mô hình đọc của Google cho khóa này.'; aiStatus(aiDead); }
+          store.aiModel = ''; save(); job.tries++; if (job.tries > 2) { aiDead = t('aiNoModel'); aiStatus(aiDead); }
         } else {
-          aiDead = 'Trang này không kết nối được tới Google, nên dùng giọng của máy.'; aiStatus(aiDead);
+          aiDead = t('aiOffline'); aiStatus(aiDead);
         }
       }
     }
@@ -423,7 +472,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
   }
   function aiStatus(msg) {
     const el = $('aiStatus'); if (!el) return;
-    el.textContent = msg || (aiDead ? aiDead : !aiKey() ? 'Chưa có khóa Gemini, đang dùng giọng của máy' + (viVoice ? '.' : ' (máy này chưa có giọng tiếng Việt).') : store.aiKey ? 'Đã có khóa Gemini.' : 'Đang dùng chung khóa Gemini đã lưu ở trang khác.');
+    el.textContent = msg || (aiDead ? aiDead : !aiKey() ? t('noKey')(voices[L()]) : store.aiKey ? t('ownKey') : t('sharedKey'));
   }
   const player = new Audio();
   let sayTok = 0;
@@ -452,7 +501,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
 
   const GAMES = [
     {
-      id: 'dem', icon: '🔢', name: 'Đếm hình', desc: 'Có bao nhiêu?',
+      id: 'dem', icon: '🔢', name: ['Đếm hình', 'Counting'], desc: ['Có bao nhiêu?', 'How many?'],
       make(d) {
         const max = [5, 10, 15, 20][d], min = [1, 3, 5, 8][d];
         const it = pick(COUNTABLE), n = ri(min, max);
@@ -460,12 +509,12 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
         // Từ 5 tuổi: lẫn hình khác vào để bé chỉ đếm đúng một loại
         if (d >= 2) { const other = pick(COUNTABLE.filter(x => x !== it)); arr = arr.concat(Array(ri(2, d === 2 ? 4 : 7)).fill(other)); }
         arr = shuffle(arr);
-        const ask = 'Có bao nhiêu ' + NAME[it] + '?';
+        const ask = vien('Có bao nhiêu ' + NAME[it] + '?', 'How many ' + many(it, 2) + '?');
         return { ask, board: pileHtml(arr, pileSize(arr.length)), opts: numOpts(n, d === 0 ? 3 : 4, 1).map(v => ({ v, html: v })), ans: n, tap: true };
       },
     },
     {
-      id: 'quyluat', icon: '🔁', name: 'Tìm quy luật', desc: 'Hình nào tiếp theo?',
+      id: 'quyluat', icon: '🔁', name: ['Tìm quy luật', 'Patterns'], desc: ['Hình nào tiếp theo?', 'What comes next?'],
       make(d) {
         const shapes = [['AB'], ['AB', 'AAB', 'ABB', 'ABC'], ['AAB', 'ABB', 'ABC', 'AABB', 'ABCC'], ['ABCD', 'AABC', 'ABBC', 'AABB', 'ABAC', 'ABCB']][d];
         const unit = pick(shapes), letters = [...new Set(unit)];
@@ -480,11 +529,11 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
         const cells = shown.map((e, i) => i === hole ? '<b class="q">?</b>' : '<b>' + e + '</b>');
         if (hole === len) cells.push('<b class="q">?</b>');
         const opts = shuffle([...new Set(letters.map(l => map[l]).concat(d >= 1 ? [syms[letters.length]] : []))]);
-        return { ask: hole === len ? 'Hình nào tiếp theo?' : 'Hình nào còn thiếu?', board: '<div class="seq">' + cells.join('') + '</div>', opts: opts.map(v => ({ v, html: v })), ans, cols: opts.length };
+        return { ask: hole === len ? vien('Hình nào tiếp theo?', 'What comes next?') : vien('Hình nào còn thiếu?', 'What is missing?'), board: '<div class="seq">' + cells.join('') + '</div>', opts: opts.map(v => ({ v, html: v })), ans, cols: opts.length };
       },
     },
     {
-      id: 'khac', icon: '🧐', name: 'Hình nào khác?', desc: 'Tìm bạn khác nhóm',
+      id: 'khac', icon: '🧐', name: ['Hình nào khác?', 'Odd one out'], desc: ['Tìm bạn khác nhóm', 'Which one doesn’t belong?'],
       make(d) {
         const keys = Object.keys(CATS);
         const a = pick(keys);
@@ -492,16 +541,16 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
         const far = keys.filter(k => CATS[k].fam !== CATS[a].fam), near = keys.filter(k => k !== a && CATS[k].fam === CATS[a].fam);
         const b = pick(d <= 1 || !near.length || R() < .2 ? far : near);
         const k = [3, 4, 4, 5][d];
-        const same = sample(CATS[a].items, k - 1), odd = pick(CATS[b].items);
+        const same = sample(CATS[a].items, k - 1), odd = pick(CATS[b].items), A = CATS[a], B = CATS[b];
         const opts = shuffle(same.concat([odd]).map(([e]) => ({ v: e, html: e })));
         return {
-          ask: 'Hình nào không cùng nhóm?', board: '', opts, ans: odd[0], cols: k === 5 ? 3 : k === 4 ? 2 : 3,
-          praise: 'Đúng rồi! ' + cap(odd[1]) + ' là ' + CATS[b].name + ', còn lại là ' + CATS[a].name + '.',
+          ask: vien('Hình nào không cùng nhóm?', 'Which one doesn’t belong?'), board: '', opts, ans: odd[0], cols: k === 5 ? 3 : k === 4 ? 2 : 3,
+          praise: vien('Đúng rồi! ' + cap(odd[1]) + ' là ' + B.vi + ', còn lại là ' + A.vi + '.', 'That’s right! The ' + odd[2] + ' is ' + B.one + ', and the others are ' + A.many + '.'),
         };
       },
     },
     {
-      id: 'sosanh', icon: '⚖️', name: 'Nhiều hay ít', desc: 'Bên nào nhiều hơn?',
+      id: 'sosanh', icon: '⚖️', name: ['Nhiều hay ít', 'More or less'], desc: ['Bên nào nhiều hơn?', 'Which side has more?'],
       make(d) {
         const max = [5, 8, 12, 15][d];
         const gap = [3, 2, 1, 1][d];
@@ -512,12 +561,16 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
         const ans = a === b ? 'eq' : (a > b) === more ? 'L' : 'R';
         const panel = (n, e) => '<div class="pile" style="font-size:' + (n <= 6 ? 2.2 : n <= 10 ? 1.7 : 1.4) + 'rem">' + Array(n).fill('<span>' + e + '</span>').join('') + '</div>';
         const opts = [{ v: 'L', html: panel(a, e1), panel: true }, { v: 'R', html: panel(b, e2), panel: true }];
-        if (d >= 2) opts.push({ v: 'eq', html: 'Bằng nhau', word: true, wide: true });
-        return { ask: 'Bên nào ' + (more ? 'nhiều' : 'ít') + ' hơn?', board: '', opts, ans, cols: 2, praise: a === b ? 'Đúng rồi! Hai bên bằng nhau, đều có ' + a + '.' : 'Đúng rồi! ' + Math.max(a, b) + ' nhiều hơn ' + Math.min(a, b) + '.' };
+        if (d >= 2) opts.push({ v: 'eq', html: vien('Bằng nhau', 'The same'), word: true, wide: true });
+        const hi = Math.max(a, b), lo = Math.min(a, b);
+        return {
+          ask: vien('Bên nào ' + (more ? 'nhiều' : 'ít') + ' hơn?', 'Which side has ' + (more ? 'more' : 'fewer') + '?'), board: '', opts, ans, cols: 2,
+          praise: a === b ? vien('Đúng rồi! Hai bên bằng nhau, đều có ' + a + '.', 'That’s right! Both sides are the same, ' + a + ' each.') : more ? vien('Đúng rồi! ' + hi + ' nhiều hơn ' + lo + '.', 'That’s right! ' + hi + ' is more than ' + lo + '.') : vien('Đúng rồi! ' + lo + ' ít hơn ' + hi + '.', 'That’s right! ' + lo + ' is fewer than ' + hi + '.'),
+        };
       },
     },
     {
-      id: 'congtru', icon: '➕', name: 'Cộng trừ', desc: 'Thêm vào, bớt đi',
+      id: 'congtru', icon: '➕', name: ['Cộng trừ', 'Add & subtract'], desc: ['Thêm vào, bớt đi', 'Put in, take away'],
       make(d) {
         const it = pick(COUNTABLE);
         const grp = (n, gone) => '<div class="grp">' + [...Array(n)].map((_, i) => '<span class="' + (gone && i >= n - gone ? 'gone' : '') + '">' + it + '</span>').join('') + '</div>';
@@ -530,12 +583,15 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
         if (d <= 1) board = '<div class="sum">' + (sub ? grp(a, b) : grp(a) + '<span class="op">+</span>' + grp(b)) + '</div><div class="sum"><span class="num">' + a + '</span><span class="op">' + (sub ? '−' : '+') + '</span><span class="num">' + b + '</span><span class="op">=</span><span class="q">?</span></div>';
         else if (d === 2) board = '<div class="sum">' + (sub ? grp(a, b) : '') + '</div><div class="sum"><span class="num">' + a + '</span><span class="op">' + (sub ? '−' : '+') + '</span><span class="num">' + b + '</span><span class="op">=</span><span class="q">?</span></div>';
         else board = '<div class="sum"><span class="num">' + a + '</span><span class="op">' + (sub ? '−' : '+') + '</span><span class="num">' + b + '</span><span class="op">=</span><span class="q">?</span></div>';
-        const ask = d <= 1 ? (sub ? 'Có ' + a + ' ' + NAME[it] + ', bớt đi ' + b + '. Còn lại mấy?' : 'Có ' + a + ' ' + NAME[it] + ', thêm ' + b + '. Tất cả là mấy?') : a + (sub ? ' trừ ' : ' cộng ') + b + ' bằng mấy?';
-        return { ask, board, opts: numOpts(ans, d === 0 ? 3 : 4, 0).map(v => ({ v, html: v })), ans, praise: 'Đúng rồi! ' + a + (sub ? ' trừ ' : ' cộng ') + b + ' bằng ' + ans + '.' };
+        const ask = L() === 'vi'
+          ? (d <= 1 ? (sub ? 'Có ' + a + ' ' + NAME[it] + ', bớt đi ' + b + '. Còn lại mấy?' : 'Có ' + a + ' ' + NAME[it] + ', thêm ' + b + '. Tất cả là mấy?') : a + (sub ? ' trừ ' : ' cộng ') + b + ' bằng mấy?')
+          : (d <= 1 ? (sub ? 'There ' + (a === 1 ? 'is ' : 'are ') + a + ' ' + many(it, a) + '. Take away ' + b + '. How many are left?' : 'There ' + (a === 1 ? 'is ' : 'are ') + a + ' ' + many(it, a) + '. Add ' + b + ' more. How many in all?') : 'What is ' + a + (sub ? ' minus ' : ' plus ') + b + '?');
+        const praise = vien('Đúng rồi! ' + a + (sub ? ' trừ ' : ' cộng ') + b + ' bằng ' + ans + '.', 'That’s right! ' + a + (sub ? ' minus ' : ' plus ') + b + ' is ' + ans + '.');
+        return { ask, board, opts: numOpts(ans, d === 0 ? 3 : 4, 0).map(v => ({ v, html: v })), ans, praise };
       },
     },
     {
-      id: 'dayso', icon: '🔟', name: 'Số còn thiếu', desc: 'Điền vào dãy số',
+      id: 'dayso', icon: '🔟', name: ['Số còn thiếu', 'Missing number'], desc: ['Điền vào dãy số', 'Fill in the number line'],
       make(d) {
         let step = 1, start, len = 5, down = false;
         if (d === 0) { start = ri(1, 2); len = 4; }
@@ -549,23 +605,25 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
         const cells = arr.map((v, i) => i === hole ? '<b class="q">?</b>' : '<b>' + v + '</b>').join('');
         const opts = Math.abs(step) > 1 ? shuffle([...new Set([ans, ans + 1, ans - 1, ans + step].filter(v => v >= 0))]).slice(0, 4) : numOpts(ans, d === 0 ? 3 : 4, 0);
         if (!opts.includes(ans)) opts[0] = ans;
-        return { ask: Math.abs(step) > 1 ? 'Đếm cách ' + Math.abs(step) + '. Số nào còn thiếu?' : down ? 'Đếm lùi. Số nào còn thiếu?' : 'Số nào còn thiếu?', board: '<div class="seq">' + cells + '</div>', opts: shuffle(opts).map(v => ({ v, html: v })), ans };
+        const ask = Math.abs(step) > 1 ? vien('Đếm cách ' + step + '. Số nào còn thiếu?', 'Count by ' + step + 's. Which number is missing?')
+          : down ? vien('Đếm lùi. Số nào còn thiếu?', 'Count backwards. Which number is missing?') : vien('Số nào còn thiếu?', 'Which number is missing?');
+        return { ask, board: '<div class="seq">' + cells + '</div>', opts: shuffle(opts).map(v => ({ v, html: v })), ans };
       },
     },
     {
-      id: 'bong', icon: '👤', name: 'Đoán bóng', desc: 'Bóng của ai đây?',
+      id: 'bong', icon: '👤', name: ['Đoán bóng', 'Shadow match'], desc: ['Bóng của ai đây?', 'Whose shadow is it?'],
       make(d) {
         const k = [3, 3, 4, 4][d];
         const target = pick(ALL);
         // Bé lớn: các bóng cùng nhóm nên trông giống nhau hơn
-        const pool = d >= 2 ? CATS[target.c].items.map(([e, n]) => ({ e, n })) : ALL.filter(x => x.c !== target.c);
+        const pool = d >= 2 ? ALL.filter(x => x.c === target.c) : ALL.filter(x => x.c !== target.c);
         const others = sample(pool.filter(x => x.e !== target.e), k - 1);
         const opts = shuffle(others.concat([target]).map(x => ({ v: x.e, html: '<span class="shadow">' + x.e + '</span>' })));
-        return { ask: 'Bóng nào là của ' + target.n + '?', board: '<div class="big-one">' + target.e + '</div>', opts, ans: target.e, cols: k === 4 ? 2 : 3 };
+        return { ask: vien('Bóng nào là của ' + target.n + '?', 'Which shadow belongs to the ' + target.en + '?'), board: '<div class="big-one">' + target.e + '</div>', opts, ans: target.e, cols: k === 4 ? 2 : 3 };
       },
     },
     {
-      id: 'tonho', icon: '🐘', name: 'To và nhỏ', desc: 'Cái nào to nhất?',
+      id: 'tonho', icon: '🐘', name: ['To và nhỏ', 'Big and small'], desc: ['Cái nào to nhất?', 'Which is the biggest?'],
       make(d) {
         const k = [3, 3, 4, 5][d];
         const it = pick(ALL);
@@ -574,7 +632,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
         const sizes = shuffle(base.slice(0, k));
         const target = big ? Math.max(...sizes) : Math.min(...sizes);
         const opts = sizes.map(s => ({ v: s, html: '<span style="font-size:' + s + 'rem">' + it.e + '</span>' }));
-        return { ask: (big ? 'Cái nào to nhất?' : 'Cái nào nhỏ nhất?'), board: '', opts, ans: target, cols: k > 3 ? (k === 4 ? 2 : 3) : 3 };
+        return { ask: big ? vien('Cái nào to nhất?', 'Which one is the biggest?') : vien('Cái nào nhỏ nhất?', 'Which one is the smallest?'), board: '', opts, ans: target, cols: k > 3 ? (k === 4 ? 2 : 3) : 3 };
       },
     },
   ];
@@ -582,11 +640,21 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
 
   // ---------- Trang chủ ----------
   const starKey = g => g + '-' + store.age;
+  // Đổi chữ cố định trên trang theo ngôn ngữ đang chọn
+  function applyLang() {
+    document.documentElement.lang = L();
+    document.title = t('title');
+    document.querySelectorAll('[data-t]').forEach(el => { el.textContent = t(el.dataset.t); });
+    document.querySelectorAll('[data-tp]').forEach(el => { el.placeholder = t(el.dataset.tp); el.setAttribute('aria-label', t(el.dataset.tp)); });
+    document.querySelectorAll('[data-ta]').forEach(el => el.setAttribute('aria-label', t(el.dataset.ta)));
+  }
   function renderHome() {
-    $('ages').innerHTML = AGES.map(([ic, t], i) => '<button class="age" data-age="' + i + '" aria-pressed="' + (store.age === i) + '"><b>' + ic + '</b>' + t + '</button>').join('');
+    applyLang();
+    $('langs').innerHTML = LANGS.map(([k, flag, name]) => '<button class="lang" data-lang="' + k + '" aria-pressed="' + (L() === k) + '"><b>' + flag + '</b>' + name + '</button>').join('');
+    $('ages').innerHTML = AGES.map((ic, i) => '<button class="age" data-age="' + i + '" aria-pressed="' + (store.age === i) + '"><b>' + ic + '</b>' + t('age')(i) + '</button>').join('');
     $('games').innerHTML = GAMES.map((g, i) => {
       const s = store.best[starKey(g.id)] || 0;
-      return '<button class="game" data-g="' + i + '"><span class="ic">' + g.icon + '</span><h3>' + g.name + '</h3><small>' + g.desc + '</small><span class="st" aria-label="' + s + ' sao">' + [1, 2, 3].map(k => '<span class="' + (k <= s ? '' : 'off') + '">⭐</span>').join('') + '</span></button>';
+      return '<button class="game" data-g="' + i + '"><span class="ic">' + g.icon + '</span><h3>' + vien(...g.name) + '</h3><small>' + vien(...g.desc) + '</small><span class="st" aria-label="' + t('stars')(s) + '">' + [1, 2, 3].map(k => '<span class="' + (k <= s ? '' : 'off') + '">⭐</span>').join('') + '</span></button>';
     }).join('');
     $('optSound').checked = store.sound; $('optVoice').checked = store.voice; $('optAi').checked = store.ai;
     $('aiKeyInput').value = store.aiKey || '';
@@ -595,7 +663,12 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
   $('ages').addEventListener('click', e => {
     const b = e.target.closest('.age'); if (!b) return;
     store.age = +b.dataset.age; save(); sfx.tap(); renderHome();
-    say('Bé ' + AGES[store.age][1]);
+    say(t('ageSay')(store.age));
+  });
+  $('langs').addEventListener('click', e => {
+    const b = e.target.closest('.lang'); if (!b) return;
+    store.lang = b.dataset.lang; save(); sfx.tap(); renderHome();
+    say(t('hello'));
   });
   $('games').addEventListener('click', e => {
     const b = e.target.closest('.game'); if (!b) return;
@@ -606,10 +679,10 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
   $('optAi').addEventListener('change', e => { store.ai = e.target.checked; save(); aiStatus(); });
   $('aiKeySave').addEventListener('click', () => {
     store.aiKey = $('aiKeyInput').value.trim(); store.aiModel = ''; aiDead = ''; save(); aiStatus();
-    say('Xin chào bé, mình cùng chơi nhé!');
+    say(t('hello'));
   });
   $('resetBtn').addEventListener('click', () => {
-    if (!confirm('Xóa hết số sao bé đã đạt?')) return;
+    if (!confirm(t('resetQ'))) return;
     store.best = {}; save(); renderHome();
   });
 
@@ -652,12 +725,12 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
     const o = game.p.opts[+b.dataset.i];
     if (o.v === game.p.ans) {
       game.locked = true; b.classList.add('right'); sfx.ting();
-      const msg = game.p.praise || pick(PRAISE);
+      const msg = game.p.praise || pick(t('praise'));
       setAsk(msg, '🥳', 'good'); say(msg);
       setTimeout(() => { game.q++; if (game.q >= ROUND) win(); else next(); }, game.p.praise ? 2200 : 1300);
     } else {
       b.classList.add('wrong'); sfx.boing(); game.mistakes++; game.wrongHere++;
-      const msg = pick(TRY); setAsk(msg, '🤗', 'oops'); say(msg);
+      const msg = pick(t('tryAgain')); setAsk(msg, '🤗', 'oops'); say(msg);
       // Sai 2 lần thì làm sáng đáp án đúng
       if (game.wrongHere >= 2) {
         const i = game.p.opts.findIndex(x => x.v === game.p.ans);
@@ -673,12 +746,12 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
     const m = game.mistakes, stars = m <= 1 ? 3 : m <= 4 ? 2 : 1, k = starKey(game.g.id);
     store.best[k] = Math.max(store.best[k] || 0, stars); save();
     sfx.win();
-    const t = pick(['Giỏi quá!', 'Tuyệt vời!', 'Hoan hô bé!']);
-    $('winTitle').textContent = t;
+    const title = pick(t('winTitle'));
+    $('winTitle').textContent = title;
     $('winStars').innerHTML = [1, 2, 3].map(n => '<span class="' + (n <= stars ? '' : 'off') + '">⭐</span>').join('');
-    const note = stars === 3 ? 'Bé trả lời đúng cả ' + ROUND + ' câu!' : 'Bé làm xong ' + ROUND + ' câu rồi. Chơi lại để được 3 sao nhé!';
+    const note = t(stars === 3 ? 'winAll' : 'winSome')(ROUND);
     $('winNote').textContent = note;
-    say(t + ' ' + note);
+    say(title + ' ' + note);
     $('winBox').hidden = false; confetti();
   }
   $('againBtn').addEventListener('click', () => { $('winBox').hidden = true; start(game.gi); });

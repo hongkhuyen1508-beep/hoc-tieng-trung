@@ -164,6 +164,24 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
 @keyframes pop { 50% { transform: scale(1.08); } }
 @keyframes glow { to { box-shadow: 0 0 0 6px var(--sun-soft), var(--shadow); } }
 
+.clock { width: min(210px, 58vw); height: auto; }
+.clock .face { fill: var(--card); stroke: var(--frame); stroke-width: 3; }
+.clock text { font-family: var(--font-display); font-weight: 800; font-size: 11px; fill: var(--ink); text-anchor: middle; }
+.clock line { stroke-linecap: round; }
+.clock .hh { stroke: var(--ink); }
+.clock .mh { stroke: var(--berry); }
+.clock .pin { fill: var(--ink); }
+.shape { width: 72px; height: 72px; }
+.seq .op { align-self: center; color: var(--frame); font-family: var(--font-display); font-weight: 800; font-size: 1.5rem; }
+.eqs { display: grid; gap: 8px; justify-items: center; }
+.eq { display: flex; align-items: center; gap: 8px; font-size: 2.2rem; }
+.eq b { font-family: var(--font-display); color: var(--frame); font-size: 2rem; }
+.eq .num { font-family: var(--font-display); font-weight: 800; }
+.eq .q { font-family: var(--font-display); font-weight: 800; font-size: 1.9rem; background: var(--sun-soft); border: 3px dashed var(--sun); border-radius: 12px; padding: 0 12px; color: var(--soft-ink); }
+.grid { display: grid; grid-template-columns: repeat(var(--n), 1fr); gap: 8px; }
+.grid span { width: 68px; height: 68px; display: grid; place-items: center; font-size: 2.5rem; background: var(--card); border: 2px solid var(--line); border-radius: 16px; }
+.grid span.ref { border: 3px solid var(--sun); background: var(--sun-soft); }
+
 /* Chúc mừng */
 .overlay { position: fixed; inset: 0; background: rgba(20, 24, 48, .55); display: grid; place-items: center; z-index: 20; padding: 16px; }
 .winbox {
@@ -353,16 +371,36 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
     ['vi', 'en'].forEach(l => { voices[l] = all.filter(v => new RegExp('^' + l, 'i').test(v.lang)).sort((a, b) => score(b) - score(a))[0] || null; });
   }
   try { findVoice(); speechSynthesis.onvoiceschanged = findVoice; } catch (e) {}
-  function deviceSay(text) {
+  // Đọc bằng giọng của máy; done() được gọi khi đọc xong (hoặc khi không đọc được)
+  let lastU = null;
+  function deviceSay(text, done) {
+    done = done || (() => {});
+    if (!voices[L()]) findVoice();
     const v = voices[L()];
-    if (!v) return;
     try {
+      const u = new SpeechSynthesisUtterance(text);
+      // Máy chưa báo danh sách giọng thì vẫn đọc theo mã ngôn ngữ, để trình duyệt tự chọn giọng
+      if (v) { u.voice = v; u.lang = v.lang; } else u.lang = L() === 'vi' ? 'vi-VN' : 'en-US';
+      u.rate = .9; u.pitch = 1.05; u.volume = 1;
+      let over = false;
+      const end = () => { if (!over) { over = true; clearTimeout(guard); done(); } };
+      const guard = setTimeout(end, 2500 + text.length * 110);
+      u.onend = end; u.onerror = end;
+      lastU = u; // giữ lại để Chrome không dọn mất câu đang đọc
+      const busy = speechSynthesis.speaking || speechSynthesis.pending;
       speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text); u.voice = v; u.lang = v.lang; u.rate = .85; u.pitch = 1.05;
-      // Đợi một nhịp sau khi dừng câu cũ, tránh bị nuốt chữ đầu trên một số máy
-      setTimeout(() => { try { speechSynthesis.speak(u); } catch (e) {} }, 60);
-    } catch (e) {}
+      const go = () => { try { speechSynthesis.resume(); speechSynthesis.speak(u); } catch (e) { end(); } };
+      // Đọc ngay nếu máy đang rảnh (iPhone chỉ cho đọc khi vừa chạm); đang đọc dở thì đợi một nhịp, tránh nuốt chữ đầu
+      if (busy) setTimeout(go, 80); else go();
+    } catch (e) { done(); }
   }
+  // Lần chạm đầu tiên: mở khóa âm thanh cho iPhone/iPad để các câu sau tự đọc được
+  const SILENT = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
+  function unlockAudio() {
+    try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } catch (e) {}
+    try { player.src = SILENT; player.play().catch(() => {}); } catch (e) {}
+  }
+  document.addEventListener('pointerdown', unlockAudio, { once: true, capture: true });
 
   // ---------- Giọng AI như người thật (Gemini của Google), giống Sudoku Bé Vui ----------
   // Câu chưa có sẵn thì đọc bằng giọng của máy trước, đồng thời tạo giọng AI để lần sau phát ngay.
@@ -434,8 +472,10 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
     return pcmToWav(part.inlineData.data, rate);
   }
   // Hàng đợi tạo giọng: làm lần lượt từng câu, gặp giới hạn của Google thì chờ rồi làm tiếp
-  const queue = [], queued = new Set();
+  const queue = [], queued = new Set(), waiters = new Map();
   let running = false;
+  function ready(k, blob) { (waiters.get(k) || []).forEach(f => f(blob)); waiters.delete(k); }
+  function failAll() { [...waiters.keys()].forEach(k => ready(k, null)); }
   function aiQueue(text, front) {
     if (!aiOn() || !text) return;
     const k = ck(text);
@@ -450,15 +490,17 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
       const wait = aiPauseUntil - Date.now();
       if (wait > 0) { aiStatus(t('aiLimit')(Math.ceil(wait / 1000))); await new Promise(r => setTimeout(r, Math.min(wait, 5000))); continue; }
       const job = queue[0];
-      if (await cached(job.k)) { queue.shift(); queued.delete(job.k); continue; }
+      const have = await cached(job.k);
+      if (have) { queue.shift(); queued.delete(job.k); ready(job.k, have); continue; }
       try {
         const blob = await aiMake(job.text, job.lang);
         mem.set(job.k, blob); await idb.set(job.k, blob);
-        queue.shift(); queued.delete(job.k); aiStatus('');
+        queue.shift(); queued.delete(job.k); aiStatus(''); ready(job.k, blob);
       } catch (e) {
         if (e.status === 429 || e.status === 503 || e.status === 500) {
           job.tries++; aiPauseUntil = Date.now() + Math.min(60000, 15000 * job.tries);
           if (job.tries > 4) { queue.shift(); queued.delete(job.k); }
+          failAll();
         } else if (e.status === 400 || e.status === 401 || e.status === 403) {
           aiDead = t('aiBad')(e.message); aiStatus(aiDead);
         } else if (e.status === 404) {
@@ -466,9 +508,11 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
         } else {
           aiDead = t('aiOffline'); aiStatus(aiDead);
         }
+        if (aiDead) failAll();
       }
     }
     running = false;
+    failAll();
   }
   function aiStatus(msg) {
     const el = $('aiStatus'); if (!el) return;
@@ -476,22 +520,44 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
   }
   const player = new Audio();
   let sayTok = 0;
+  function stopVoice() { sayTok++; try { player.pause(); speechSynthesis.cancel(); } catch (e) {} }
+  // Đọc một câu; trả về Promise xong khi đọc hết, để màn chơi không cắt ngang lời khen.
+  // Có giọng AI thì luôn dùng giọng AI (đợi tối đa vài giây), không trộn lẫn hai giọng; lỗi hoặc quá lâu mới dùng giọng máy.
   function say(text) {
-    if (!store.voice || !text) return;
-    const tok = ++sayTok;
-    try { player.pause(); speechSynthesis.cancel(); } catch (e) {}
-    if (!aiOn()) { deviceSay(text); return; }
-    const k = ck(text), hit = mem.get(k);
-    const play = blob => {
-      if (tok !== sayTok) return;
-      try { if (player.src) URL.revokeObjectURL(player.src); player.src = URL.createObjectURL(blob); player.play().catch(() => deviceSay(text)); } catch (e) { deviceSay(text); }
-    };
-    if (hit) { play(hit); return; }
-    cached(k).then(b => {
-      if (tok !== sayTok) return;
-      if (b) play(b); else { deviceSay(text); aiQueue(text, true); }
+    return new Promise(done => {
+      if (!store.voice || !text) return done();
+      const tok = ++sayTok;
+      try { player.pause(); } catch (e) {}
+      let over = false;
+      const fin = () => { if (!over) { over = true; done(); } };
+      const dev = () => { if (tok === sayTok) deviceSay(text, fin); else fin(); };
+      if (!aiOn() || aiPauseUntil > Date.now()) { dev(); return; }
+      try { speechSynthesis.cancel(); } catch (e) {}
+      const k = ck(text);
+      const play = blob => {
+        if (tok !== sayTok) return fin();
+        if (!blob) return dev();
+        try {
+          if (player.src && player.src.startsWith('blob:')) URL.revokeObjectURL(player.src);
+          player.src = URL.createObjectURL(blob);
+          player.onended = fin; player.onerror = dev;
+          player.play().catch(dev);
+        } catch (e) { dev(); }
+      };
+      const hit = mem.get(k);
+      if (hit) { play(hit); return; }
+      cached(k).then(b => {
+        if (b) return play(b);
+        if (tok !== sayTok) return fin();
+        let waited = false;
+        const timer = setTimeout(() => { waited = true; dev(); }, 6000);
+        waiters.set(k, (waiters.get(k) || []).concat([blob => { clearTimeout(timer); if (!waited) play(blob); }]));
+        aiQueue(text, true);
+      });
     });
   }
+  // Tạo sẵn giọng AI cho câu sắp hỏi, để tới lượt là phát ngay
+  function prefetch(text) { if (aiOn() && text) cached(ck(text)).then(b => { if (!b) aiQueue(text); }); }
 
   // ---------- Các trò chơi ----------
   // Mỗi trò sinh một câu đố theo độ khó d (0: 3–4 tuổi ... 3: 6–7 tuổi).
@@ -499,7 +565,46 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
   const pileHtml = (arr, size) => '<div class="pile" style="font-size:' + size + 'rem">' + arr.map(e => '<span>' + e + '</span>').join('') + '</div>';
   const pileSize = n => n <= 5 ? 3 : n <= 10 ? 2.4 : n <= 15 ? 2 : 1.7;
 
+  // ---------- Đồ dùng cho các trò mới ----------
+  function clockSvg(h, m) {
+    const nums = [...Array(12)].map((_, i) => { const a = (i + 1) * Math.PI / 6; return '<text x="' + (Math.sin(a) * 37).toFixed(1) + '" y="' + (-Math.cos(a) * 37 + 4.5).toFixed(1) + '">' + (i + 1) + '</text>'; }).join('');
+    const hand = (deg, len, w, cls) => { const a = deg * Math.PI / 180; return '<line class="' + cls + '" x1="0" y1="0" x2="' + (Math.sin(a) * len).toFixed(1) + '" y2="' + (-Math.cos(a) * len).toFixed(1) + '" stroke-width="' + w + '"/>'; };
+    return '<svg class="clock" viewBox="-50 -50 100 100" aria-hidden="true"><circle r="47" class="face"/>' + nums + hand((h % 12 + m / 60) * 30, 20, 6.5, 'hh') + hand(m * 6, 35, 2.8, 'mh') + '<circle r="3.5" class="pin"/></svg>';
+  }
+  const poly = (n, r, rot) => [...Array(n)].map((_, i) => { const a = (i * 360 / n + (rot || 0) - 90) * Math.PI / 180; return (50 + r * Math.cos(a)).toFixed(1) + ',' + (50 + r * Math.sin(a)).toFixed(1); }).join(' ');
+  const starPts = [...Array(10)].map((_, i) => { const a = (i * 36 - 90) * Math.PI / 180, r = i % 2 ? 19 : 46; return (50 + r * Math.cos(a)).toFixed(1) + ',' + (52 + r * Math.sin(a)).toFixed(1); }).join(' ');
+  const SHAPES = {
+    circle: { vi: 'hình tròn', svg: '<circle cx="50" cy="50" r="42"/>' },
+    square: { vi: 'hình vuông', sides: 4, svg: '<rect x="12" y="12" width="76" height="76" rx="3"/>' },
+    triangle: { vi: 'hình tam giác', sides: 3, svg: '<polygon points="50,8 94,88 6,88"/>' },
+    star: { vi: 'ngôi sao', svg: '<polygon points="' + starPts + '"/>' },
+    heart: { vi: 'trái tim', svg: '<path d="M50 88 C20 66 4 46 17 26 C29 9 46 15 50 30 C54 15 71 9 83 26 C96 46 80 66 50 88 Z"/>' },
+    rectangle: { vi: 'hình chữ nhật', sides: 4, svg: '<rect x="4" y="26" width="92" height="48" rx="3"/>' },
+    oval: { vi: 'hình bầu dục', svg: '<ellipse cx="50" cy="50" rx="46" ry="28"/>' },
+    diamond: { vi: 'hình thoi', sides: 4, svg: '<polygon points="50,4 86,50 50,96 14,50"/>' },
+    pentagon: { vi: 'hình ngũ giác', sides: 5, svg: '<polygon points="' + poly(5, 46) + '"/>' },
+    hexagon: { vi: 'hình lục giác', sides: 6, svg: '<polygon points="' + poly(6, 46, 30) + '"/>' },
+  };
+  const SHAPE_COLORS = ['#e63e6d', '#4f63d2', '#2a9d8f', '#f4a100', '#8e5cd9', '#f4752b'];
+  const shapeSvg = (k, color) => '<svg class="shape" viewBox="0 0 100 100" fill="' + color + '" aria-hidden="true">' + SHAPES[k].svg + '</svg>';
+  // Cặp đồ vật đi cùng nhau: [hình, tên Việt, tên Anh, hình đi kèm, tên Việt, tên Anh]
+  const PAIRS = [
+    ['🐝', 'con ong', 'bee', '🍯', 'mật ong', 'honey'], ['🐶', 'con chó', 'dog', '🦴', 'khúc xương', 'bone'], ['🐰', 'con thỏ', 'rabbit', '🥕', 'củ cà rốt', 'carrot'],
+    ['🐒', 'con khỉ', 'monkey', '🍌', 'quả chuối', 'banana'], ['🐱', 'con mèo', 'cat', '🐟', 'con cá', 'fish'], ['🐮', 'con bò', 'cow', '🥛', 'cốc sữa', 'milk'],
+    ['🐔', 'con gà mái', 'hen', '🥚', 'quả trứng', 'egg'], ['🪥', 'bàn chải đánh răng', 'toothbrush', '🦷', 'cái răng', 'tooth'], ['🧦', 'chiếc tất', 'sock', '👟', 'chiếc giày', 'shoe'],
+    ['🔑', 'chìa khóa', 'key', '🔒', 'ổ khóa', 'lock'], ['☂️', 'cái ô', 'umbrella', '🌧️', 'cơn mưa', 'rain'], ['🥄', 'cái thìa', 'spoon', '🥣', 'cái bát', 'bowl'],
+    ['⚽', 'quả bóng', 'ball', '🥅', 'khung thành', 'goal'], ['🎂', 'bánh sinh nhật', 'birthday cake', '🕯️', 'cây nến', 'candle'], ['🐼', 'gấu trúc', 'panda', '🎋', 'cây tre', 'bamboo'],
+    ['🐦', 'chú chim', 'bird', '🪺', 'tổ chim', 'nest'], ['🐿️', 'con sóc', 'squirrel', '🌰', 'hạt dẻ', 'acorn'], ['🎨', 'bảng màu', 'paint palette', '🖌️', 'cây cọ vẽ', 'paintbrush'],
+    ['✉️', 'lá thư', 'letter', '📮', 'hộp thư', 'mailbox'], ['🚗', 'ô tô', 'car', '⛽', 'cây xăng', 'gas pump'],
+  ];
+  // Những thứ diễn ra theo thứ tự
+  const SEQS = [['🥚', '🐣', '🐥', '🐔'], ['🌰', '🌱', '🌿', '🌳'], ['👶', '🧒', '🧑', '🧓'], ['🌑', '🌒', '🌓', '🌔', '🌕'], ['🌅', '☀️', '🌇', '🌙'], ['🌱', '🌷', '💐'], ['☁️', '🌧️', '🌈'], ['🌾', '🍞', '🥪'], ['🕐', '🕑', '🕒', '🕓', '🕔']];
+
   const GAMES = [
+    {
+      id: 'tron', icon: '🎲', name: ['Trộn tất cả', 'Mix it up'], desc: ['Mỗi câu một kiểu', 'A new kind each time'],
+      make(d) { return pick(GAMES.filter(g => g.id !== 'tron')).make(d); },
+    },
     {
       id: 'dem', icon: '🔢', name: ['Đếm hình', 'Counting'], desc: ['Có bao nhiêu?', 'How many?'],
       make(d) {
@@ -635,6 +740,134 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
         return { ask: big ? vien('Cái nào to nhất?', 'Which one is the biggest?') : vien('Cái nào nhỏ nhất?', 'Which one is the smallest?'), board: '', opts, ans: target, cols: k > 3 ? (k === 4 ? 2 : 3) : 3 };
       },
     },
+    {
+      id: 'dongho', icon: '🕒', name: ['Xem đồng hồ', 'Tell the time'], desc: ['Mấy giờ rồi?', 'What time is it?'],
+      make(d) {
+        // Bé nhỏ: giờ đúng; lớn dần: giờ rưỡi, 15 phút, 5 phút
+        const steps = [[0], [0, 30], [0, 15, 30, 45], [...Array(12)].map((_, i) => i * 5)][d];
+        const h = ri(1, 12), m = pick(steps);
+        const fmt = (h, m) => h + ':' + (m < 10 ? '0' : '') + m;
+        const set = new Set([fmt(h, m)]);
+        set.add(fmt(h % 12 + 1, m)); // nhầm kim giờ
+        while (set.size < (d === 0 ? 3 : 4)) set.add(fmt(ri(1, 12), pick(steps)));
+        const opts = shuffle([...set]).map(v => ({ v, html: v, word: true }));
+        const viT = m === 0 ? h + ' giờ' : m === 30 ? h + ' giờ rưỡi' : h + ' giờ ' + m + ' phút';
+        const enT = m === 0 ? h + ' o’clock' : fmt(h, m);
+        return { ask: vien('Đồng hồ chỉ mấy giờ?', 'What time is it?'), board: clockSvg(h, m), opts, ans: fmt(h, m), cols: 2, praise: vien('Đúng rồi! ' + viT + '.', 'That’s right! It’s ' + enT + '.') };
+      },
+    },
+    {
+      id: 'hinh', icon: '🔷', name: ['Hình khối', 'Shapes'], desc: ['Đâu là hình tròn?', 'Find the shape'],
+      make(d) {
+        const colors = shuffle(SHAPE_COLORS);
+        if (d === 3) {
+          // Đếm cạnh: mỗi đáp án có số cạnh khác nhau
+          const bySides = { 3: ['triangle'], 4: ['square', 'rectangle', 'diamond'], 5: ['pentagon'], 6: ['hexagon'] };
+          const n = ri(3, 6), kinds = shuffle([3, 4, 5, 6]).map(k => pick(bySides[k]));
+          const ans = kinds.find(k => SHAPES[k].sides === n);
+          const opts = kinds.map((k, i) => ({ v: k, html: shapeSvg(k, colors[i]) }));
+          return { ask: vien('Hình nào có ' + n + ' cạnh?', 'Which shape has ' + n + ' sides?'), board: '', opts, ans, cols: 2, praise: vien('Đúng rồi! ' + cap(SHAPES[ans].vi) + ' có ' + n + ' cạnh.', 'That’s right! A ' + ans + ' has ' + n + ' sides.') };
+        }
+        const pool = [['circle', 'square', 'triangle', 'star', 'heart'], ['circle', 'square', 'triangle', 'star', 'heart', 'rectangle', 'oval', 'diamond'], Object.keys(SHAPES)][d];
+        const kinds = sample(pool, d === 0 ? 3 : 4), ans = pick(kinds);
+        const opts = kinds.map((k, i) => ({ v: k, html: shapeSvg(k, colors[i]) }));
+        return { ask: vien('Đâu là ' + SHAPES[ans].vi + '?', 'Which one is the ' + ans + '?'), board: '', opts, ans, cols: kinds.length === 4 ? 2 : 3 };
+      },
+    },
+    {
+      id: 'ghepdoi', icon: '🔗', name: ['Ghép đôi', 'What goes together?'], desc: ['Cái gì đi cùng nhau?', 'Match the pairs'],
+      make(d) {
+        const [a, b] = sample(PAIRS, 2);
+        const others = sample(PAIRS.filter(p => p !== a && p !== b), d === 0 ? 2 : 3).map(p => p[3]);
+        const opts = shuffle([b[3]].concat(others)).map(v => ({ v, html: v }));
+        const praise = vien('Đúng rồi! ' + cap(b[1]) + ' đi với ' + b[4] + '.', 'That’s right! The ' + b[2] + ' goes with the ' + b[5] + '.');
+        // Bé lớn: suy luận theo cặp mẫu (chó đi với xương, vậy thỏ đi với gì?)
+        if (d >= 2) {
+          const board = '<div class="seq"><b>' + a[0] + '</b><span class="op">➜</span><b>' + a[3] + '</b></div><div class="seq"><b>' + b[0] + '</b><span class="op">➜</span><b class="q">?</b></div>';
+          return { ask: vien(cap(a[1]) + ' đi với ' + a[4] + '. Vậy ' + b[1] + ' đi với gì?', 'The ' + a[2] + ' goes with the ' + a[5] + '. What goes with the ' + b[2] + '?'), board, opts, ans: b[3], cols: 2, praise };
+        }
+        const board = '<div class="seq"><b>' + b[0] + '</b><span class="op">➜</span><b class="q">?</b></div>';
+        return { ask: vien(cap(b[1]) + ' đi với cái gì?', 'What goes with the ' + b[2] + '?'), board, opts, ans: b[3], cols: opts.length === 4 ? 2 : 3, praise };
+      },
+    },
+    {
+      id: 'bian', icon: '❓', name: ['Hình bí ẩn', 'Mystery pictures'], desc: ['Mỗi hình là số mấy?', 'What is each picture worth?'],
+      make(d) {
+        const [A, B] = sample(['🍎', '🍌', '⭐', '🐶', '🐱', '🎈', '🌸', '🍓'], 2);
+        const eq = (left, right) => '<div class="eq">' + left.map(x => x === '+' ? '<b>+</b>' : '<span>' + x + '</span>').join('') + '<b>=</b>' + (right === '?' ? '<span class="q">?</span>' : '<span class="num">' + right + '</span>') + '</div>';
+        const one = (e, n) => L() === 'vi' ? NAME[e] : many(e, n);
+        let lines, ans, ask, praise;
+        if (d === 0) {
+          const v = ri(1, 3); ans = 2 * v;
+          lines = [eq([A], v), eq([A, '+', A], '?')];
+          ask = vien('Mỗi ' + NAME[A] + ' là ' + v + '. Hai ' + NAME[A] + ' là mấy?', 'One ' + one(A, 1) + ' is ' + v + '. How much are two ' + one(A, 2) + '?');
+        } else if (d === 1) {
+          const a = ri(1, 4), b = ri(1, 5); ans = a + b;
+          lines = [eq([A], a), eq([B], b), eq([A, '+', B], '?')];
+          ask = vien('Nhìn gợi ý nhé. Dòng cuối bằng mấy?', 'Look at the clues. What does the last line make?');
+        } else if (d === 2) {
+          const v = ri(1, 6); ans = v;
+          lines = [eq([A, '+', A], 2 * v), eq([A], '?')];
+          ask = vien('Mỗi ' + NAME[A] + ' là số mấy?', 'What number is each ' + one(A, 1) + '?');
+          praise = vien('Đúng rồi! Mỗi ' + NAME[A] + ' là ' + v + '.', 'That’s right! Each ' + one(A, 1) + ' is ' + v + '.');
+        } else {
+          const v = ri(1, 5), w = ri(1, 6); ans = w;
+          lines = [eq([A, '+', A], 2 * v), eq([A, '+', B], v + w), eq([B], '?')];
+          ask = vien('Mỗi ' + NAME[B] + ' là số mấy?', 'What number is each ' + one(B, 1) + '?');
+          praise = vien('Đúng rồi! ' + cap(NAME[A]) + ' là ' + v + ', nên ' + NAME[B] + ' là ' + w + '.', 'That’s right! The ' + one(A, 1) + ' is ' + v + ', so the ' + one(B, 1) + ' is ' + w + '.');
+        }
+        return { ask, board: '<div class="eqs">' + lines.join('') + '</div>', opts: numOpts(ans, d === 0 ? 3 : 4, 1).map(v => ({ v, html: v })), ans, praise };
+      },
+    },
+    {
+      id: 'vitri', icon: '🧭', name: ['Ở đâu nhỉ?', 'Where is it?'], desc: ['Trên, dưới, trái, phải', 'Above, below, left, right'],
+      make(d) {
+        const n = d === 0 ? 2 : 3;
+        const items = sample(ALL, n * n), at = (r, c) => items[r * n + c];
+        const rels = [['above', 'below'], ['above', 'below'], ['above', 'below', 'left', 'right'], ['above', 'below', 'left', 'right', 'between']][d];
+        const rel = pick(rels);
+        let refs, ans;
+        if (rel === 'between') {
+          const k = ri(0, 2);
+          if (R() < .5) { refs = [at(k, 0), at(k, 2)]; ans = at(k, 1); } else { refs = [at(0, k), at(2, k)]; ans = at(1, k); }
+        } else {
+          const [dr, dc] = { above: [-1, 0], below: [1, 0], left: [0, -1], right: [0, 1] }[rel];
+          let r, c;
+          do { r = ri(0, n - 1); c = ri(0, n - 1); } while (r + dr < 0 || r + dr >= n || c + dc < 0 || c + dc >= n);
+          refs = [at(r, c)]; ans = at(r + dr, c + dc);
+        }
+        const X = refs[0], Y = refs[1];
+        const ask = {
+          above: vien('Cái gì ở ngay trên ' + X.n + '?', 'What is right above the ' + X.en + '?'),
+          below: vien('Cái gì ở ngay dưới ' + X.n + '?', 'What is right below the ' + X.en + '?'),
+          left: vien('Cái gì ở ngay bên trái ' + X.n + '?', 'What is just to the left of the ' + X.en + '?'),
+          right: vien('Cái gì ở ngay bên phải ' + X.n + '?', 'What is just to the right of the ' + X.en + '?'),
+          between: Y && vien('Cái gì ở giữa ' + X.n + ' và ' + Y.n + '?', 'What is between the ' + X.en + ' and the ' + Y.en + '?'),
+        }[rel];
+        const board = '<div class="grid" style="--n:' + n + '">' + items.map(x => '<span class="' + (refs.includes(x) ? 'ref' : '') + '">' + x.e + '</span>').join('') + '</div>';
+        const others = sample(items.filter(x => x !== ans && !refs.includes(x)), n === 2 ? 2 : 3);
+        const opts = shuffle([ans].concat(others)).map(x => ({ v: x.e, html: x.e }));
+        return { ask, board, opts, ans: ans.e, cols: opts.length === 4 ? 2 : 3, praise: vien('Đúng rồi! Là ' + ans.n + '.', 'That’s right! It’s the ' + ans.en + '.') };
+      },
+    },
+    {
+      id: 'thutu', icon: '🐣', name: ['Chuyện gì tiếp theo?', 'What happens next?'], desc: ['Sắp xếp theo thứ tự', 'Put things in order'],
+      make(d) {
+        const seq = pick(SEQS.filter(s => d === 0 ? s.length <= 4 : true));
+        const show = d === 0 ? seq.length - 1 : seq.length;
+        // Bé lớn: chỗ trống có thể ở giữa
+        const hole = d >= 2 && R() < .5 ? ri(1, seq.length - 2) : show === seq.length ? seq.length - 1 : show;
+        const ans = seq[hole];
+        const cells = seq.slice(0, Math.max(show, hole + 1)).map((e, i) => i === hole ? '<b class="q">?</b>' : '<b>' + e + '</b>');
+        const same = d >= 1 ? seq.filter(e => e !== ans) : [];
+        const far = SEQS.filter(s => s !== seq).flat().filter(e => !seq.includes(e));
+        const k = d === 0 ? 3 : 4;
+        const pickd = sample(same, Math.min(same.length, d >= 2 ? 2 : 1));
+        const opts = shuffle([ans].concat(pickd, sample([...new Set(far)], k - 1 - pickd.length))).map(v => ({ v, html: v }));
+        const middle = hole < seq.length - 1 && hole < Math.max(show, hole + 1) - 1;
+        return { ask: middle ? vien('Cái gì còn thiếu?', 'What is missing?') : vien('Tiếp theo là gì?', 'What comes next?'), board: '<div class="seq">' + cells.join('<span class="op">➜</span>') + '</div>', opts, ans, cols: k === 4 ? 2 : 3 };
+      },
+    },
   ];
   const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 
@@ -690,14 +923,22 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
   let game = null;
   function show(id) { $('home').hidden = id !== 'home'; $('play').hidden = id !== 'play'; window.scrollTo(0, 0); }
   function start(gi) {
-    game = { gi, g: GAMES[gi], q: 0, mistakes: 0, last: '' };
+    game = { gi, g: GAMES[gi], q: 0, mistakes: 0, last: '', upcoming: null };
     show('play'); next();
   }
-  function next() {
+  function makeOne() {
     // Tránh lặp lại đúng câu vừa hỏi
     let p, tries = 0;
     do { p = game.g.make(store.age); tries++; } while (tries < 6 && p.ask + p.board === game.last);
+    return p;
+  }
+  function next() {
+    const p = game.upcoming || makeOne();
     game.last = p.ask + p.board;
+    // Soạn sẵn câu tiếp theo để giọng AI kịp tạo trước
+    game.upcoming = game.q + 1 < ROUND ? makeOne() : null;
+    if (game.upcoming) { prefetch(game.upcoming.ask); prefetch(game.upcoming.praise); }
+    prefetch(p.praise);
     game.p = p; game.wrongHere = 0; game.locked = false;
     $('dots').innerHTML = [...Array(ROUND)].map((_, i) => '<i class="' + (i < game.q ? 'done' : i === game.q ? 'now' : '') + '"></i>').join('');
     setAsk(p.ask, '🦉', '');
@@ -726,8 +967,13 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
     if (o.v === game.p.ans) {
       game.locked = true; b.classList.add('right'); sfx.ting();
       const msg = game.p.praise || pick(t('praise'));
-      setAsk(msg, '🥳', 'good'); say(msg);
-      setTimeout(() => { game.q++; if (game.q >= ROUND) win(); else next(); }, game.p.praise ? 2200 : 1300);
+      setAsk(msg, '🥳', 'good');
+      // Đợi đọc xong lời khen rồi mới sang câu mới
+      const g = game;
+      Promise.all([say(msg), new Promise(r => setTimeout(r, 1200))]).then(() => {
+        if (game !== g || $('play').hidden) return;
+        game.q++; if (game.q >= ROUND) win(); else next();
+      });
     } else {
       b.classList.add('wrong'); sfx.boing(); game.mistakes++; game.wrongHere++;
       const msg = pick(t('tryAgain')); setAsk(msg, '🤗', 'oops'); say(msg);
@@ -736,11 +982,11 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
         const i = game.p.opts.findIndex(x => x.v === game.p.ans);
         $('opts').children[i].classList.add('hint');
       }
-      setTimeout(() => { if (!game.locked) setAsk(game.p.ask, '🦉', ''); }, 1800);
+      setTimeout(() => { if (game && !game.locked) setAsk(game.p.ask, '🦉', ''); }, 1800);
     }
   });
   $('sayBtn').addEventListener('click', () => { sfx.tap(); say($('askText').textContent); });
-  $('backBtn').addEventListener('click', () => { sfx.tap(); try { player.pause(); speechSynthesis.cancel(); } catch (e) {} renderHome(); show('home'); });
+  $('backBtn').addEventListener('click', () => { sfx.tap(); stopVoice(); game = null; renderHome(); show('home'); });
 
   function win() {
     const m = game.mistakes, stars = m <= 1 ? 3 : m <= 4 ? 2 : 1, k = starKey(game.g.id);
@@ -755,6 +1001,8 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
     $('winBox').hidden = false; confetti();
   }
   $('againBtn').addEventListener('click', () => { $('winBox').hidden = true; start(game.gi); });
+  // Có giọng AI thì tạo sẵn các lời khen, lời động viên hay dùng
+  setTimeout(() => ['praise', 'tryAgain'].forEach(k => t(k).forEach(prefetch)), 1500);
   $('homeBtn').addEventListener('click', () => { $('winBox').hidden = true; renderHome(); show('home'); });
 
   function confetti() {

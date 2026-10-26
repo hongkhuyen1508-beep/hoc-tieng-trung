@@ -1,0 +1,15 @@
+{
+ "name": "Bé Tư Duy",
+ "short_name": "Bé Tư Duy",
+ "start_url": "./",
+ "display": "standalone",
+ "background_color": "#eef0fb",
+ "theme_color": "#4f63d2",
+ "icons": [
+  {
+   "src": "icon.svg",
+   "sizes": "any",
+   "type": "image/svg+xml"
+  }
+ ]
+}

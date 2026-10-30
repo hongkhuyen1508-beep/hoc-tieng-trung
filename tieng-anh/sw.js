@@ -1,5 +1,5 @@
 // Lưu sẵn trang để bé chơi được khi không có mạng
-const CACHE = 'be-hoc-tieng-anh-v3';
+const CACHE = 'be-hoc-tieng-anh-v4';
 const FILES = ['./', 'index.html', 'manifest.webmanifest', 'icon.svg'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener('activate', e => {

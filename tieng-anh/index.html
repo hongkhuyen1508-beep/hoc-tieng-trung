@@ -122,7 +122,8 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
   display: grid; justify-items: center; gap: 2px; text-align: center; min-width: 0; transition: transform .1s;
 }
 .vcard:active { transform: translateY(3px); box-shadow: none; }
-.vcard .pic { font-size: 2.6rem; min-height: 3.1rem; display: grid; place-items: center; }
+.vcard .pic { font-size: 2.6rem; min-height: 3.1rem; display: grid; place-items: center; white-space: nowrap; }
+.chip .pic, .opt .pic { white-space: nowrap; }
 .vcard .pic .numpic { font-size: 2.6rem; }
 .vcard .en { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; line-height: 1.1; overflow-wrap: anywhere; }
 .vcard .vi { color: var(--soft-ink); font-size: .82rem; line-height: 1.2; }
@@ -366,32 +367,33 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
   const TOPICS = [
     {
       id: 'greet', ic: '👋', en: 'Hello!', vi: 'Chào hỏi', bare: true,
-      words: [['👋', 'hello', 'xin chào'], ['🚪👋', 'goodbye', 'tạm biệt'], ['🌅', 'good morning', 'chào buổi sáng'], ['🌙', 'good night', 'chúc ngủ ngon'], ['🙏', 'thank you', 'cảm ơn'], ['🥺', 'sorry', 'xin lỗi'], ['🤲', 'please', 'làm ơn'], ['👍', 'yes', 'vâng, có'], ['👎', 'no', 'không'], ['🤝', 'friend', 'bạn bè', 'c']],
+      words: [['👋', 'hello', 'xin chào'], ['🙋', 'hi', 'chào bạn'], ['🚪👋', 'goodbye', 'tạm biệt'], ['🔜', 'see you later', 'hẹn gặp lại'], ['🌅', 'good morning', 'chào buổi sáng'], ['🌇', 'good afternoon', 'chào buổi chiều'], ['🌆', 'good evening', 'chào buổi tối'], ['🌙', 'good night', 'chúc ngủ ngon'], ['🙏', 'thank you', 'cảm ơn'], ['😊', "you're welcome", 'không có gì'], ['🥺', 'sorry', 'xin lỗi'], ['🙇', 'excuse me', 'xin phép, cho hỏi'], ['🤲', 'please', 'làm ơn'], ['👍', 'yes', 'vâng, có'], ['👎', 'no', 'không'], ['👌', 'okay', 'được rồi'], ['🤝', 'nice to meet you', 'rất vui được gặp bạn'], ['🧑‍🤝‍🧑', 'friend', 'bạn bè', 'c'], ['🎂', 'happy birthday', 'chúc mừng sinh nhật'], ['🎉', 'congratulations', 'chúc mừng'], ['👏', 'well done', 'giỏi lắm'], ['❤️', 'I love you', 'con yêu bố mẹ'], ['⚠️', 'be careful', 'cẩn thận'], ['✋', 'wait', 'đợi đã'], ['🏃', "let's go", 'đi thôi'], ['🆘', 'help', 'giúp với']],
       qs: [
         { q: "Hello! What's your name?", v: 'Xin chào! Bạn tên là gì?', p: '👋', a: [['Hello! My name is {name}.', 'Xin chào! Mình tên là {name}.'], ["Hi! I'm {name}.", 'Chào bạn! Mình là {name}.']] },
         { q: 'How are you?', v: 'Bạn có khỏe không?', p: '🙂', a: [["I'm fine, thank you. And you?", 'Mình khỏe, cảm ơn bạn. Còn bạn thì sao?'], ["I'm great!", 'Mình rất khỏe!']] },
         { q: 'How old are you?', v: 'Bạn mấy tuổi?', p: '🎂', f: ["I'm {w} years old.", 'Mình {v} tuổi.'], c: ['three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'] },
         { q: 'Nice to meet you!', v: 'Rất vui được gặp bạn!', p: '🤝', a: [['Nice to meet you, too!', 'Mình cũng rất vui được gặp bạn!']] },
         { q: 'Where are you from?', v: 'Bạn đến từ đâu?', p: '🌏', a: [["I'm from Vietnam.", 'Mình đến từ Việt Nam.']] },
-        { q: 'What do you say when you get a present?', v: 'Khi được tặng quà, bé nói gì?', p: '🎁', k: 'thank you', a: [['Thank you!', 'Cảm ơn ạ!']] },
-        { q: 'What do you say in the morning?', v: 'Buổi sáng bé chào thế nào?', p: '☀️', k: 'good morning', a: [['Good morning!', 'Chào buổi sáng!']] },
-        { q: 'What do you say before bed?', v: 'Trước khi đi ngủ bé nói gì?', p: '🛏️', k: 'good night', a: [['Good night!', 'Chúc ngủ ngon!']] },
-        { q: 'Oops! You bump into your friend. What do you say?', v: 'Ôi! Bé lỡ va vào bạn. Bé nói gì?', p: '💥', k: 'sorry', a: [["I'm sorry!", 'Mình xin lỗi!']] },
+        { q: 'What do you say when you get a present?', v: 'Khi được tặng quà, bé nói gì?', p: '🎁', k: 'thank you', no: ['happy birthday', 'congratulations', 'I love you'], a: [['Thank you!', 'Cảm ơn ạ!']] },
+        { q: 'What do you say in the morning?', v: 'Buổi sáng bé chào thế nào?', p: '☀️', k: 'good morning', no: ['hello', 'hi', 'good afternoon'], a: [['Good morning!', 'Chào buổi sáng!']] },
+        { q: 'What do you say before bed?', v: 'Trước khi đi ngủ bé nói gì?', p: '🛏️', k: 'good night', no: ['good evening', 'goodbye', 'I love you'], a: [['Good night!', 'Chúc ngủ ngon!']] },
+        { q: 'Oops! You bump into your friend. What do you say?', v: 'Ôi! Bé lỡ va vào bạn. Bé nói gì?', p: '💥', k: 'sorry', no: ['excuse me'], a: [["I'm sorry!", 'Mình xin lỗi!']] },
       ],
     },
     {
       // Con vật chia theo nơi sống; flag 'x' là con sống được ở nhiều nơi nên không dùng trong câu đố "sống ở đâu"
-      id: 'animals', ic: '🦁', en: 'Animals', vi: 'Con vật',
+      id: 'animals', ic: '🦁', en: 'Animals', vi: 'Con vật', habitat: true,
       groups: [
-        { p: '🚜', en: 'farm', vi: 'trang trại', at: 'on a farm', atVi: 'ở trang trại', words: [['🐮', 'cow', 'con bò'], ['🐷', 'pig', 'con lợn'], ['🐑', 'sheep', 'con cừu'], ['🐐', 'goat', 'con dê'], ['🐴', 'horse', 'con ngựa'], ['🐔', 'chicken', 'con gà'], ['🦃', 'turkey', 'gà tây'], ['🦆', 'duck', 'con vịt', 'x']] },
-        { p: '🌴', en: 'jungle', vi: 'rừng nhiệt đới', at: 'in the jungle', atVi: 'ở rừng nhiệt đới', words: [['🐒', 'monkey', 'con khỉ'], ['🦍', 'gorilla', 'khỉ đột'], ['🐯', 'tiger', 'con hổ', 'x'], ['🦜', 'parrot', 'con vẹt'], ['🦥', 'sloth', 'con lười'], ['🦚', 'peacock', 'con công']] },
-        { p: '🌾', en: 'grassland', vi: 'đồng cỏ', at: 'in the grassland', atVi: 'ở đồng cỏ', words: [['🦁', 'lion', 'sư tử'], ['🦓', 'zebra', 'ngựa vằn'], ['🦒', 'giraffe', 'hươu cao cổ'], ['🐘', 'elephant', 'con voi', 'x'], ['🦏', 'rhino', 'tê giác'], ['🦘', 'kangaroo', 'chuột túi'], ['🐆', 'leopard', 'con báo', 'x']] },
-        { p: '🌲', en: 'forest', vi: 'rừng', at: 'in the forest', atVi: 'ở trong rừng', words: [['🐻', 'bear', 'con gấu'], ['🦌', 'deer', 'con hươu'], ['🦊', 'fox', 'con cáo'], ['🐺', 'wolf', 'chó sói'], ['🐿️', 'squirrel', 'con sóc'], ['🦉', 'owl', 'con cú', 'x'], ['🦔', 'hedgehog', 'con nhím'], ['🐼', 'panda', 'gấu trúc'], ['🐨', 'koala', 'gấu túi']] },
-        { p: '🌊', en: 'ocean', vi: 'biển', at: 'in the ocean', atVi: 'ở biển', words: [['🐳', 'whale', 'cá voi'], ['🐬', 'dolphin', 'cá heo'], ['🦈', 'shark', 'cá mập'], ['🐙', 'octopus', 'bạch tuộc'], ['🦀', 'crab', 'con cua'], ['🐢', 'sea turtle', 'rùa biển'], ['🦞', 'lobster', 'tôm hùm']] },
+        { p: '🏠', en: 'home', vi: 'nhà', at: 'at home', atVi: 'ở nhà', words: [['🐶', 'dog', 'con chó'], ['🐱', 'cat', 'con mèo'], ['🐹', 'hamster', 'chuột hamster'], ['🐰', 'rabbit', 'con thỏ'], ['🐭', 'mouse', 'con chuột', 'x']] },
+        { p: '🚜', en: 'farm', vi: 'trang trại', at: 'on a farm', atVi: 'ở trang trại', words: [['🐮', 'cow', 'con bò'], ['🐷', 'pig', 'con lợn'], ['🐑', 'sheep', 'con cừu'], ['🐐', 'goat', 'con dê'], ['🐴', 'horse', 'con ngựa'], ['🐔', 'chicken', 'con gà'], ['🦃', 'turkey', 'gà tây'], ['🐓', 'rooster', 'gà trống'], ['🦙', 'llama', 'lạc đà không bướu'], ['🦆', 'duck', 'con vịt', 'x']] },
+        { p: '🌴', en: 'jungle', vi: 'rừng nhiệt đới', at: 'in the jungle', atVi: 'ở rừng nhiệt đới', words: [['🐒', 'monkey', 'con khỉ'], ['🦍', 'gorilla', 'khỉ đột'], ['🐯', 'tiger', 'con hổ', 'x'], ['🦜', 'parrot', 'con vẹt'], ['🦥', 'sloth', 'con lười'], ['🦚', 'peacock', 'con công'], ['🦧', 'orangutan', 'đười ươi']] },
+        { p: '🌾', en: 'grassland', vi: 'đồng cỏ', at: 'in the grassland', atVi: 'ở đồng cỏ', words: [['🦁', 'lion', 'sư tử'], ['🦓', 'zebra', 'ngựa vằn'], ['🦒', 'giraffe', 'hươu cao cổ'], ['🐘', 'elephant', 'con voi', 'x'], ['🦏', 'rhino', 'tê giác'], ['🦘', 'kangaroo', 'chuột túi'], ['🐆', 'leopard', 'con báo', 'x'], ['🦬', 'bison', 'bò rừng']] },
+        { p: '🌲', en: 'forest', vi: 'rừng', at: 'in the forest', atVi: 'ở trong rừng', words: [['🐻', 'bear', 'con gấu'], ['🦌', 'deer', 'con hươu'], ['🦊', 'fox', 'con cáo'], ['🐺', 'wolf', 'chó sói'], ['🐿️', 'squirrel', 'con sóc'], ['🦉', 'owl', 'con cú', 'x'], ['🦔', 'hedgehog', 'con nhím'], ['🐼', 'panda', 'gấu trúc'], ['🐨', 'koala', 'gấu túi'], ['🦇', 'bat', 'con dơi', 'x'], ['🦝', 'raccoon', 'gấu mèo'], ['🦨', 'skunk', 'chồn hôi'], ['🦡', 'badger', 'con lửng'], ['🦅', 'eagle', 'đại bàng', 'x']] },
+        { p: '🌊', en: 'ocean', vi: 'biển', at: 'in the ocean', atVi: 'ở biển', words: [['🐳', 'whale', 'cá voi'], ['🐬', 'dolphin', 'cá heo'], ['🦈', 'shark', 'cá mập'], ['🐙', 'octopus', 'bạch tuộc'], ['🦀', 'crab', 'con cua'], ['🐢', 'sea turtle', 'rùa biển'], ['🦞', 'lobster', 'tôm hùm'], ['🦐', 'shrimp', 'con tôm'], ['🦑', 'squid', 'con mực'], ['🐠', 'tropical fish', 'cá nhiệt đới'], ['🦪', 'oyster', 'con hàu']] },
         { p: '🏜️', en: 'desert', vi: 'sa mạc', at: 'in the desert', atVi: 'ở sa mạc', words: [['🐫', 'camel', 'lạc đà'], ['🦎', 'lizard', 'thằn lằn', 'x'], ['🦂', 'scorpion', 'bọ cạp'], ['🐍', 'snake', 'con rắn', 'x']] },
         { p: '🧊', en: 'ice', vi: 'vùng băng tuyết', at: 'on the ice', atVi: 'ở vùng băng tuyết', words: [['🐧', 'penguin', 'chim cánh cụt'], ['🐻‍❄️', 'polar bear', 'gấu Bắc Cực'], ['🦭', 'seal', 'hải cẩu']] },
-        { p: '🏞️', en: 'river', vi: 'sông hồ', at: 'in rivers and ponds', atVi: 'ở sông hồ', words: [['🐸', 'frog', 'con ếch'], ['🦛', 'hippo', 'hà mã'], ['🐊', 'crocodile', 'cá sấu'], ['🐟', 'fish', 'con cá', 'x'], ['🦢', 'swan', 'thiên nga'], ['🦫', 'beaver', 'hải ly']] },
-        { p: '🌻', en: 'garden', vi: 'khu vườn', at: 'in the garden', atVi: 'ở khu vườn', words: [['🐝', 'bee', 'con ong'], ['🦋', 'butterfly', 'con bướm'], ['🐞', 'ladybug', 'bọ rùa'], ['🐜', 'ant', 'con kiến'], ['🐌', 'snail', 'ốc sên'], ['🪱', 'worm', 'con giun'], ['🕷️', 'spider', 'con nhện', 'x']] },
+        { p: '🏞️', en: 'river', vi: 'sông hồ', at: 'in rivers and ponds', atVi: 'ở sông hồ', words: [['🐸', 'frog', 'con ếch'], ['🦛', 'hippo', 'hà mã'], ['🐊', 'crocodile', 'cá sấu'], ['🐟', 'fish', 'con cá', 'x'], ['🦢', 'swan', 'thiên nga'], ['🦫', 'beaver', 'hải ly'], ['🦦', 'otter', 'rái cá'], ['🦩', 'flamingo', 'hồng hạc']] },
+        { p: '🌻', en: 'garden', vi: 'khu vườn', at: 'in the garden', atVi: 'ở khu vườn', words: [['🐝', 'bee', 'con ong'], ['🦋', 'butterfly', 'con bướm'], ['🐞', 'ladybug', 'bọ rùa'], ['🐜', 'ant', 'con kiến'], ['🐌', 'snail', 'ốc sên'], ['🪱', 'worm', 'con giun'], ['🐛', 'caterpillar', 'sâu bướm'], ['🦗', 'cricket', 'con dế'], ['🦟', 'mosquito', 'con muỗi', 'x'], ['🪰', 'fly', 'con ruồi', 'x'], ['🕷️', 'spider', 'con nhện', 'x']] },
       ],
       qs: [
         { q: 'Where does a penguin live?', v: 'Chim cánh cụt sống ở đâu?', p: '🐧', k: 'ice', a: [['A penguin lives on the ice.', 'Chim cánh cụt sống ở vùng băng tuyết.']] },
@@ -400,17 +402,23 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
         { q: 'Where does a kangaroo live?', v: 'Chuột túi sống ở đâu?', p: '🦘', k: 'grassland', no: ['forest'], a: [['A kangaroo lives in the grassland.', 'Chuột túi sống ở đồng cỏ.']] },
         { q: 'Where does a hippo live?', v: 'Hà mã sống ở đâu?', p: '🦛', k: 'river', no: ['grassland', 'jungle'], a: [['A hippo lives in rivers and ponds.', 'Hà mã sống ở sông hồ.']] },
         { q: 'Which animal has a very long neck?', v: 'Con vật nào có cái cổ rất dài?', p: '📏', k: 'giraffe', a: [['A giraffe has a very long neck.', 'Hươu cao cổ có cái cổ rất dài.']] },
-        { q: 'Which animal has black and white stripes?', v: 'Con vật nào có sọc đen trắng?', p: '🎨', k: 'zebra', no: ['panda'], a: [['A zebra has black and white stripes.', 'Ngựa vằn có sọc đen trắng.']] },
+        { q: 'Which animal has black and white stripes?', v: 'Con vật nào có sọc đen trắng?', p: '🎨', k: 'zebra', no: ['panda', 'skunk', 'badger'], a: [['A zebra has black and white stripes.', 'Ngựa vằn có sọc đen trắng.']] },
         { q: 'Which animal makes honey?', v: 'Con vật nào làm ra mật ong?', p: '🍯', k: 'bee', a: [['A bee makes honey.', 'Con ong làm ra mật ong.']] },
         { q: 'Which animal eats bamboo?', v: 'Con vật nào ăn tre?', p: '🎋', k: 'panda', a: [['A panda eats bamboo.', 'Gấu trúc ăn tre.']] },
         { q: 'Which animal carries its baby in a pouch?', v: 'Con vật nào mang con trong túi?', p: '👜', k: 'kangaroo', no: ['koala'], a: [['A kangaroo carries its baby in a pouch.', 'Chuột túi mang con trong túi trước bụng.']] },
+        { q: 'Which animal sleeps in the day and flies at night?', v: 'Con vật nào ngủ ban ngày, bay ban đêm?', p: '🌙', k: 'bat', no: ['owl', 'mosquito'], a: [['A bat sleeps in the day and flies at night.', 'Con dơi ngủ ban ngày, bay ban đêm.']] },
+        { q: 'Which pet likes to eat cheese?', v: 'Con vật nào thích ăn phô mai?', p: '🧀', k: 'mouse', no: ['hamster'], a: [['A mouse likes cheese.', 'Con chuột thích phô mai.']] },
+        { q: 'Which animal says "cock-a-doodle-doo"?', v: 'Con vật nào gáy "ò ó o"?', p: '🌅', k: 'rooster', no: ['chicken', 'turkey'], a: [['A rooster says "cock-a-doodle-doo"!', 'Gà trống gáy "ò ó o"!']] },
         { q: 'Which animal is very, very slow?', v: 'Con vật nào rất là chậm?', p: '🐢💤', k: 'sloth', no: ['snail', 'sea turtle'], a: [['A sloth is very, very slow.', 'Con lười rất là chậm.']] },
         { q: "What's your favorite animal?", v: 'Con vật bé thích nhất là gì?', p: '❤️', f: ['My favorite animal is the {w}.', 'Con vật mình thích nhất là {v}.'], c: ['lion', 'giraffe', 'kangaroo', 'panda', 'penguin', 'dolphin', 'octopus', 'sloth', 'peacock', 'polar bear', 'fox', 'butterfly'] },
       ],
     },
     {
-      id: 'fruits', ic: '🍎', en: 'Fruits', vi: 'Trái cây',
-      words: [['🍎', 'apple', 'quả táo'], ['🍌', 'banana', 'quả chuối'], ['🍊', 'orange', 'quả cam'], ['🍇', 'grapes', 'quả nho', 'p'], ['🍓', 'strawberry', 'quả dâu tây'], ['🍉', 'watermelon', 'dưa hấu'], ['🍍', 'pineapple', 'quả dứa'], ['🥭', 'mango', 'quả xoài'], ['🍒', 'cherry', 'quả anh đào'], ['🍐', 'pear', 'quả lê'], ['🍋', 'lemon', 'quả chanh'], ['🥥', 'coconut', 'quả dừa'], ['🍑', 'peach', 'quả đào'], ['🥝', 'kiwi', 'quả kiwi']],
+      id: 'fruits', ic: '🍎', en: 'Fruits & veggies', vi: 'Rau củ quả',
+      groups: [
+        { p: '🍎', en: 'fruits', vi: 'trái cây', words: [['🍎', 'apple', 'quả táo'], ['🍏', 'green apple', 'táo xanh'], ['🍌', 'banana', 'quả chuối'], ['🍊', 'orange', 'quả cam'], ['🍇', 'grapes', 'quả nho', 'p'], ['🍓', 'strawberry', 'quả dâu tây'], ['🍉', 'watermelon', 'dưa hấu'], ['🍈', 'melon', 'dưa lưới'], ['🍍', 'pineapple', 'quả dứa'], ['🥭', 'mango', 'quả xoài'], ['🍒', 'cherry', 'quả anh đào'], ['🍐', 'pear', 'quả lê'], ['🍋', 'lemon', 'quả chanh'], ['🥥', 'coconut', 'quả dừa'], ['🍑', 'peach', 'quả đào'], ['🥝', 'kiwi', 'quả kiwi'], ['🫐', 'blueberry', 'việt quất'], ['🥑', 'avocado', 'quả bơ'], ['🍅', 'tomato', 'cà chua']] },
+        { p: '🥕', en: 'vegetables', vi: 'rau củ', words: [['🥕', 'carrot', 'cà rốt'], ['🌽', 'corn', 'bắp ngô', 'u'], ['🥦', 'broccoli', 'súp lơ xanh', 'u'], ['🥔', 'potato', 'khoai tây'], ['🍠', 'sweet potato', 'khoai lang'], ['🧅', 'onion', 'củ hành'], ['🧄', 'garlic', 'tỏi', 'u'], ['🥒', 'cucumber', 'dưa chuột'], ['🍆', 'eggplant', 'cà tím'], ['🫑', 'bell pepper', 'ớt chuông'], ['🌶️', 'chili', 'quả ớt'], ['🍄', 'mushroom', 'cây nấm'], ['🥬', 'lettuce', 'rau xà lách', 'u'], ['🎃', 'pumpkin', 'quả bí ngô'], ['🥜', 'peanut', 'củ lạc'], ['🫒', 'olive', 'quả ô liu']] },
+      ],
       qs: [
         { q: 'What fruit is this?', v: 'Đây là quả gì?', p: '🍍', k: 'pineapple', a: [["It's a pineapple.", 'Đó là quả dứa.']] },
         { q: 'What color is a banana?', v: 'Quả chuối màu gì?', p: '🍌', k: 'yellow', no: ['green'], a: [["It's yellow.", 'Nó màu vàng.']] },
@@ -418,12 +426,21 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
         { q: 'Which fruit is green outside and red inside?', v: 'Quả nào bên ngoài xanh, bên trong đỏ?', p: '🤔', k: 'watermelon', a: [['A watermelon!', 'Quả dưa hấu!']] },
         { q: 'How many apples are there?', v: 'Có bao nhiêu quả táo?', p: '🍎🍎🍎', k: 'three', a: [['There are three apples.', 'Có ba quả táo.']] },
         { q: 'Do you like mangoes?', v: 'Bé có thích xoài không?', p: '🥭', a: [['Yes, I do. Mangoes are sweet!', 'Có ạ. Xoài ngọt lắm!'], ["No, I don't.", 'Không ạ.']] },
-        { q: "What's your favorite fruit?", v: 'Bé thích quả gì nhất?', p: '❤️', f: ['I like {s}.', 'Mình thích {v}.'] },
+        { q: "What's your favorite fruit?", v: 'Bé thích quả gì nhất?', p: '❤️', f: ['I like {s}.', 'Mình thích {v}.'], c: ['apple', 'banana', 'orange', 'grapes', 'strawberry', 'watermelon', 'pineapple', 'mango', 'cherry', 'peach', 'kiwi', 'blueberry', 'avocado'] },
+        { q: 'Which vegetable do rabbits love?', v: 'Con thỏ thích ăn rau củ nào?', p: '🐰', k: 'carrot', a: [['Rabbits love carrots.', 'Thỏ thích ăn cà rốt.']] },
+        { q: 'Which one makes you cry when you cut it?', v: 'Cắt cái gì làm bé chảy nước mắt?', p: '🔪😢', k: 'onion', no: ['garlic', 'chili'], a: [['An onion!', 'Củ hành!']] },
+        { q: 'What do we make french fries from?', v: 'Khoai tây chiên làm từ gì?', p: '🍟', k: 'potato', no: ['sweet potato'], a: [['We make them from potatoes.', 'Làm từ khoai tây.']] },
+        { q: 'Which one is very hot and spicy?', v: 'Cái nào rất cay?', p: '🔥', k: 'chili', no: ['bell pepper', 'garlic', 'onion'], a: [['A chili is very hot!', 'Quả ớt rất cay!']] },
+        { q: 'What is big and orange at Halloween?', v: 'Quả gì to, màu cam vào dịp Halloween?', p: '👻', k: 'pumpkin', no: ['orange', 'mango'], a: [["It's a pumpkin.", 'Đó là quả bí ngô.']] },
+        { q: 'What vegetables do you like?', v: 'Bé thích ăn rau củ gì?', p: '🥗', f: ['I like {s}.', 'Mình thích ăn {v}.'], c: ['carrot', 'corn', 'broccoli', 'potato', 'cucumber', 'tomato', 'mushroom', 'pumpkin'] },
       ],
     },
     {
-      id: 'colors', ic: '🎨', en: 'Colors', vi: 'Màu sắc', bare: true,
-      words: [['#e63946', 'red', 'màu đỏ'], ['#f4892b', 'orange', 'màu cam'], ['#ffd23f', 'yellow', 'màu vàng'], ['#43aa59', 'green', 'màu xanh lá'], ['#3a86ff', 'blue', 'màu xanh dương'], ['#8e5cd9', 'purple', 'màu tím'], ['#ff8fc0', 'pink', 'màu hồng'], ['#8b5a2b', 'brown', 'màu nâu'], ['#222222', 'black', 'màu đen'], ['#ffffff', 'white', 'màu trắng'], ['#9aa0a6', 'gray', 'màu xám']],
+      id: 'colors', ic: '🎨', en: 'Colors & shapes', vi: 'Màu sắc, hình khối', bare: true,
+      groups: [
+        { p: '🎨', en: 'colors', vi: 'màu sắc', words: [['#e63946', 'red', 'màu đỏ'], ['#f4892b', 'orange', 'màu cam'], ['#ffd23f', 'yellow', 'màu vàng'], ['#43aa59', 'green', 'màu xanh lá'], ['#3a86ff', 'blue', 'màu xanh dương'], ['#1d3557', 'dark blue', 'màu xanh đậm'], ['#90e0ef', 'light blue', 'màu xanh nhạt'], ['#8e5cd9', 'purple', 'màu tím'], ['#ff8fc0', 'pink', 'màu hồng'], ['#8b5a2b', 'brown', 'màu nâu'], ['#222222', 'black', 'màu đen'], ['#ffffff', 'white', 'màu trắng'], ['#9aa0a6', 'gray', 'màu xám'], ['#d4af37', 'gold', 'màu vàng kim'], ['#c0c0c0', 'silver', 'màu bạc']] },
+        { p: '🔺', en: 'shapes', vi: 'hình khối', words: [['⭕', 'circle', 'hình tròn', 'c'], ['🟦', 'square', 'hình vuông', 'c'], ['🔺', 'triangle', 'hình tam giác', 'c'], ['⭐', 'star', 'ngôi sao', 'c'], ['💜', 'heart', 'trái tim', 'c'], ['🔶', 'diamond', 'hình thoi', 'c'], ['🌙', 'crescent', 'hình trăng khuyết', 'c'], ['➕', 'cross', 'dấu cộng', 'c'], ['➡️', 'arrow', 'mũi tên', 'c']] },
+      ],
       qs: [
         { q: 'What color is the sun?', v: 'Mặt trời màu gì?', p: '☀️', k: 'yellow', no: ['orange', 'red'], a: [["It's yellow.", 'Nó màu vàng.']] },
         { q: 'What color is the grass?', v: 'Cỏ màu gì?', p: '🌱', k: 'green', a: [["It's green.", 'Nó màu xanh lá.']] },
@@ -431,13 +448,21 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
         { q: 'What color is a strawberry?', v: 'Quả dâu tây màu gì?', p: '🍓', k: 'red', no: ['pink'], a: [["It's red.", 'Nó màu đỏ.']] },
         { q: 'What color is milk?', v: 'Sữa màu gì?', p: '🥛', k: 'white', a: [["It's white.", 'Nó màu trắng.']] },
         { q: 'What color is the night sky?', v: 'Bầu trời ban đêm màu gì?', p: '🌃', k: 'black', no: ['gray', 'blue', 'purple'], a: [["It's black.", 'Nó màu đen.']] },
-        { q: "What's your favorite color?", v: 'Bé thích màu gì nhất?', p: '🎨', f: ['My favorite color is {w}.', 'Màu mình thích nhất là {v}.'] },
-        { q: 'What color is your shirt?', v: 'Áo của bé màu gì?', p: '👕', f: ['My shirt is {w}.', 'Áo của mình {v}.'] },
+        { q: "What's your favorite color?", v: 'Bé thích màu gì nhất?', p: '🎨', f: ['My favorite color is {w}.', 'Màu mình thích nhất là {v}.'], c: ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink', 'brown', 'black', 'white', 'gold', 'silver'] },
+        { q: 'What color is your shirt?', v: 'Áo của bé màu gì?', p: '👕', f: ['My shirt is {w}.', 'Áo của mình {v}.'], c: ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink', 'brown', 'black', 'white', 'gray'] },
+        { q: 'What shape is a ball?', v: 'Quả bóng có hình gì?', p: '⚽', k: 'circle', a: [["It's a circle.", 'Hình tròn.']] },
+        { q: 'What shape has three sides?', v: 'Hình nào có ba cạnh?', p: '3️⃣', k: 'triangle', a: [['A triangle has three sides.', 'Hình tam giác có ba cạnh.']] },
+        { q: 'What shape has four equal sides?', v: 'Hình nào có bốn cạnh bằng nhau?', p: '4️⃣', k: 'square', no: ['diamond'], a: [['A square has four equal sides.', 'Hình vuông có bốn cạnh bằng nhau.']] },
+        { q: 'What color is a gold medal?', v: 'Huy chương vàng có màu gì?', p: '🥇', k: 'gold', no: ['yellow', 'orange'], a: [["It's gold.", 'Màu vàng kim.']] },
       ],
     },
     {
       id: 'numbers', ic: '🔢', en: 'Numbers', vi: 'Số đếm', bare: true,
-      words: [['1', 'one', 'một'], ['2', 'two', 'hai'], ['3', 'three', 'ba'], ['4', 'four', 'bốn'], ['5', 'five', 'năm'], ['6', 'six', 'sáu'], ['7', 'seven', 'bảy'], ['8', 'eight', 'tám'], ['9', 'nine', 'chín'], ['10', 'ten', 'mười']],
+      groups: [
+        { p: '🔢', en: 'one to ten', vi: 'từ một đến mười', words: [['1', 'one', 'một'], ['2', 'two', 'hai'], ['3', 'three', 'ba'], ['4', 'four', 'bốn'], ['5', 'five', 'năm'], ['6', 'six', 'sáu'], ['7', 'seven', 'bảy'], ['8', 'eight', 'tám'], ['9', 'nine', 'chín'], ['10', 'ten', 'mười']] },
+        { p: '🔟', en: 'eleven to twenty', vi: 'từ mười một đến hai mươi', words: [['11', 'eleven', 'mười một'], ['12', 'twelve', 'mười hai'], ['13', 'thirteen', 'mười ba'], ['14', 'fourteen', 'mười bốn'], ['15', 'fifteen', 'mười lăm'], ['16', 'sixteen', 'mười sáu'], ['17', 'seventeen', 'mười bảy'], ['18', 'eighteen', 'mười tám'], ['19', 'nineteen', 'mười chín'], ['20', 'twenty', 'hai mươi']] },
+        { p: '💯', en: 'big numbers', vi: 'số lớn', words: [['30', 'thirty', 'ba mươi'], ['40', 'forty', 'bốn mươi'], ['50', 'fifty', 'năm mươi'], ['60', 'sixty', 'sáu mươi'], ['70', 'seventy', 'bảy mươi'], ['80', 'eighty', 'tám mươi'], ['90', 'ninety', 'chín mươi'], ['100', 'one hundred', 'một trăm']] },
+      ],
       qs: [
         { q: 'How many cats are there?', v: 'Có bao nhiêu con mèo?', p: '🐱🐱🐱🐱', k: 'four', a: [['There are four cats.', 'Có bốn con mèo.']] },
         { q: 'How many fingers are on one hand?', v: 'Một bàn tay có mấy ngón?', p: '🖐️', k: 'five', a: [['Five fingers!', 'Năm ngón!']] },
@@ -446,117 +471,179 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
         { q: 'How many stars can you see?', v: 'Bé thấy mấy ngôi sao?', p: '⭐⭐⭐⭐⭐⭐', k: 'six', a: [['I can see six stars.', 'Mình thấy sáu ngôi sao.']] },
         { q: 'Can you count to ten?', v: 'Bé đếm được đến mười không?', p: '🔟', a: [['Yes! One, two, three, four, five, six, seven, eight, nine, ten!', 'Được ạ! Một, hai, ba, bốn, năm, sáu, bảy, tám, chín, mười!']] },
         { q: 'How many brothers and sisters do you have?', v: 'Bé có mấy anh chị em?', p: '👧👦', a: [["I don't have any.", 'Mình không có ạ.']], f: ['I have {w}.', 'Mình có {v} anh chị em.'], c: ['one', 'two', 'three'] },
+        { q: 'How many days are in a week?', v: 'Một tuần có mấy ngày?', p: '📅', k: 'seven', a: [['There are seven days in a week.', 'Một tuần có bảy ngày.']] },
+        { q: 'How many months are in a year?', v: 'Một năm có mấy tháng?', p: '🗓️', k: 'twelve', a: [['There are twelve months in a year.', 'Một năm có mười hai tháng.']] },
+        { q: 'What comes after nineteen?', v: 'Sau mười chín là số mấy?', p: '19 ➜ ?', k: 'twenty', a: [['Twenty comes after nineteen.', 'Sau mười chín là hai mươi.']] },
+        { q: 'How many minutes are in an hour?', v: 'Một giờ có bao nhiêu phút?', p: '⏰', k: 'sixty', a: [['There are sixty minutes in an hour.', 'Một giờ có sáu mươi phút.']] },
+        { q: 'How old is your grandma?', v: 'Bà của bé bao nhiêu tuổi?', p: '👵', f: ['My grandma is {w} years old.', 'Bà mình {v} tuổi.'], c: ['fifty', 'sixty', 'seventy', 'eighty', 'ninety'] },
       ],
     },
     {
       id: 'family', ic: '👨‍👩‍👧', en: 'Family', vi: 'Gia đình', line: 'This is my {w}.',
-      words: [['👩', 'mom', 'mẹ'], ['👨', 'dad', 'bố'], ['👧', 'sister', 'chị, em gái'], ['👦', 'brother', 'anh, em trai'], ['👶', 'baby', 'em bé'], ['👵', 'grandma', 'bà'], ['👴', 'grandpa', 'ông'], ['👨‍👩‍👧‍👦', 'family', 'gia đình']],
+      words: [['👩', 'mom', 'mẹ'], ['👨', 'dad', 'bố'], ['👧', 'sister', 'chị, em gái'], ['👦', 'brother', 'anh, em trai'], ['👶', 'baby', 'em bé'], ['👵', 'grandma', 'bà'], ['👴', 'grandpa', 'ông'], ['🧔', 'uncle', 'chú, bác, cậu'], ['👩‍🦱', 'aunt', 'cô, dì, bác gái'], ['🧒', 'cousin', 'anh chị em họ'], ['👫', 'parents', 'bố mẹ', 'p'], ['👯', 'twins', 'anh chị em sinh đôi', 'p'], ['🤰', 'mother-to-be', 'mẹ bầu'], ['👨‍👩‍👧‍👦', 'family', 'gia đình'], ['🏠', 'home', 'nhà', 'u'], ['🐶', 'pet', 'thú cưng']],
       qs: [
         { q: 'Who is this?', v: 'Đây là ai?', p: '👵', k: 'grandma', a: [['She is my grandma.', 'Đây là bà của mình.']] },
-        { q: 'Who is this?', v: 'Đây là ai?', p: '👨', k: 'dad', no: ['brother', 'grandpa'], a: [['He is my dad.', 'Đây là bố của mình.']] },
+        { q: 'Who is this?', v: 'Đây là ai?', p: '👨', k: 'dad', no: ['brother', 'grandpa', 'uncle', 'cousin'], a: [['He is my dad.', 'Đây là bố của mình.']] },
         { q: 'Who is the youngest?', v: 'Ai nhỏ tuổi nhất?', p: '🍼', k: 'baby', a: [['The baby is the youngest.', 'Em bé nhỏ tuổi nhất.']] },
         { q: 'How many people are in your family?', v: 'Nhà bé có mấy người?', p: '🏠', f: ['There are {w} people in my family.', 'Nhà mình có {v} người.'], c: ['three', 'four', 'five', 'six', 'seven'] },
         { q: 'Do you have a brother?', v: 'Bé có anh hoặc em trai không?', p: '👦', a: [['Yes, I do.', 'Có ạ.'], ["No, I don't. I have a sister.", 'Không ạ. Mình có chị (em) gái.']] },
-        { q: 'Who do you love?', v: 'Bé yêu ai?', p: '❤️', f: ['I love my {w}.', 'Mình yêu {v} của mình.'] },
+        { q: 'Who do you love?', v: 'Bé yêu ai?', p: '❤️', f: ['I love my {w}.', 'Mình yêu {v} của mình.'], c: ['mom', 'dad', 'sister', 'brother', 'baby', 'grandma', 'grandpa', 'uncle', 'aunt', 'cousin', 'family', 'pet'] },
         { q: 'Who cooks dinner at your home?', v: 'Ở nhà ai nấu bữa tối?', p: '🍲', f: ['My {w} cooks dinner.', '{V} của mình nấu bữa tối.'], c: ['mom', 'dad', 'grandma', 'grandpa'] },
+        { q: "Who is your mom's sister?", v: 'Chị em gái của mẹ là ai?', p: '👩👩', k: 'aunt', no: ['grandma', 'sister'], a: [['She is my aunt.', 'Đó là dì của mình.']] },
+        { q: "Who is your dad's brother?", v: 'Anh em trai của bố là ai?', p: '👨👨', k: 'uncle', no: ['grandpa', 'brother'], a: [['He is my uncle.', 'Đó là chú (bác) của mình.']] },
       ],
     },
     {
       id: 'body', ic: '👀', en: 'My body', vi: 'Cơ thể',
-      words: [['👁️', 'eye', 'mắt'], ['👂', 'ear', 'tai'], ['👃', 'nose', 'mũi'], ['👄', 'mouth', 'miệng'], ['🦷', 'tooth', 'răng'], ['💇', 'hair', 'tóc', 'u'], ['🙂', 'face', 'khuôn mặt'], ['✋', 'hand', 'bàn tay'], ['☝️', 'finger', 'ngón tay'], ['💪', 'arm', 'cánh tay'], ['🦵', 'leg', 'chân'], ['🦶', 'foot', 'bàn chân']],
+      groups: [
+        { p: '🙂', en: 'my face', vi: 'khuôn mặt', words: [['🙂', 'face', 'khuôn mặt'], ['👁️', 'eye', 'mắt'], ['👂', 'ear', 'tai'], ['👃', 'nose', 'mũi'], ['👄', 'mouth', 'miệng'], ['🦷', 'tooth', 'răng'], ['👅', 'tongue', 'cái lưỡi'], ['💇', 'hair', 'tóc', 'u'], ['🧔', 'beard', 'râu']] },
+        { p: '🧍', en: 'my body', vi: 'cơ thể', words: [['🗣️', 'head', 'cái đầu'], ['✋', 'hand', 'bàn tay'], ['☝️', 'finger', 'ngón tay'], ['👍', 'thumb', 'ngón cái'], ['💅', 'nail', 'móng tay'], ['💪', 'arm', 'cánh tay'], ['🦵', 'leg', 'chân'], ['🦶', 'foot', 'bàn chân']] },
+        { p: '🫀', en: 'inside my body', vi: 'bên trong cơ thể', words: [['🫀', 'heart', 'trái tim'], ['🫁', 'lungs', 'phổi', 'p'], ['🧠', 'brain', 'bộ não'], ['🦴', 'bone', 'xương'], ['🩸', 'blood', 'máu', 'u']] },
+      ],
       qs: [
         { q: 'What do you see with?', v: 'Bé nhìn bằng gì?', p: '🌈', k: 'eye', a: [['I see with my eyes.', 'Mình nhìn bằng mắt.']] },
         { q: 'What do you hear with?', v: 'Bé nghe bằng gì?', p: '🎵', k: 'ear', a: [['I hear with my ears.', 'Mình nghe bằng tai.']] },
         { q: 'What do you smell with?', v: 'Bé ngửi bằng gì?', p: '🌸', k: 'nose', a: [['I smell with my nose.', 'Mình ngửi bằng mũi.']] },
         { q: 'What do you brush every morning?', v: 'Sáng nào bé cũng đánh gì?', p: '🪥', k: 'tooth', no: ['hair'], a: [['I brush my teeth.', 'Mình đánh răng.']] },
-        { q: 'What do you clap with?', v: 'Bé vỗ tay bằng gì?', p: '👏', k: 'hand', no: ['finger', 'arm'], a: [['I clap with my hands.', 'Mình vỗ bằng hai bàn tay.']] },
-        { q: 'What do you eat with?', v: 'Bé ăn bằng gì?', p: '🍽️', k: 'mouth', no: ['tooth', 'hand'], a: [['I eat with my mouth.', 'Mình ăn bằng miệng.']] },
+        { q: 'What do you clap with?', v: 'Bé vỗ tay bằng gì?', p: '👏', k: 'hand', no: ['finger', 'arm', 'thumb', 'nail'], a: [['I clap with my hands.', 'Mình vỗ bằng hai bàn tay.']] },
+        { q: 'What do you eat with?', v: 'Bé ăn bằng gì?', p: '🍽️', k: 'mouth', no: ['tooth', 'hand', 'tongue'], a: [['I eat with my mouth.', 'Mình ăn bằng miệng.']] },
         { q: 'How many eyes do you have?', v: 'Bé có mấy con mắt?', p: '👀', k: 'two', a: [['I have two eyes.', 'Mình có hai mắt.']] },
         { q: 'Touch your nose!', v: 'Bé chạm vào mũi nào!', p: '👃', a: [['This is my nose!', 'Đây là mũi của mình!']] },
+        { q: 'What do you think with?', v: 'Bé suy nghĩ bằng gì?', p: '🤔', k: 'brain', no: ['head'], a: [['I think with my brain.', 'Mình suy nghĩ bằng bộ não.']] },
+        { q: 'What do you taste with?', v: 'Bé nếm bằng gì?', p: '🍭', k: 'tongue', no: ['mouth', 'tooth'], a: [['I taste with my tongue.', 'Mình nếm bằng lưỡi.']] },
+        { q: 'What goes "thump, thump" in your chest?', v: 'Cái gì đập "thình thịch" trong ngực?', p: '💓', k: 'heart', no: ['lungs'], a: [['My heart goes "thump, thump".', 'Tim mình đập thình thịch.']] },
       ],
     },
     {
-      id: 'food', ic: '🍞', en: 'Food', vi: 'Đồ ăn, đồ uống',
-      words: [['🍞', 'bread', 'bánh mì', 'u'], ['🍚', 'rice', 'cơm', 'u'], ['🥛', 'milk', 'sữa', 'u'], ['🥚', 'egg', 'quả trứng'], ['🍰', 'cake', 'bánh ngọt'], ['🍕', 'pizza', 'bánh pizza', 'u'], ['🍜', 'noodles', 'mì', 'p'], ['💧', 'water', 'nước', 'u'], ['🧃', 'juice', 'nước ép', 'u'], ['🍦', 'ice cream', 'kem', 'u'], ['🍪', 'cookie', 'bánh quy'], ['🥪', 'sandwich', 'bánh kẹp'], ['🍬', 'candy', 'kẹo', 'u'], ['🍲', 'soup', 'canh, súp', 'u']],
+      id: 'food', ic: '🍔', en: 'Food', vi: 'Đồ ăn, đồ uống',
+      groups: [
+        { p: '🍚', en: 'meals', vi: 'món ăn', words: [['🍞', 'bread', 'bánh mì', 'u'], ['🍚', 'rice', 'cơm', 'u'], ['🥚', 'egg', 'quả trứng'], ['🍜', 'noodles', 'mì', 'p'], ['🍲', 'soup', 'canh, súp', 'u'], ['🍕', 'pizza', 'bánh pizza', 'u'], ['🍔', 'hamburger', 'bánh hamburger'], ['🍟', 'french fries', 'khoai tây chiên', 'p'], ['🌭', 'hot dog', 'xúc xích kẹp'], ['🍗', 'fried chicken', 'gà rán', 'u'], ['🥩', 'meat', 'thịt', 'u'], ['🥪', 'sandwich', 'bánh kẹp'], ['🧀', 'cheese', 'phô mai', 'u'], ['🥗', 'salad', 'rau trộn', 'u'], ['🍝', 'spaghetti', 'mì Ý', 'u'], ['🍣', 'sushi', 'sushi', 'u'], ['🥟', 'dumpling', 'bánh bao, sủi cảo'], ['🍙', 'rice ball', 'cơm nắm'], ['🥣', 'cereal', 'ngũ cốc', 'u'], ['🧈', 'butter', 'bơ', 'u'], ['🍯', 'honey', 'mật ong', 'u'], ['🧂', 'salt', 'muối', 'u']] },
+        { p: '🥤', en: 'drinks', vi: 'đồ uống', words: [['💧', 'water', 'nước', 'u'], ['🥛', 'milk', 'sữa', 'u'], ['🧃', 'juice', 'nước ép', 'u'], ['🍵', 'tea', 'trà', 'u'], ['☕', 'coffee', 'cà phê', 'u'], ['🧋', 'bubble tea', 'trà sữa trân châu', 'u'], ['🥤', 'soda', 'nước ngọt', 'u']] },
+        { p: '🍰', en: 'sweets', vi: 'đồ ngọt', words: [['🍰', 'cake', 'bánh ngọt'], ['🧁', 'cupcake', 'bánh cupcake'], ['🍪', 'cookie', 'bánh quy'], ['🍩', 'donut', 'bánh vòng'], ['🥞', 'pancake', 'bánh kếp'], ['🥧', 'pie', 'bánh nướng'], ['🍦', 'ice cream', 'kem', 'u'], ['🍫', 'chocolate', 'sô cô la', 'u'], ['🍬', 'candy', 'kẹo', 'u'], ['🍭', 'lollipop', 'kẹo mút'], ['🍿', 'popcorn', 'bỏng ngô', 'u']] },
+      ],
       qs: [
         { q: "What's this?", v: 'Đây là gì?', p: '🍕', k: 'pizza', a: [["It's pizza.", 'Đó là bánh pizza.']] },
         { q: 'What do cows give us?', v: 'Con bò cho chúng ta gì?', p: '🐮', k: 'milk', a: [['Cows give us milk.', 'Bò cho chúng ta sữa.']] },
         { q: 'What do hens lay?', v: 'Gà mái đẻ ra gì?', p: '🐔', k: 'egg', a: [['Hens lay eggs.', 'Gà mái đẻ trứng.']] },
-        { q: 'What do you drink when you are thirsty?', v: 'Khi khát bé uống gì?', p: '🥵', k: 'water', no: ['milk', 'juice'], a: [['I drink water.', 'Mình uống nước.']] },
-        { q: 'What do you have on your birthday?', v: 'Sinh nhật bé có gì?', p: '🎉', k: 'cake', no: ['candy', 'ice cream', 'cookie'], a: [['I have a birthday cake!', 'Mình có bánh sinh nhật!']] },
+        { q: 'What do you drink when you are thirsty?', v: 'Khi khát bé uống gì?', p: '🥵', k: 'water', no: ['milk', 'juice', 'tea', 'coffee', 'bubble tea', 'soda'], a: [['I drink water.', 'Mình uống nước.']] },
+        { q: 'What do you have on your birthday?', v: 'Sinh nhật bé có gì?', p: '🎉', k: 'cake', no: ['candy', 'ice cream', 'cookie', 'cupcake', 'pie', 'donut', 'chocolate', 'lollipop', 'popcorn', 'pancake'], a: [['I have a birthday cake!', 'Mình có bánh sinh nhật!']] },
         { q: 'What do you eat for breakfast?', v: 'Bữa sáng bé ăn gì?', p: '🌅', f: ['I eat {s} for breakfast.', 'Bữa sáng mình ăn {v}.'], c: ['bread', 'rice', 'egg', 'noodles', 'soup', 'sandwich'] },
         { q: 'Are you hungry?', v: 'Bé có đói không?', p: '😋', a: [["No, I'm full.", 'Không ạ, mình no rồi.']], f: ['Yes, I am. I want some {s}.', 'Có ạ. Mình muốn ăn {v}.'], c: ['rice', 'bread', 'noodles', 'cookie', 'soup'] },
         { q: 'Do you like ice cream?', v: 'Bé có thích kem không?', p: '🍦', a: [['Yes, I do. I love ice cream!', 'Có ạ. Mình rất thích kem!'], ["No, I don't.", 'Không ạ.']] },
+        { q: 'What do bees make?', v: 'Ong làm ra gì?', p: '🐝', k: 'honey', a: [['Bees make honey.', 'Ong làm ra mật ong.']] },
+        { q: 'What is sweet and brown?', v: 'Cái gì ngọt và màu nâu?', p: '🤎', k: 'chocolate', no: ['candy', 'cookie', 'cake', 'cupcake', 'pie', 'pancake', 'donut', 'coffee', 'honey', 'bread'], a: [["It's chocolate.", 'Đó là sô cô la.']] },
+        { q: 'What do you drink in the morning?', v: 'Buổi sáng bé uống gì?', p: '☀️', f: ['I drink {w}.', 'Mình uống {v}.'], c: ['milk', 'water', 'juice', 'tea'] },
+        { q: 'What is your favorite snack?', v: 'Món ăn vặt bé thích nhất là gì?', p: '😋', f: ['I love {s}!', 'Mình rất thích {v}!'], c: ['cookie', 'cupcake', 'donut', 'ice cream', 'chocolate', 'popcorn', 'candy', 'french fries'] },
       ],
     },
     {
       id: 'clothes', ic: '👕', en: 'Clothes', vi: 'Quần áo',
-      words: [['👕', 'shirt', 'áo phông'], ['👗', 'dress', 'váy'], ['🎩', 'hat', 'cái mũ'], ['🧢', 'cap', 'mũ lưỡi trai'], ['👟', 'shoe', 'giày'], ['🧦', 'sock', 'tất'], ['👖', 'pants', 'quần dài', 'p'], ['🩳', 'shorts', 'quần đùi', 'p'], ['🧥', 'coat', 'áo khoác'], ['🧤', 'glove', 'găng tay'], ['🧣', 'scarf', 'khăn quàng'], ['👓', 'glasses', 'kính', 'p'], ['👢', 'boot', 'ủng']],
+      groups: [
+        { p: '👕', en: 'clothes', vi: 'quần áo', words: [['👕', 'shirt', 'áo phông'], ['👔', 'tie', 'cà vạt'], ['👗', 'dress', 'váy'], ['👖', 'pants', 'quần dài', 'p'], ['🩳', 'shorts', 'quần đùi', 'p'], ['🧥', 'coat', 'áo khoác'], ['🥼', 'lab coat', 'áo blouse'], ['🩱', 'swimsuit', 'đồ bơi'], ['👘', 'kimono', 'áo kimono'], ['🧦', 'sock', 'tất'], ['🧤', 'glove', 'găng tay'], ['🧣', 'scarf', 'khăn quàng']] },
+        { p: '👟', en: 'shoes', vi: 'giày dép', words: [['👟', 'shoe', 'giày'], ['👢', 'boot', 'ủng'], ['👡', 'sandal', 'xăng đan'], ['🩴', 'flip-flops', 'dép tông', 'p'], ['👠', 'high heels', 'giày cao gót', 'p'], ['🥿', 'flat shoe', 'giày búp bê']] },
+        { p: '🎩', en: 'hats and more', vi: 'mũ và phụ kiện', words: [['🎩', 'hat', 'cái mũ'], ['🧢', 'cap', 'mũ lưỡi trai'], ['⛑️', 'helmet', 'mũ bảo hiểm'], ['👑', 'crown', 'vương miện'], ['👓', 'glasses', 'kính', 'p'], ['🕶️', 'sunglasses', 'kính râm', 'p'], ['⌚', 'watch', 'đồng hồ đeo tay'], ['💍', 'ring', 'chiếc nhẫn'], ['📿', 'necklace', 'vòng cổ'], ['👛', 'purse', 'cái ví'], ['👜', 'handbag', 'túi xách'], ['🎒', 'backpack', 'ba lô']] },
+      ],
       qs: [
-        { q: 'What do you wear on your head?', v: 'Bé đội gì lên đầu?', p: '🧒', k: 'hat', no: ['cap', 'glasses'], a: [['I wear a hat.', 'Mình đội mũ.']] },
-        { q: 'What do you wear on your feet?', v: 'Bé đi gì ở chân?', p: '🦶', k: 'shoe', no: ['sock', 'boot'], a: [['I wear shoes.', 'Mình đi giày.']] },
+        { q: 'What do you wear on your head?', v: 'Bé đội gì lên đầu?', p: '🧒', k: 'hat', no: ['cap', 'glasses', 'helmet', 'crown', 'sunglasses'], a: [['I wear a hat.', 'Mình đội mũ.']] },
+        { q: 'What do you wear on your feet?', v: 'Bé đi gì ở chân?', p: '🦶', k: 'shoe', no: ['sock', 'boot', 'sandal', 'flip-flops', 'high heels', 'flat shoe'], a: [['I wear shoes.', 'Mình đi giày.']] },
         { q: 'What do you wear on your hands when it is cold?', v: 'Trời lạnh bé đeo gì ở tay?', p: '❄️', k: 'glove', a: [['I wear gloves.', 'Mình đeo găng tay.']] },
-        { q: 'What do you wear around your neck?', v: 'Bé quàng gì quanh cổ?', p: '🥶', k: 'scarf', a: [['I wear a scarf.', 'Mình quàng khăn.']] },
-        { q: 'What helps you see better?', v: 'Cái gì giúp bé nhìn rõ hơn?', p: '👀', k: 'glasses', a: [['Glasses help me see better.', 'Kính giúp mình nhìn rõ hơn.']] },
+        { q: 'What do you wear around your neck?', v: 'Bé quàng gì quanh cổ?', p: '🥶', k: 'scarf', no: ['necklace', 'tie'], a: [['I wear a scarf.', 'Mình quàng khăn.']] },
+        { q: 'What helps you see better?', v: 'Cái gì giúp bé nhìn rõ hơn?', p: '👀', k: 'glasses', no: ['sunglasses'], a: [['Glasses help me see better.', 'Kính giúp mình nhìn rõ hơn.']] },
         { q: 'What are you wearing today?', v: 'Hôm nay bé mặc gì?', p: '🪞', f: ["I'm wearing {a}.", 'Mình đang mặc {v}.'], c: ['shirt', 'dress', 'coat', 'pants', 'shorts'] },
         { q: 'Is this a dress?', v: 'Đây có phải cái váy không?', p: '👗', a: [['Yes, it is.', 'Đúng rồi ạ.']] },
+        { q: 'What does a king wear on his head?', v: 'Nhà vua đội gì trên đầu?', p: '🤴', k: 'crown', no: ['hat', 'cap', 'helmet'], a: [['A king wears a crown.', 'Nhà vua đội vương miện.']] },
+        { q: 'What do you wear to swim?', v: 'Bé mặc gì để đi bơi?', p: '🏊', k: 'swimsuit', no: ['shorts'], a: [['I wear a swimsuit.', 'Mình mặc đồ bơi.']] },
+        { q: 'What do you wear on your wrist to tell the time?', v: 'Bé đeo gì ở cổ tay để xem giờ?', p: '⏰', k: 'watch', a: [['I wear a watch.', 'Mình đeo đồng hồ.']] },
+        { q: 'What do you wear when you ride a bike?', v: 'Đi xe đạp bé đội gì?', p: '🚲', k: 'helmet', no: ['hat', 'cap'], a: [['I wear a helmet.', 'Mình đội mũ bảo hiểm.']] },
       ],
     },
     {
       id: 'school', ic: '✏️', en: 'School', vi: 'Trường học',
-      words: [['📕', 'book', 'quyển sách'], ['📓', 'notebook', 'quyển vở'], ['✏️', 'pencil', 'bút chì'], ['🖊️', 'pen', 'bút bi'], ['🖍️', 'crayon', 'bút sáp màu'], ['📏', 'ruler', 'thước kẻ'], ['✂️', 'scissors', 'cái kéo', 'p'], ['🎒', 'bag', 'cặp sách'], ['🧑‍🏫', 'teacher', 'cô giáo, thầy giáo'], ['🏫', 'school', 'trường học'], ['💻', 'computer', 'máy tính'], ['🖌️', 'paintbrush', 'cọ vẽ']],
+      groups: [
+        { p: '✏️', en: 'school things', vi: 'đồ dùng học tập', words: [['📕', 'book', 'quyển sách'], ['📓', 'notebook', 'quyển vở'], ['✏️', 'pencil', 'bút chì'], ['🖊️', 'pen', 'bút bi'], ['🖍️', 'crayon', 'bút sáp màu'], ['🖌️', 'paintbrush', 'cọ vẽ'], ['📏', 'ruler', 'thước kẻ'], ['📐', 'set square', 'thước ê ke'], ['✂️', 'scissors', 'cái kéo', 'p'], ['🎒', 'bag', 'cặp sách'], ['📄', 'paper', 'tờ giấy', 'u'], ['📎', 'paper clip', 'cái kẹp giấy'], ['📌', 'pin', 'đinh ghim'], ['🧮', 'abacus', 'bàn tính'], ['🔍', 'magnifying glass', 'kính lúp'], ['💻', 'computer', 'máy tính']] },
+        { p: '🏫', en: 'at school', vi: 'ở trường', words: [['🏫', 'school', 'trường học'], ['🧑‍🏫', 'teacher', 'cô giáo, thầy giáo'], ['🧑‍🎓', 'student', 'học sinh'], ['🪑', 'chair', 'cái ghế'], ['🔔', 'bell', 'cái chuông'], ['🕒', 'clock', 'đồng hồ'], ['🌍', 'globe', 'quả địa cầu'], ['🗺️', 'map', 'bản đồ'], ['📅', 'calendar', 'tờ lịch'], ['🏆', 'trophy', 'cúp'], ['📝', 'homework', 'bài tập về nhà', 'u'], ['🔬', 'microscope', 'kính hiển vi']] },
+        { p: '📚', en: 'subjects', vi: 'môn học', words: [['➕', 'math', 'môn toán', 'u'], ['🔤', 'English', 'tiếng Anh', 'u'], ['🎵', 'music', 'âm nhạc', 'u'], ['🎨', 'art', 'mỹ thuật', 'u'], ['🧪', 'science', 'khoa học', 'u'], ['🤸', 'P.E.', 'thể dục', 'u']] },
+      ],
       qs: [
         { q: 'What do you cut paper with?', v: 'Bé cắt giấy bằng gì?', p: '📄', k: 'scissors', a: [['I cut paper with scissors.', 'Mình cắt giấy bằng kéo.']] },
         { q: 'What do you read?', v: 'Bé đọc gì?', p: '👀', k: 'book', no: ['notebook', 'computer'], a: [['I read a book.', 'Mình đọc sách.']] },
         { q: 'Who teaches you at school?', v: 'Ai dạy bé ở trường?', p: '🏫', k: 'teacher', a: [['My teacher teaches me.', 'Cô giáo dạy mình.']] },
-        { q: 'What do you draw a straight line with?', v: 'Bé kẻ đường thẳng bằng gì?', p: '➖', k: 'ruler', no: ['pencil', 'pen', 'crayon'], a: [['I use a ruler.', 'Mình dùng thước kẻ.']] },
+        { q: 'What do you draw a straight line with?', v: 'Bé kẻ đường thẳng bằng gì?', p: '➖', k: 'ruler', no: ['pencil', 'pen', 'crayon', 'set square'], a: [['I use a ruler.', 'Mình dùng thước kẻ.']] },
         { q: 'Where do you put your books?', v: 'Bé để sách vở ở đâu?', p: '📚', k: 'bag', a: [['I put them in my bag.', 'Mình để trong cặp sách.']] },
         { q: "What's in your bag?", v: 'Trong cặp của bé có gì?', p: '🎒', f: ['I have {a} in my bag.', 'Trong cặp mình có {v}.'], c: ['book', 'notebook', 'pencil', 'pen', 'crayon', 'ruler'] },
         { q: 'Do you like school?', v: 'Bé có thích đi học không?', p: '🏫', a: [['Yes, I do. I like my friends!', 'Có ạ. Mình thích các bạn!'], ['Yes! I like drawing.', 'Có ạ! Mình thích vẽ.']] },
+        { q: 'What subject do you like?', v: 'Bé thích môn học nào?', p: '📚', f: ['I like {w}.', 'Mình thích {v}.'], c: ['math', 'English', 'music', 'art', 'science', 'P.E.'] },
+        { q: 'What do you use to count beads?', v: 'Bé dùng gì để đếm hạt?', p: '🔢', k: 'abacus', a: [['I use an abacus.', 'Mình dùng bàn tính.']] },
+        { q: 'What helps you see tiny things?', v: 'Cái gì giúp bé nhìn những vật rất nhỏ?', p: '🐜', k: 'microscope', no: ['magnifying glass'], a: [['A microscope!', 'Kính hiển vi!']] },
+        { q: 'What shows all the countries of the world?', v: 'Cái gì có tất cả các nước trên thế giới?', p: '🇻🇳', k: 'globe', no: ['map'], a: [['A globe!', 'Quả địa cầu!']] },
       ],
     },
     {
-      id: 'weather', ic: '☀️', en: 'Weather', vi: 'Thời tiết', bare: true,
-      words: [['☀️', 'sunny', 'trời nắng'], ['🌧️', 'rainy', 'trời mưa'], ['☁️', 'cloudy', 'nhiều mây'], ['🌬️', 'windy', 'có gió'], ['❄️', 'snowy', 'có tuyết'], ['🥵', 'hot', 'nóng'], ['🥶', 'cold', 'lạnh'], ['⛈️', 'stormy', 'có bão'], ['🌈', 'rainbow', 'cầu vồng', 'c'], ['☂️', 'umbrella', 'cái ô', 'c']],
+      id: 'weather', ic: '☀️', en: 'Weather & nature', vi: 'Thời tiết, thiên nhiên', bare: true,
+      groups: [
+        { p: '🌤️', en: 'weather', vi: 'thời tiết', words: [['☀️', 'sunny', 'trời nắng'], ['🌧️', 'rainy', 'trời mưa'], ['☁️', 'cloudy', 'nhiều mây'], ['🌬️', 'windy', 'có gió'], ['❄️', 'snowy', 'có tuyết'], ['🌫️', 'foggy', 'có sương mù'], ['⛈️', 'stormy', 'có bão'], ['🥵', 'hot', 'nóng'], ['🥶', 'cold', 'lạnh'], ['😌', 'warm', 'ấm áp'], ['🍃', 'cool', 'mát mẻ'], ['🌈', 'rainbow', 'cầu vồng', 'c'], ['☂️', 'umbrella', 'cái ô', 'c'], ['⚡', 'lightning', 'tia chớp', 'c'], ['🌪️', 'tornado', 'lốc xoáy', 'c']] },
+        { p: '🍂', en: 'seasons', vi: 'các mùa', words: [['🌷', 'spring', 'mùa xuân'], ['🏖️', 'summer', 'mùa hè'], ['🍂', 'autumn', 'mùa thu'], ['⛄', 'winter', 'mùa đông']] },
+        { p: '🌳', en: 'nature', vi: 'thiên nhiên', words: [['🌞', 'sun', 'mặt trời'], ['🌕', 'moon', 'mặt trăng'], ['🌟', 'star', 'ngôi sao', 'c'], ['🌥️', 'cloud', 'đám mây', 'c'], ['🌳', 'tree', 'cái cây', 'c'], ['🌸', 'flower', 'bông hoa', 'c'], ['🌿', 'leaf', 'chiếc lá', 'c'], ['🌱', 'grass', 'cỏ'], ['⛰️', 'mountain', 'ngọn núi', 'c'], ['🌋', 'volcano', 'núi lửa', 'c'], ['🏝️', 'island', 'hòn đảo', 'c'], ['🌊', 'sea', 'biển'], ['🪨', 'rock', 'hòn đá', 'c'], ['🔥', 'fire', 'lửa'], ['🌍', 'Earth', 'Trái Đất']] },
+      ],
       qs: [
-        { q: "What's the weather like?", v: 'Thời tiết thế nào?', p: '☀️😎', k: 'sunny', no: ['hot'], a: [["It's sunny.", 'Trời nắng.']] },
-        { q: "What's the weather like?", v: 'Thời tiết thế nào?', p: '🌧️☔', k: 'rainy', no: ['stormy', 'umbrella', 'cloudy'], a: [["It's rainy.", 'Trời mưa.']] },
-        { q: 'Is it hot or cold?', v: 'Trời nóng hay lạnh?', p: '⛄', k: 'cold', no: ['snowy'], a: [["It's cold.", 'Trời lạnh.']] },
+        { q: "What's the weather like?", v: 'Thời tiết thế nào?', p: '☀️😎', k: 'sunny', no: ['hot', 'warm', 'summer'], a: [["It's sunny.", 'Trời nắng.']] },
+        { q: "What's the weather like?", v: 'Thời tiết thế nào?', p: '🌧️☔', k: 'rainy', no: ['stormy', 'umbrella', 'cloudy', 'lightning'], a: [["It's rainy.", 'Trời mưa.']] },
+        { q: 'Is it hot or cold?', v: 'Trời nóng hay lạnh?', p: '⛄', k: 'cold', no: ['snowy', 'winter', 'cool'], a: [["It's cold.", 'Trời lạnh.']] },
         { q: 'What do you need when it rains?', v: 'Trời mưa bé cần gì?', p: '💧', k: 'umbrella', a: [['I need an umbrella.', 'Mình cần một cái ô.']] },
-        { q: 'What can you see after the rain?', v: 'Sau cơn mưa bé có thể thấy gì?', p: '🌦️', k: 'rainbow', a: [['I can see a rainbow!', 'Mình thấy cầu vồng!']] },
+        { q: 'What can you see after the rain?', v: 'Sau cơn mưa bé có thể thấy gì?', p: '🌦️', k: 'rainbow', no: ['sun', 'cloud'], a: [['I can see a rainbow!', 'Mình thấy cầu vồng!']] },
         { q: "How's the weather today?", v: 'Hôm nay thời tiết thế nào?', p: '🪟', f: ["It's {w} today.", 'Hôm nay {v}.'], c: ['sunny', 'rainy', 'cloudy', 'windy', 'hot', 'cold'] },
         { q: 'Do you like rainy days?', v: 'Bé có thích ngày mưa không?', p: '🌧️', a: [['Yes, I do. I can jump in puddles!', 'Có ạ. Mình được nhảy vào vũng nước!'], ["No, I don't. I like sunny days.", 'Không ạ. Mình thích ngày nắng.']] },
+        { q: 'Which season has snow?', v: 'Mùa nào có tuyết?', p: '❄️', k: 'winter', a: [['Winter has snow.', 'Mùa đông có tuyết.']] },
+        { q: 'In which season do flowers bloom?', v: 'Hoa nở vào mùa nào?', p: '🌼', k: 'spring', a: [['Flowers bloom in spring.', 'Hoa nở vào mùa xuân.']] },
+        { q: 'In which season do leaves fall?', v: 'Lá rụng vào mùa nào?', p: '🍁', k: 'autumn', a: [['Leaves fall in autumn.', 'Lá rụng vào mùa thu.']] },
+        { q: 'What shines in the sky at night?', v: 'Cái gì sáng trên trời ban đêm?', p: '🌃', k: 'moon', no: ['star'], a: [['The moon shines at night.', 'Mặt trăng sáng ban đêm.']] },
+        { q: 'What is very tall and has snow on top?', v: 'Cái gì rất cao và có tuyết trên đỉnh?', p: '🏔️', k: 'mountain', no: ['volcano'], a: [["It's a mountain.", 'Đó là ngọn núi.']] },
+        { q: "What's your favorite season?", v: 'Bé thích mùa nào nhất?', p: '❤️', f: ['I like {w}.', 'Mình thích {v}.'], c: ['spring', 'summer', 'autumn', 'winter'] },
       ],
     },
     {
       id: 'transport', ic: '🚗', en: 'Transport', vi: 'Xe cộ',
-      words: [['🚗', 'car', 'ô tô'], ['🚌', 'bus', 'xe buýt'], ['🚲', 'bike', 'xe đạp'], ['🏍️', 'motorbike', 'xe máy'], ['🚂', 'train', 'tàu hỏa'], ['✈️', 'plane', 'máy bay'], ['⛵', 'boat', 'con thuyền'], ['🚚', 'truck', 'xe tải'], ['🚕', 'taxi', 'xe tắc xi'], ['🚁', 'helicopter', 'trực thăng'], ['🚀', 'rocket', 'tên lửa'], ['🚒', 'fire truck', 'xe cứu hỏa'], ['🚑', 'ambulance', 'xe cứu thương']],
+      groups: [
+        { p: '🛣️', en: 'on the road', vi: 'trên đường', words: [['🚗', 'car', 'ô tô'], ['🚌', 'bus', 'xe buýt'], ['🚲', 'bike', 'xe đạp'], ['🏍️', 'motorbike', 'xe máy'], ['🛵', 'scooter', 'xe tay ga'], ['🚚', 'truck', 'xe tải'], ['🚕', 'taxi', 'xe tắc xi'], ['🚐', 'van', 'xe khách nhỏ'], ['🚓', 'police car', 'xe cảnh sát'], ['🚒', 'fire truck', 'xe cứu hỏa'], ['🚑', 'ambulance', 'xe cứu thương'], ['🚜', 'tractor', 'máy cày'], ['🏎️', 'race car', 'xe đua'], ['🛴', 'kick scooter', 'xe trượt scooter'], ['🛹', 'skateboard', 'ván trượt'], ['🚦', 'traffic light', 'đèn giao thông'], ['⛽', 'gas station', 'cây xăng']] },
+        { p: '🛤️', en: 'on rails', vi: 'trên đường ray', words: [['🚂', 'train', 'tàu hỏa'], ['🚇', 'subway', 'tàu điện ngầm'], ['🚊', 'tram', 'xe điện'], ['🚡', 'cable car', 'cáp treo']] },
+        { p: '🌊', en: 'on the water', vi: 'trên mặt nước', words: [['⛵', 'boat', 'con thuyền'], ['🚢', 'ship', 'tàu thủy'], ['🛶', 'canoe', 'xuồng'], ['🚤', 'speedboat', 'ca nô']] },
+        { p: '☁️', en: 'in the sky', vi: 'trên bầu trời', words: [['✈️', 'plane', 'máy bay'], ['🚁', 'helicopter', 'trực thăng'], ['🚀', 'rocket', 'tên lửa'], ['🪂', 'parachute', 'dù'], ['🛸', 'flying saucer', 'đĩa bay']] },
+      ],
       qs: [
         { q: 'How do you go to school?', v: 'Bé đi học bằng gì?', p: '🏫', a: [['I walk to school.', 'Mình đi bộ đến trường.']], f: ['I go to school by {w}.', 'Mình đi học bằng {v}.'], c: ['car', 'bus', 'bike', 'motorbike'] },
-        { q: 'What flies in the sky?', v: 'Cái gì bay trên bầu trời?', p: '☁️', k: 'plane', no: ['helicopter', 'rocket'], a: [['A plane flies in the sky.', 'Máy bay bay trên bầu trời.']] },
-        { q: 'What goes on the water?', v: 'Cái gì đi trên mặt nước?', p: '🌊', k: 'boat', a: [['A boat goes on the water.', 'Con thuyền đi trên mặt nước.']] },
-        { q: 'What runs on train tracks?', v: 'Cái gì chạy trên đường ray?', p: '🛤️', k: 'train', a: [['A train runs on tracks.', 'Tàu hỏa chạy trên đường ray.']] },
-        { q: 'What takes sick people to the hospital?', v: 'Xe nào chở người ốm đến bệnh viện?', p: '🏥', k: 'ambulance', no: ['taxi', 'car', 'helicopter'], a: [['An ambulance.', 'Xe cứu thương.']] },
+        { q: 'What flies in the sky?', v: 'Cái gì bay trên bầu trời?', p: '☁️', k: 'plane', no: ['helicopter', 'rocket', 'parachute', 'flying saucer'], a: [['A plane flies in the sky.', 'Máy bay bay trên bầu trời.']] },
+        { q: 'What goes on the water?', v: 'Cái gì đi trên mặt nước?', p: '🌊', k: 'boat', no: ['ship', 'canoe', 'speedboat'], a: [['A boat goes on the water.', 'Con thuyền đi trên mặt nước.']] },
+        { q: 'What runs on train tracks?', v: 'Cái gì chạy trên đường ray?', p: '🛤️', k: 'train', no: ['subway', 'tram', 'cable car'], a: [['A train runs on tracks.', 'Tàu hỏa chạy trên đường ray.']] },
+        { q: 'What takes sick people to the hospital?', v: 'Xe nào chở người ốm đến bệnh viện?', p: '🏥', k: 'ambulance', no: ['taxi', 'car', 'helicopter', 'van'], a: [['An ambulance.', 'Xe cứu thương.']] },
         { q: 'What puts out fires?', v: 'Xe nào dập lửa?', p: '🔥', k: 'fire truck', a: [['A fire truck puts out fires.', 'Xe cứu hỏa dập lửa.']] },
-        { q: 'What goes to the moon?', v: 'Cái gì bay lên mặt trăng?', p: '🌙', k: 'rocket', a: [['A rocket goes to the moon.', 'Tên lửa bay lên mặt trăng.']] },
+        { q: 'What goes to the moon?', v: 'Cái gì bay lên mặt trăng?', p: '🌙', k: 'rocket', no: ['flying saucer'], a: [['A rocket goes to the moon.', 'Tên lửa bay lên mặt trăng.']] },
+        { q: 'What goes under the ground?', v: 'Cái gì chạy dưới lòng đất?', p: '🕳️', k: 'subway', a: [['A subway goes under the ground.', 'Tàu điện ngầm chạy dưới lòng đất.']] },
+        { q: 'What tells cars to stop and go?', v: 'Cái gì bảo xe dừng lại và đi tiếp?', p: '🛑', k: 'traffic light', a: [['A traffic light.', 'Đèn giao thông.']] },
+        { q: 'What do farmers drive?', v: 'Nông dân lái xe gì?', p: '🌾', k: 'tractor', no: ['truck'], a: [['Farmers drive tractors.', 'Nông dân lái máy cày.']] },
       ],
     },
     {
       id: 'feelings', ic: '😊', en: 'Feelings', vi: 'Cảm xúc', bare: true,
-      words: [['😊', 'happy', 'vui vẻ'], ['😢', 'sad', 'buồn'], ['😠', 'angry', 'tức giận'], ['😨', 'scared', 'sợ hãi'], ['😴', 'tired', 'mệt, buồn ngủ'], ['😋', 'hungry', 'đói bụng'], ['😮', 'surprised', 'ngạc nhiên'], ['🤒', 'sick', 'bị ốm'], ['🤩', 'excited', 'háo hức'], ['😳', 'shy', 'ngại ngùng']],
+      words: [['😊', 'happy', 'vui vẻ'], ['😢', 'sad', 'buồn'], ['😠', 'angry', 'tức giận'], ['😨', 'scared', 'sợ hãi'], ['😴', 'tired', 'mệt'], ['🥱', 'sleepy', 'buồn ngủ'], ['😋', 'hungry', 'đói bụng'], ['🥤', 'thirsty', 'khát nước'], ['😮', 'surprised', 'ngạc nhiên'], ['🤒', 'sick', 'bị ốm'], ['🤩', 'excited', 'háo hức'], ['😳', 'shy', 'ngại ngùng'], ['😑', 'bored', 'chán'], ['😟', 'worried', 'lo lắng'], ['😕', 'confused', 'bối rối'], ['🤪', 'silly', 'nghịch ngợm'], ['🥰', 'loved', 'được yêu thương'], ['😌', 'calm', 'bình tĩnh'], ['😎', 'cool', 'ngầu'], ['🤢', 'yucky', 'buồn nôn'], ['🦸', 'brave', 'dũng cảm'], ['😤', 'proud', 'tự hào']],
       qs: [
         { q: 'How are you today?', v: 'Hôm nay bé thấy thế nào?', p: '🙂', a: [["I'm fine, thank you!", 'Mình khỏe, cảm ơn!']], f: ["I'm {w}.", 'Mình thấy {v}.'], c: ['happy', 'sad', 'tired', 'hungry', 'excited', 'sick'] },
         { q: 'How does the boy feel?', v: 'Bạn nhỏ cảm thấy thế nào?', p: '😢', k: 'sad', a: [['He is sad.', 'Bạn ấy đang buồn.']] },
-        { q: 'You get a present. How do you feel?', v: 'Bé được tặng quà. Bé thấy thế nào?', p: '🎁', k: 'happy', no: ['excited', 'surprised'], a: [["I'm happy!", 'Mình thấy vui!']] },
-        { q: 'You see a big monster. How do you feel?', v: 'Bé thấy một con quái vật to. Bé thấy thế nào?', p: '👹', k: 'scared', no: ['surprised'], a: [["I'm scared!", 'Mình thấy sợ!']] },
-        { q: "It's lunchtime. How do you feel?", v: 'Đến giờ ăn trưa rồi. Bé thấy thế nào?', p: '🍽️', k: 'hungry', no: ['excited', 'happy'], a: [["I'm hungry.", 'Mình thấy đói.']] },
-        { q: "It's very late at night. How do you feel?", v: 'Đêm khuya rồi. Bé thấy thế nào?', p: '🌙', k: 'tired', a: [["I'm tired. I want to sleep.", 'Mình mệt rồi. Mình muốn đi ngủ.']] },
+        { q: 'You get a present. How do you feel?', v: 'Bé được tặng quà. Bé thấy thế nào?', p: '🎁', k: 'happy', no: ['excited', 'surprised', 'loved', 'proud'], a: [["I'm happy!", 'Mình thấy vui!']] },
+        { q: 'You see a big monster. How do you feel?', v: 'Bé thấy một con quái vật to. Bé thấy thế nào?', p: '👹', k: 'scared', no: ['surprised', 'worried', 'brave'], a: [["I'm scared!", 'Mình thấy sợ!']] },
+        { q: "It's lunchtime. How do you feel?", v: 'Đến giờ ăn trưa rồi. Bé thấy thế nào?', p: '🍽️', k: 'hungry', no: ['excited', 'happy', 'thirsty'], a: [["I'm hungry.", 'Mình thấy đói.']] },
+        { q: "It's very late at night. How do you feel?", v: 'Đêm khuya rồi. Bé thấy thế nào?', p: '🌙', k: 'tired', no: ['sleepy'], a: [["I'm tired. I want to sleep.", 'Mình mệt rồi. Mình muốn đi ngủ.']] },
         { q: 'What do you do when you are sad?', v: 'Khi buồn bé làm gì?', p: '🫂', a: [['I hug my mom.', 'Mình ôm mẹ.'], ['I talk to my friend.', 'Mình nói chuyện với bạn.']] },
+        { q: "You didn't drink all day. How do you feel?", v: 'Cả ngày bé chưa uống nước. Bé thấy thế nào?', p: '🏜️', k: 'thirsty', no: ['tired', 'sick'], a: [["I'm thirsty.", 'Mình khát nước.']] },
+        { q: 'There is nothing to do. How do you feel?', v: 'Không có gì để làm. Bé thấy thế nào?', p: '🪑', k: 'bored', no: ['tired', 'sleepy', 'calm', 'sad'], a: [["I'm bored.", 'Mình thấy chán.']] },
+        { q: 'You win a race. How do you feel?', v: 'Bé thắng cuộc thi chạy. Bé thấy thế nào?', p: '🏆', k: 'proud', no: ['happy', 'excited', 'cool', 'loved'], a: [["I'm proud!", 'Mình thấy tự hào!']] },
       ],
     },
     {
       id: 'toys', ic: '🧸', en: 'Toys', vi: 'Đồ chơi',
-      words: [['⚽', 'ball', 'quả bóng'], ['🪆', 'doll', 'búp bê'], ['🧸', 'teddy bear', 'gấu bông'], ['🪁', 'kite', 'cái diều'], ['🎈', 'balloon', 'bóng bay'], ['🤖', 'robot', 'người máy'], ['🧩', 'puzzle', 'trò xếp hình'], ['🧱', 'block', 'khối xếp hình'], ['🪀', 'yo-yo', 'con quay yo-yo'], ['🥁', 'drum', 'cái trống'], ['🎮', 'video game', 'trò chơi điện tử']],
+      groups: [
+        { p: '🧸', en: 'toys', vi: 'đồ chơi', words: [['⚽', 'ball', 'quả bóng'], ['🪆', 'doll', 'búp bê'], ['🧸', 'teddy bear', 'gấu bông'], ['🪁', 'kite', 'cái diều'], ['🎈', 'balloon', 'bóng bay'], ['🤖', 'robot', 'người máy'], ['🧩', 'puzzle', 'trò xếp hình'], ['🧱', 'block', 'khối xếp hình'], ['🪀', 'yo-yo', 'con quay yo-yo'], ['🥁', 'drum', 'cái trống'], ['🎮', 'video game', 'trò chơi điện tử'], ['🎲', 'dice', 'xúc xắc', 'p'], ['🃏', 'card', 'lá bài'], ['♟️', 'chess', 'cờ vua', 'u'], ['🪄', 'magic wand', 'đũa thần'], ['🦖', 'dinosaur', 'khủng long'], ['🦄', 'unicorn', 'kỳ lân'], ['🪅', 'piñata', 'thú nhồi kẹo'], ['🎁', 'present', 'món quà']] },
+        { p: '🎡', en: 'at the fair', vi: 'khu vui chơi', words: [['🎠', 'carousel', 'vòng ngựa quay'], ['🎡', 'Ferris wheel', 'vòng đu quay'], ['🎢', 'roller coaster', 'tàu lượn siêu tốc'], ['🎪', 'circus', 'rạp xiếc'], ['🤡', 'clown', 'chú hề'], ['🎆', 'fireworks', 'pháo hoa', 'p']] },
+      ],
       qs: [
         { q: 'What can fly high in the wind?', v: 'Cái gì bay cao trong gió?', p: '🌬️', k: 'kite', no: ['balloon'], a: [['A kite can fly high!', 'Cái diều bay cao!']] },
         { q: 'What do you hug at night?', v: 'Buổi tối bé ôm gì đi ngủ?', p: '🛏️', k: 'teddy bear', no: ['doll'], a: [['I hug my teddy bear.', 'Mình ôm gấu bông.']] },
@@ -565,20 +652,111 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
         { q: 'What can go "pop"?', v: 'Cái gì có thể nổ "bụp"?', p: '📌', k: 'balloon', a: [['A balloon can go "pop"!', 'Quả bóng bay nổ "bụp"!']] },
         { q: "What's your favorite toy?", v: 'Đồ chơi bé thích nhất là gì?', p: '❤️', f: ['My favorite toy is my {w}.', 'Đồ chơi mình thích nhất là {v}.'] },
         { q: 'Do you like robots?', v: 'Bé có thích người máy không?', p: '🤖', a: [['Yes! Robots are cool.', 'Có ạ! Người máy rất ngầu.'], ["No, I don't. I like dolls.", 'Không ạ. Mình thích búp bê.']] },
+        { q: 'Who has a red nose and funny shoes?', v: 'Ai có cái mũi đỏ và đôi giày buồn cười?', p: '🔴👃', k: 'clown', a: [['A clown!', 'Chú hề!']] },
+        { q: 'What lights up the sky at New Year?', v: 'Cái gì làm sáng bầu trời đêm Giao thừa?', p: '🌃', k: 'fireworks', a: [['Fireworks!', 'Pháo hoa!']] },
+        { q: 'Which ride goes round and round with horses?', v: 'Trò nào quay vòng vòng với những chú ngựa?', p: '🐴', k: 'carousel', no: ['Ferris wheel'], a: [['A carousel!', 'Vòng ngựa quay!']] },
       ],
     },
     {
       id: 'jobs', ic: '🧑‍⚕️', en: 'Jobs', vi: 'Nghề nghiệp', line: '{A}!',
-      words: [['🧑‍⚕️', 'doctor', 'bác sĩ'], ['👮', 'police officer', 'cảnh sát'], ['🧑‍🚒', 'firefighter', 'lính cứu hỏa'], ['🧑‍🍳', 'cook', 'đầu bếp'], ['🧑‍🌾', 'farmer', 'nông dân'], ['🧑‍✈️', 'pilot', 'phi công'], ['🧑‍🎤', 'singer', 'ca sĩ'], ['🧑‍🎨', 'artist', 'họa sĩ'], ['🧑‍🚀', 'astronaut', 'phi hành gia'], ['👷', 'builder', 'thợ xây'], ['🧑‍🔬', 'scientist', 'nhà khoa học']],
+      words: [['🧑‍⚕️', 'doctor', 'bác sĩ'], ['🦷', 'dentist', 'nha sĩ'], ['🐶🩺', 'vet', 'bác sĩ thú y'], ['👮', 'police officer', 'cảnh sát'], ['🧑‍🚒', 'firefighter', 'lính cứu hỏa'], ['🧑‍🍳', 'cook', 'đầu bếp'], ['🥐', 'baker', 'thợ làm bánh'], ['🧑‍🌾', 'farmer', 'nông dân'], ['🧑‍✈️', 'pilot', 'phi công'], ['🧑‍🎤', 'singer', 'ca sĩ'], ['💃', 'dancer', 'vũ công'], ['🧑‍🎨', 'artist', 'họa sĩ'], ['📸', 'photographer', 'thợ chụp ảnh'], ['🧑‍🚀', 'astronaut', 'phi hành gia'], ['👷', 'builder', 'thợ xây'], ['🧑‍🔬', 'scientist', 'nhà khoa học'], ['🧑‍🔧', 'mechanic', 'thợ sửa xe'], ['🧑‍💻', 'programmer', 'lập trình viên'], ['🧑‍💼', 'office worker', 'nhân viên văn phòng'], ['🧑‍⚖️', 'judge', 'thẩm phán'], ['🕵️', 'detective', 'thám tử'], ['💂', 'guard', 'lính gác'], ['🤵', 'waiter', 'người phục vụ'], ['💇', 'hairdresser', 'thợ cắt tóc'], ['🎣', 'fisher', 'ngư dân'], ['🧑‍🏫', 'teacher', 'giáo viên'], ['📮', 'mail carrier', 'người đưa thư']],
       qs: [
-        { q: 'Who helps sick people?', v: 'Ai giúp người bị ốm?', p: '🤒', k: 'doctor', a: [['A doctor helps sick people.', 'Bác sĩ giúp người bị ốm.']] },
-        { q: 'Who flies a plane?', v: 'Ai lái máy bay?', p: '✈️', k: 'pilot', no: ['astronaut'], a: [['A pilot flies a plane.', 'Phi công lái máy bay.']] },
-        { q: 'Who cooks food in a restaurant?', v: 'Ai nấu ăn ở nhà hàng?', p: '🍳', k: 'cook', a: [['A cook cooks food.', 'Đầu bếp nấu ăn.']] },
+        { q: 'Who helps sick people?', v: 'Ai giúp người bị ốm?', p: '🤒', k: 'doctor', no: ['dentist', 'vet'], a: [['A doctor helps sick people.', 'Bác sĩ giúp người bị ốm.']] },
+        { q: 'Who flies a plane?', v: 'Ai lái máy bay?', p: '✈️', k: 'pilot', no: ['astronaut', 'flying saucer'], a: [['A pilot flies a plane.', 'Phi công lái máy bay.']] },
+        { q: 'Who cooks food in a restaurant?', v: 'Ai nấu ăn ở nhà hàng?', p: '🍳', k: 'cook', no: ['baker', 'waiter'], a: [['A cook cooks food.', 'Đầu bếp nấu ăn.']] },
         { q: 'Who grows rice?', v: 'Ai trồng lúa?', p: '🌾', k: 'farmer', a: [['A farmer grows rice.', 'Nông dân trồng lúa.']] },
         { q: 'Who puts out fires?', v: 'Ai dập lửa?', p: '🔥', k: 'firefighter', a: [['A firefighter puts out fires.', 'Lính cứu hỏa dập lửa.']] },
         { q: 'Who goes to space?', v: 'Ai bay vào vũ trụ?', p: '🌌', k: 'astronaut', no: ['pilot', 'scientist'], a: [['An astronaut goes to space.', 'Phi hành gia bay vào vũ trụ.']] },
         { q: 'Who builds houses?', v: 'Ai xây nhà?', p: '🏠', k: 'builder', a: [['A builder builds houses.', 'Thợ xây xây nhà.']] },
         { q: 'What do you want to be?', v: 'Lớn lên bé muốn làm nghề gì?', p: '🌟', f: ['I want to be {a}.', 'Mình muốn làm {v}.'] },
+        { q: 'Who fixes cars?', v: 'Ai sửa ô tô?', p: '🚗', k: 'mechanic', a: [['A mechanic fixes cars.', 'Thợ sửa xe sửa ô tô.']] },
+        { q: 'Who brings letters to your home?', v: 'Ai mang thư đến nhà bé?', p: '✉️', k: 'mail carrier', a: [['A mail carrier brings letters.', 'Người đưa thư mang thư đến.']] },
+        { q: 'Who takes care of sick animals?', v: 'Ai chữa bệnh cho con vật?', p: '🐱', k: 'vet', no: ['doctor', 'farmer'], a: [['A vet takes care of sick animals.', 'Bác sĩ thú y chữa bệnh cho con vật.']] },
+        { q: 'Who checks your teeth?', v: 'Ai khám răng cho bé?', p: '😁', k: 'dentist', no: ['doctor'], a: [['A dentist checks my teeth.', 'Nha sĩ khám răng cho mình.']] },
+        { q: 'Who makes bread?', v: 'Ai làm bánh mì?', p: '🍞', k: 'baker', no: ['cook', 'farmer'], a: [['A baker makes bread.', 'Thợ làm bánh làm bánh mì.']] },
+      ],
+    },
+    {
+      id: 'home', ic: '🏠', en: 'My home', vi: 'Nhà của bé',
+      groups: [
+        { p: '🚪', en: 'rooms', vi: 'các phòng', words: [['🛏️', 'bedroom', 'phòng ngủ'], ['🛁', 'bathroom', 'phòng tắm'], ['🍳', 'kitchen', 'nhà bếp'], ['🛋️', 'living room', 'phòng khách'], ['🏡', 'yard', 'sân vườn'], ['🚗🏠', 'garage', 'nhà để xe']] },
+        { p: '🪑', en: 'furniture and things', vi: 'đồ đạc', words: [['🚪', 'door', 'cái cửa'], ['🪟', 'window', 'cửa sổ'], ['🪑', 'chair', 'cái ghế'], ['🛌', 'bed', 'cái giường'], ['💡', 'lamp', 'cái đèn'], ['📺', 'TV', 'ti vi'], ['🕰️', 'clock', 'đồng hồ'], ['🪞', 'mirror', 'cái gương'], ['🖼️', 'picture', 'bức tranh'], ['🪴', 'plant', 'chậu cây'], ['🕯️', 'candle', 'cây nến'], ['🔑', 'key', 'chìa khóa'], ['📱', 'phone', 'điện thoại'], ['🧺', 'basket', 'cái giỏ'], ['🪜', 'ladder', 'cái thang'], ['🧹', 'broom', 'cái chổi'], ['🪣', 'bucket', 'cái xô']] },
+        { p: '🚿', en: 'in the bathroom', vi: 'trong phòng tắm', words: [['🚿', 'shower', 'vòi hoa sen'], ['🛀', 'bathtub', 'bồn tắm'], ['🚽', 'toilet', 'bồn cầu'], ['🪥', 'toothbrush', 'bàn chải đánh răng'], ['🧼', 'soap', 'xà phòng', 'u'], ['🧻', 'toilet paper', 'giấy vệ sinh', 'u'], ['🧽', 'sponge', 'miếng bọt biển']] },
+        { p: '🍽️', en: 'in the kitchen', vi: 'trong nhà bếp', words: [['🥄', 'spoon', 'cái thìa'], ['🍴', 'fork', 'cái dĩa'], ['🔪', 'knife', 'con dao'], ['🥢', 'chopsticks', 'đôi đũa', 'p'], ['🍽️', 'plate', 'cái đĩa'], ['🥣', 'bowl', 'cái bát'], ['🥤', 'cup', 'cái cốc'], ['🫖', 'teapot', 'ấm trà'], ['🥘', 'pan', 'cái chảo'], ['🧊', 'ice', 'đá lạnh', 'u']] },
+      ],
+      qs: [
+        { q: 'Where do you sleep?', v: 'Bé ngủ ở đâu?', p: '😴', k: 'bedroom', a: [['I sleep in my bedroom.', 'Mình ngủ trong phòng ngủ.']] },
+        { q: 'Where do you cook food?', v: 'Nấu ăn ở đâu?', p: '🍲', k: 'kitchen', a: [['We cook in the kitchen.', 'Nhà mình nấu ăn trong bếp.']] },
+        { q: 'Where do you watch TV?', v: 'Bé xem ti vi ở đâu?', p: '📺', k: 'living room', no: ['bedroom'], a: [['I watch TV in the living room.', 'Mình xem ti vi ở phòng khách.']] },
+        { q: 'What do you open to go outside?', v: 'Bé mở cái gì để đi ra ngoài?', p: '🏃', k: 'door', no: ['window'], a: [['I open the door.', 'Mình mở cửa.']] },
+        { q: 'What do you use to see your face?', v: 'Bé dùng gì để soi mặt?', p: '🙂', k: 'mirror', no: ['phone'], a: [['I use a mirror.', 'Mình dùng cái gương.']] },
+        { q: 'What do you use to sweep the floor?', v: 'Bé quét nhà bằng gì?', p: '🧽', k: 'broom', a: [['I use a broom.', 'Mình dùng cái chổi.']] },
+        { q: 'What do you eat with in Vietnam?', v: 'Ở Việt Nam mình ăn cơm bằng gì?', p: '🍚', k: 'chopsticks', no: ['spoon', 'fork', 'bowl'], a: [['We eat with chopsticks.', 'Mình ăn bằng đũa.']] },
+        { q: 'What do you use to wash your hands?', v: 'Bé rửa tay bằng gì?', p: '👐', k: 'soap', no: ['sponge'], a: [['I use soap and water.', 'Mình dùng xà phòng và nước.']] },
+        { q: 'What is your favorite room?', v: 'Bé thích phòng nào nhất?', p: '❤️', f: ['My favorite room is the {w}.', 'Phòng mình thích nhất là {v}.'], c: ['bedroom', 'bathroom', 'kitchen', 'living room', 'yard', 'garage'] },
+        { q: 'What is in your bedroom?', v: 'Trong phòng ngủ của bé có gì?', p: '🛏️', f: ['There is {a} in my bedroom.', 'Trong phòng ngủ của mình có {v}.'], c: ['bed', 'lamp', 'chair', 'window', 'clock', 'mirror', 'picture', 'plant'] },
+      ],
+    },
+    {
+      id: 'actions', ic: '🏃', en: 'Actions', vi: 'Hành động', bare: true,
+      groups: [
+        { p: '🏃', en: 'moving', vi: 'vận động', words: [['🏃', 'run', 'chạy'], ['🚶', 'walk', 'đi bộ'], ['🤸', 'jump', 'nhảy'], ['🏊', 'swim', 'bơi'], ['🧗', 'climb', 'leo trèo'], ['🚴', 'ride a bike', 'đạp xe'], ['💃', 'dance', 'nhảy múa'], ['🧍', 'stand up', 'đứng lên'], ['🪑', 'sit down', 'ngồi xuống'], ['🦅', 'fly', 'bay'], ['👏', 'clap', 'vỗ tay'], ['👋', 'wave', 'vẫy tay'], ['🫂', 'hug', 'ôm']] },
+        { p: '📖', en: 'every day', vi: 'hằng ngày', words: [['😋', 'eat', 'ăn'], ['🥤', 'drink', 'uống'], ['😴', 'sleep', 'ngủ'], ['⏰', 'wake up', 'thức dậy'], ['🪥', 'brush my teeth', 'đánh răng'], ['🧼', 'wash my hands', 'rửa tay'], ['🛀', 'take a bath', 'tắm'], ['👕', 'get dressed', 'mặc quần áo'], ['📖', 'read', 'đọc'], ['✍️', 'write', 'viết'], ['✏️', 'draw', 'vẽ'], ['🎤', 'sing', 'hát'], ['🧑‍🍳', 'cook', 'nấu ăn'], ['🧹', 'sweep', 'quét nhà']] },
+        { p: '🗣️', en: 'talking and thinking', vi: 'nói và nghĩ', words: [['🗣️', 'talk', 'nói chuyện'], ['👂', 'listen', 'lắng nghe'], ['👀', 'look', 'nhìn'], ['🤔', 'think', 'suy nghĩ'], ['😂', 'laugh', 'cười lớn'], ['😊', 'smile', 'mỉm cười'], ['😭', 'cry', 'khóc'], ['😘', 'kiss', 'hôn'], ['🔓', 'open', 'mở'], ['🔒', 'close', 'đóng'], ['🎁', 'give', 'cho, tặng'], ['🎣', 'go fishing', 'đi câu cá']] },
+      ],
+      qs: [
+        { q: 'What can you do?', v: 'Bé làm được gì?', p: '💪', f: ['I can {w}.', 'Mình biết {v}.'], c: ['run', 'jump', 'swim', 'climb', 'ride a bike', 'dance', 'sing', 'draw', 'read', 'write'] },
+        { q: 'What do you do at night?', v: 'Ban đêm bé làm gì?', p: '🌙', k: 'sleep', no: ['read', 'take a bath', 'brush my teeth'], a: [['I sleep.', 'Mình đi ngủ.']] },
+        { q: 'What do you do with a book?', v: 'Bé làm gì với quyển sách?', p: '📕', k: 'read', no: ['look', 'write', 'draw'], a: [['I read a book.', 'Mình đọc sách.']] },
+        { q: 'What do birds do?', v: 'Chim làm gì?', p: '🐦', k: 'fly', no: ['sing', 'walk', 'eat', 'drink', 'sleep', 'look'], a: [['Birds fly.', 'Chim bay.']] },
+        { q: 'What do you do before you eat?', v: 'Trước khi ăn bé làm gì?', p: '🍽️', k: 'wash my hands', a: [['I wash my hands.', 'Mình rửa tay.']] },
+        { q: 'What do you do with your ears?', v: 'Bé dùng tai để làm gì?', p: '👂', k: 'listen', a: [['I listen.', 'Mình lắng nghe.']] },
+        { q: 'What do you do in the pool?', v: 'Bé làm gì ở bể bơi?', p: '💦', k: 'swim', no: ['jump', 'take a bath'], a: [['I swim!', 'Mình bơi!']] },
+        { q: 'What do you do when something is funny?', v: 'Khi có gì buồn cười bé làm gì?', p: '🤡', k: 'laugh', no: ['smile', 'clap'], a: [['I laugh!', 'Mình cười!']] },
+        { q: 'What do you do every morning?', v: 'Sáng nào bé cũng làm gì?', p: '🌅', f: ['Every morning, I {w}.', 'Sáng nào mình cũng {v}.'], c: ['wake up', 'brush my teeth', 'wash my hands', 'get dressed', 'take a bath'] },
+        { q: "Let's play! What do you want to do?", v: 'Mình chơi nhé! Bé muốn làm gì?', p: '🎉', f: ["Let's {w}!", 'Mình cùng {v} nhé!'], c: ['run', 'jump', 'dance', 'sing', 'draw', 'swim', 'go fishing', 'ride a bike'] },
+      ],
+    },
+    {
+      id: 'places', ic: '🏙️', en: 'Places', vi: 'Nơi chốn',
+      words: [['🏠', 'house', 'ngôi nhà'], ['🏢', 'apartment', 'chung cư'], ['🏫', 'school', 'trường học'], ['🏥', 'hospital', 'bệnh viện'], ['⛲', 'park', 'công viên'], ['🦒🦓', 'zoo', 'sở thú'], ['🛒', 'supermarket', 'siêu thị'], ['🏪', 'store', 'cửa hàng'], ['🍽️', 'restaurant', 'nhà hàng'], ['📚', 'library', 'thư viện'], ['🏛️', 'museum', 'bảo tàng'], ['🎬', 'movie theater', 'rạp chiếu phim'], ['🏊', 'swimming pool', 'bể bơi'], ['🏖️', 'beach', 'bãi biển'], ['🛫', 'airport', 'sân bay'], ['🚉', 'train station', 'nhà ga'], ['🏦', 'bank', 'ngân hàng'], ['🏤', 'post office', 'bưu điện'], ['🚓', 'police station', 'đồn cảnh sát'], ['🚒', 'fire station', 'trạm cứu hỏa'], ['🏨', 'hotel', 'khách sạn'], ['🏟️', 'stadium', 'sân vận động'], ['🏰', 'castle', 'lâu đài'], ['⛺', 'campsite', 'khu cắm trại'], ['🌉', 'bridge', 'cây cầu'], ['🏙️', 'city', 'thành phố'], ['🏘️', 'village', 'làng quê'], ['🛕', 'temple', 'ngôi chùa'], ['🥖', 'bakery', 'tiệm bánh']],
+      qs: [
+        { q: 'Where do you go when you are sick?', v: 'Khi ốm bé đi đâu?', p: '🤒', k: 'hospital', a: [['I go to the hospital.', 'Mình đi bệnh viện.']] },
+        { q: 'Where can you see lions and giraffes?', v: 'Bé xem sư tử và hươu cao cổ ở đâu?', p: '🦁', k: 'zoo', a: [['At the zoo!', 'Ở sở thú!']] },
+        { q: 'Where do you buy food?', v: 'Bé mua đồ ăn ở đâu?', p: '🥕', k: 'supermarket', no: ['store', 'bakery', 'restaurant'], a: [['At the supermarket.', 'Ở siêu thị.']] },
+        { q: 'Where can you borrow books?', v: 'Bé mượn sách ở đâu?', p: '📕', k: 'library', no: ['school'], a: [['At the library.', 'Ở thư viện.']] },
+        { q: 'Where do you watch movies?', v: 'Bé xem phim ở đâu?', p: '🍿', k: 'movie theater', no: ['house', 'apartment'], a: [['At the movie theater.', 'Ở rạp chiếu phim.']] },
+        { q: 'Where do you catch a plane?', v: 'Bé đi máy bay ở đâu?', p: '✈️', k: 'airport', a: [['At the airport.', 'Ở sân bay.']] },
+        { q: 'Where can you build sandcastles?', v: 'Bé xây lâu đài cát ở đâu?', p: '🪣', k: 'beach', a: [['At the beach!', 'Ở bãi biển!']] },
+        { q: 'Where does a king live?', v: 'Nhà vua sống ở đâu?', p: '🤴', k: 'castle', a: [['A king lives in a castle.', 'Nhà vua sống trong lâu đài.']] },
+        { q: 'Where do you live?', v: 'Bé sống ở đâu?', p: '🗺️', a: [['I live in Vietnam.', 'Mình sống ở Việt Nam.']], f: ['I live in {a}.', 'Mình sống ở {v}.'], c: ['house', 'apartment', 'city', 'village'] },
+        { q: 'Where do you like to go on the weekend?', v: 'Cuối tuần bé thích đi đâu?', p: '🎉', f: ['I like to go to the {w}.', 'Mình thích đi {v}.'], c: ['park', 'zoo', 'beach', 'supermarket', 'library', 'museum', 'swimming pool', 'movie theater'] },
+      ],
+    },
+    {
+      id: 'sports', ic: '⚽', en: 'Sports', vi: 'Thể thao', bare: true,
+      words: [['⚽', 'soccer', 'bóng đá'], ['🏀', 'basketball', 'bóng rổ'], ['🏐', 'volleyball', 'bóng chuyền'], ['🎾', 'tennis', 'quần vợt'], ['🏸', 'badminton', 'cầu lông'], ['🏓', 'table tennis', 'bóng bàn'], ['⚾', 'baseball', 'bóng chày'], ['🏉', 'rugby', 'bóng bầu dục'], ['🏒', 'hockey', 'khúc côn cầu'], ['⛳', 'golf', 'đánh gôn'], ['🎳', 'bowling', 'ném bowling'], ['🏊', 'swimming', 'bơi lội'], ['🏃', 'running', 'chạy bộ'], ['🚴', 'cycling', 'đạp xe'], ['⛷️', 'skiing', 'trượt tuyết'], ['⛸️', 'ice skating', 'trượt băng'], ['🏄', 'surfing', 'lướt sóng'], ['🥊', 'boxing', 'đấm bốc'], ['🥋', 'karate', 'võ karate'], ['🤸', 'gymnastics', 'thể dục dụng cụ'], ['🧗', 'climbing', 'leo núi'], ['🧘', 'yoga', 'yoga'], ['🏇', 'horse riding', 'cưỡi ngựa'], ['🎣', 'fishing', 'câu cá'], ['🥇', 'gold medal', 'huy chương vàng', 'c']],
+      qs: [
+        { q: 'What sport do you like?', v: 'Bé thích môn thể thao nào?', p: '❤️', f: ['I like {w}.', 'Mình thích {v}.'] },
+        { q: 'Which sport uses a racket and a shuttlecock?', v: 'Môn nào dùng vợt và quả cầu?', p: '🏸', k: 'badminton', no: ['tennis', 'table tennis'], a: [["It's badminton.", 'Đó là cầu lông.']] },
+        { q: 'Which sport do you play with a big orange ball and a hoop?', v: 'Môn nào chơi với quả bóng to màu cam và cái rổ?', p: '🟠', k: 'basketball', a: [["It's basketball.", 'Đó là bóng rổ.']] },
+        { q: 'Which sport do you do in the water?', v: 'Môn nào chơi dưới nước?', p: '💦', k: 'swimming', no: ['surfing', 'fishing'], a: [["It's swimming.", 'Đó là bơi lội.']] },
+        { q: 'Which sport do you do on snow?', v: 'Môn nào chơi trên tuyết?', p: '🏔️', k: 'skiing', no: ['ice skating'], a: [["It's skiing.", 'Đó là trượt tuyết.']] },
+        { q: 'You kick the ball into a goal. What sport is it?', v: 'Đá bóng vào khung thành là môn gì?', p: '🥅', k: 'soccer', no: ['rugby', 'hockey'], a: [["It's soccer.", 'Đó là bóng đá.']] },
+        { q: 'You win first place. What do you get?', v: 'Bé về nhất. Bé được gì?', p: '🏁', k: 'gold medal', a: [['I get a gold medal!', 'Mình được huy chương vàng!']] },
+        { q: 'Can you swim?', v: 'Bé biết bơi không?', p: '🏊', a: [['Yes, I can.', 'Có ạ, mình biết bơi.'], ["No, I can't. But I want to learn.", 'Chưa ạ. Nhưng mình muốn học.']] },
+      ],
+    },
+    {
+      id: 'music', ic: '🎵', en: 'Music', vi: 'Âm nhạc',
+      words: [['🎹', 'piano', 'đàn piano'], ['🎸', 'guitar', 'đàn ghi ta'], ['🥁', 'drum', 'cái trống'], ['🎻', 'violin', 'đàn vi ô lông'], ['🎺', 'trumpet', 'kèn trumpet'], ['🎷', 'saxophone', 'kèn saxophone'], ['🪕', 'banjo', 'đàn banjo'], ['🪗', 'accordion', 'đàn accordion'], ['🔔', 'bell', 'cái chuông'], ['🎤', 'microphone', 'micro'], ['🎧', 'headphones', 'tai nghe', 'p'], ['📻', 'radio', 'đài radio'], ['🎶', 'song', 'bài hát'], ['🎼', 'music', 'bản nhạc', 'u'], ['💃', 'dance', 'điệu nhảy'], ['🎙️', 'singer', 'ca sĩ']],
+      qs: [
+        { q: 'What can you play?', v: 'Bé chơi được nhạc cụ gì?', p: '🎶', f: ['I can play the {w}.', 'Mình chơi được {v}.'], c: ['piano', 'guitar', 'drum', 'violin', 'trumpet'] },
+        { q: 'Which one has black and white keys?', v: 'Cái nào có phím đen và trắng?', p: '🎼', k: 'piano', no: ['accordion'], a: [["It's a piano.", 'Đó là đàn piano.']] },
+        { q: 'What do you hit with sticks?', v: 'Bé gõ cái gì bằng dùi?', p: '🥢', k: 'drum', no: ['bell'], a: [["It's a drum.", 'Đó là cái trống.']] },
+        { q: 'What do you put on your ears to listen to music?', v: 'Bé đeo gì lên tai để nghe nhạc?', p: '👂', k: 'headphones', a: [['I put on headphones.', 'Mình đeo tai nghe.']] },
+        { q: 'What do singers sing into?', v: 'Ca sĩ hát vào cái gì?', p: '🧑‍🎤', k: 'microphone', a: [['They sing into a microphone.', 'Ca sĩ hát vào micro.']] },
+        { q: 'Do you like to sing?', v: 'Bé có thích hát không?', p: '🎤', a: [['Yes! I love singing.', 'Có ạ! Mình rất thích hát.'], ['I like to dance more!', 'Mình thích nhảy hơn!']] },
       ],
     },
   ];
@@ -587,12 +765,13 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
   TOPICS.forEach(tp => {
     const norm = h => ([p, en, vi, f]) => ({ p, en, vi, f: f === 'c' || f === 'x' ? '' : f || (tp.bare ? 'u' : ''), x: f === 'x', h, t: tp.id });
     if (tp.groups) {
-      // Mỗi nơi sống cũng là một từ (farm, ocean...), và mỗi nơi có câu hỏi ghép hình "What animals live ...?"
+      // Chủ đề chia nhóm: mỗi nhóm có tiêu đề riêng trong phần Từ vựng.
+      // Chủ đề Con vật (habitat): mỗi nhóm là một nơi sống, cũng là một từ (farm, ocean...), và có câu hỏi ghép hình "What animals live ...?"
       tp.places = tp.groups.map(g => ({ p: g.p, en: g.en, vi: g.vi, f: 'u', place: true, at: g.at, atVi: g.atVi, t: tp.id }));
-      tp.words = tp.groups.flatMap((g, i) => g.words.map(norm(tp.places[i])));
-      tp.places.forEach((pl, i) => tp.qs.push({ q: 'What animals live ' + pl.at + '?', v: 'Những con vật nào sống ' + pl.atVi + '?', p: pl.p, f: ['{S} live ' + pl.at + '.', '{V} sống ' + pl.atVi + '.'], c: tp.groups[i].words.map(w => w[1]) }));
+      tp.words = tp.groups.flatMap((g, i) => g.words.map(norm(tp.habitat ? tp.places[i] : null).bind(null)).map(w => Object.assign(w, { g: tp.places[i] })));
+      if (tp.habitat) tp.places.forEach((pl, i) => tp.qs.push({ q: 'What animals live ' + pl.at + '?', v: 'Những con vật nào sống ' + pl.atVi + '?', p: pl.p, f: ['{S} live ' + pl.at + '.', '{V} sống ' + pl.atVi + '.'], c: tp.groups[i].words.map(w => w[1]) }));
     } else tp.words = tp.words.map(norm(null));
-    tp.words.concat(tp.places || []).forEach(w => { if (!WORD[w.en]) WORD[w.en] = w; });
+    tp.words.concat(tp.habitat ? tp.places : []).forEach(w => { if (!WORD[w.en]) WORD[w.en] = w; });
   });
   const wordIn = (tp, en) => tp.words.find(w => w.en === en) || WORD[en];
   // Câu nói con vật sống ở đâu
@@ -600,7 +779,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
 
   // ---------- Ngữ pháp nhỏ cho khung câu ----------
   const art = w => w.f ? w.en : (/^[aeiou]/i.test(w.en) && !/^(uni|eu|one)/i.test(w.en) ? 'an ' : 'a ') + w.en;
-  const IRR = { foot: 'feet', tooth: 'teeth', fish: 'fish', mango: 'mangoes', sheep: 'sheep', deer: 'deer', wolf: 'wolves', octopus: 'octopuses' };
+  const IRR = { potato: 'potatoes', tomato: 'tomatoes', knife: 'knives', shrimp: 'shrimp', squid: 'squid', leaf: 'leaves', mouse: 'mice', foot: 'feet', tooth: 'teeth', fish: 'fish', mango: 'mangoes', sheep: 'sheep', deer: 'deer', wolf: 'wolves', octopus: 'octopuses' };
   function plural(w) {
     if (w.f) return w.en;
     const parts = w.en.split(' '), last = parts.pop();
@@ -618,7 +797,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
     if (tp.line) return tp.line.replace('{w}', w.en).replace('{A}', cap(art(w)));
     if (tp.bare && w.f === 'u') return cap(w.en) + '!';
     if (w.f === 'p') return "They're " + w.en + '.';
-    return "It's " + art(w) + '.';
+    return ("It's " + art(w) + '.').replace('..', '.');
   }
 
   // ---------- Lưu trữ ----------
@@ -922,19 +1101,20 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
     const s = store.seen[topic.id] = store.seen[topic.id] || [];
     if (!s.includes(w.en)) { s.push(w.en); save(); }
   }
+  const groupEn = pl => cap(pl.at || pl.en);
   function renderVocab() {
     const seen = store.seen[topic.id] || [];
     const card = (w, i) => '<button class="vcard' + (seen.includes(w.en) ? ' seen' : '') + '" data-i="' + i + '"><span class="pic">' + pic(w.p) + '</span><span class="en">' + esc(w.en) + '</span>' +
       (store.vi ? '<span class="vi">' + esc(w.vi) + '</span>' : '') + '</button>';
     $('vocab').innerHTML = topic.places
-      ? topic.places.map(pl => '<button class="ghead" data-place="' + esc(pl.en) + '"><span class="gic">' + pl.p + '</span><span><b>' + esc(cap(pl.at)) + '</b>' + (store.vi ? '<small>' + esc(cap(pl.atVi)) + '</small>' : '') + '</span><span class="gsp">🔊</span></button>' +
-        topic.words.map((w, i) => w.h === pl ? card(w, i) : '').join('')).join('')
+      ? topic.places.map((pl, k) => '<button class="ghead" data-k="' + k + '"><span class="gic">' + pl.p + '</span><span><b>' + esc(groupEn(pl)) + '</b>' + (store.vi ? '<small>' + esc(cap(pl.atVi || pl.vi)) + '</small>' : '') + '</span><span class="gsp">🔊</span></button>' +
+        topic.words.map((w, i) => w.g === pl ? card(w, i) : '').join('')).join('')
       : topic.words.map(card).join('');
     $('vocabProgress').textContent = 'Bé đã nghe ' + seen.length + '/' + topic.words.length + ' từ. Chạm vào hình để nghe và xem to.';
   }
   $('vocab').addEventListener('click', e => {
     const gh = e.target.closest('.ghead');
-    if (gh) { sfx.tap(); const pl = WORD[gh.dataset.place]; say(cap(pl.at)); return; }
+    if (gh) { sfx.tap(); say(groupEn(topic.places[+gh.dataset.k])); return; }
     const b = e.target.closest('.vcard'); if (!b) return;
     playAllTok++; sfx.tap(); openFlash(+b.dataset.i);
   });
@@ -1033,7 +1213,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
   let game = null;
   function makeQuiz() {
     const small = store.age === 0, n = small ? 3 : 4;
-    const kinds = topic.places ? (small ? ['listen', 'where', 'who', 'ask'] : ['where', 'listen', 'who', 'look', 'ask', 'where', 'who', 'look'])
+    const kinds = topic.habitat ? (small ? ['listen', 'where', 'who', 'ask'] : ['where', 'listen', 'who', 'look', 'ask', 'where', 'who', 'look'])
       : small ? ['listen', 'listen', 'ask'] : ['listen', 'look', 'ask', 'look'];
     const asks = shuffle(topic.qs.filter(q => q.k));
     const used = new Set(), items = [];
@@ -1049,7 +1229,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
     };
     for (let i = 0; i < ROUND; i++) {
       let kind = kinds[i % kinds.length];
-      if (kind === 'ask' && !asks.length) kind = topic.places ? 'where' : 'listen';
+      if (kind === 'ask' && !asks.length) kind = topic.habitat ? 'where' : 'listen';
       if (kind === 'ask') {
         const q = asks.shift(), w = wordIn(topic, q.k);
         used.add(w.en);

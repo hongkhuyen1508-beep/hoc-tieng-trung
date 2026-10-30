@@ -182,6 +182,20 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
 .grid span { width: 68px; height: 68px; display: grid; place-items: center; font-size: 2.5rem; background: var(--card); border: 2px solid var(--line); border-radius: 16px; }
 .grid span.ref { border: 3px solid var(--sun); background: var(--sun-soft); }
 
+/* Nghe lại, gợi ý câu trả lời */
+.ask p { cursor: pointer; }
+.ask-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.btn.tool { min-height: 50px; padding: 8px 10px; font-size: 1rem; border-radius: 16px; }
+.hintbox {
+  border: 3px dashed var(--sun); background: var(--sun-soft); color: var(--ink); border-radius: 20px; padding: 10px 14px;
+  display: grid; gap: 3px; text-align: left; font: inherit; cursor: pointer; box-shadow: var(--shadow);
+}
+.hb-label { font-family: var(--font-display); font-weight: 800; font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: var(--soft-ink); }
+.hb-en { font-family: var(--font-display); font-size: 1.3rem; line-height: 1.25; }
+.hb-en b { font-weight: 800; }
+.ipa { font-family: "Charis SIL", "Doulos SIL", "Gentium Plus", "Lucida Sans Unicode", "Segoe UI", "Noto Sans", sans-serif; color: var(--frame); font-size: 1.05rem; line-height: 1.3; overflow-wrap: anywhere; }
+.hb-vi { color: var(--soft-ink); font-size: .95rem; }
+
 /* Chúc mừng */
 .overlay { position: fixed; inset: 0; background: rgba(20, 24, 48, .55); display: grid; place-items: center; z-index: 20; padding: 16px; }
 .winbox {
@@ -232,9 +246,18 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
   <div class="topbar">
     <button class="btn icon-btn" id="backBtn" data-ta="home">🏠</button>
     <div class="dots" id="dots"></div>
-    <button class="btn icon-btn" id="sayBtn" data-ta="replay">🔊</button>
   </div>
   <div class="ask" id="ask"><span class="face" id="face">🦉</span><p id="askText"></p></div>
+  <div class="ask-tools">
+    <button class="btn tool" id="sayBtn" data-t="replay"></button>
+    <button class="btn tool" id="hintBtn" data-t="hintBtn"></button>
+  </div>
+  <button class="hintbox" id="hintBox" hidden>
+    <span class="hb-label" data-t="hintLabel"></span>
+    <span class="hb-en"><b id="hintEn"></b> <span aria-hidden="true">🔊</span></span>
+    <span class="ipa" id="hintIpa"></span>
+    <span class="hb-vi" id="hintVi"></span>
+  </button>
   <div class="board" id="board"></div>
   <div class="opts" id="opts"></div>
 </div>
@@ -285,9 +308,9 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
       parents: '👪 For parents', optSound: 'Fun sounds', optVoice: 'Read questions aloud', optAi: 'Lifelike AI voice',
       aiNote: 'The AI voice uses Google Gemini and sounds like a real teacher. It needs a free Gemini key (get one at aistudio.google.com/apikey). If you already saved a key in the Chinese learning site or Sudoku Bé Vui, this page shares it. Each sentence is made once and then kept on this device.',
       keyPh: 'Paste your Gemini key (AIza...)', saveKey: 'Save key',
-      howNote: 'Each round has 8 questions. A wrong answer can be tried again, and after 2 tries the right answer glows. Fewer mistakes earn 3 stars. Difficulty follows the age chosen above.',
-      reset: 'Clear earned stars', resetQ: 'Clear all the stars your child has earned?', home: 'Back to home', replay: 'Hear the question again',
-      again: '▶ Play again', other: '🏠 Pick another game', stars: n => n + ' stars', hello: "Hello! Let's play together!",
+      howNote: 'Each round has 8 questions. Tap 🔊 to hear the question again. 💡 Hint shows a full model answer in English with IPA (it counts as one mistake). A wrong answer can be tried again, and after 2 tries the right answer glows. Fewer mistakes earn 3 stars. Difficulty follows the age chosen above.',
+      reset: 'Clear earned stars', resetQ: 'Clear all the stars your child has earned?', home: 'Back to home',
+      again: '▶ Play again', other: '🏠 Pick another game', replay: '🔊 Listen again', hintBtn: '💡 Hint', hintLabel: 'Model answer · tap to listen', stars: n => n + ' stars', hello: "Hello! Let's play together!",
       praise: ['Great job!', "That's right!", 'Awesome!', 'So clever!', 'Correct!', 'Hooray!'],
       tryAgain: ['Not quite, try again!', 'Almost! Have another go!', 'Look carefully and try again!'],
       winTitle: ['Great job!', 'Awesome!', 'Hooray!'], winAll: n => 'You got all ' + n + ' right!', winSome: n => 'You finished ' + n + ' questions. Play again to get 3 stars!',
@@ -300,9 +323,9 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
       parents: '👪 Dành cho bố mẹ', optSound: 'Âm thanh vui', optVoice: 'Đọc câu hỏi to', optAi: 'Giọng AI như người thật',
       aiNote: 'Giọng AI dùng Gemini của Google, đọc tự nhiên như cô giáo. Cần khóa Gemini miễn phí (lấy ở aistudio.google.com/apikey). Nếu đã lưu khóa ở web học tiếng Trung hoặc Sudoku Bé Vui thì trang này tự dùng chung. Mỗi câu chỉ tạo một lần rồi lưu trong máy.',
       keyPh: 'Dán khóa Gemini (AIza...)', saveKey: 'Lưu khóa',
-      howNote: 'Mỗi lượt có 8 câu. Bé trả lời sai thì thử lại, sai 2 lần sẽ có gợi ý. Sao: ít sai thì được 3 sao. Độ khó theo tuổi chọn ở trên.',
-      reset: 'Xóa số sao đã đạt', resetQ: 'Xóa hết số sao bé đã đạt?', home: 'Về trang chủ', replay: 'Nghe lại câu hỏi',
-      again: '▶ Chơi tiếp', other: '🏠 Chọn trò khác', stars: n => n + ' sao', hello: 'Xin chào bé, mình cùng chơi nhé!',
+      howNote: 'Mỗi lượt có 8 câu. Bấm 🔊 để nghe lại câu hỏi. 💡 Gợi ý trả lời hiện câu trả lời mẫu tiếng Anh đủ câu, kèm phiên âm IPA (tính như một lần sai). Bé trả lời sai thì thử lại, sai 2 lần thì đáp án đúng sáng lên. Sao: ít sai thì được 3 sao. Độ khó theo tuổi chọn ở trên.',
+      reset: 'Xóa số sao đã đạt', resetQ: 'Xóa hết số sao bé đã đạt?', home: 'Về trang chủ',
+      again: '▶ Chơi tiếp', other: '🏠 Chọn trò khác', replay: '🔊 Nghe lại câu hỏi', hintBtn: '💡 Gợi ý trả lời', hintLabel: 'Câu trả lời mẫu · bấm để nghe', stars: n => n + ' sao', hello: 'Xin chào bé, mình cùng chơi nhé!',
       praise: ['Giỏi quá!', 'Đúng rồi!', 'Tuyệt vời!', 'Bé thông minh quá!', 'Chính xác!', 'Hoan hô!'],
       tryAgain: ['Chưa đúng, bé thử lại nhé!', 'Gần đúng rồi, thử lần nữa nào!', 'Bé nhìn kỹ lại nhé!'],
       winTitle: ['Giỏi quá!', 'Tuyệt vời!', 'Hoan hô bé!'], winAll: n => 'Bé trả lời đúng cả ' + n + ' câu!', winSome: n => 'Bé làm xong ' + n + ' câu rồi. Chơi lại để được 3 sao nhé!',
@@ -373,14 +396,15 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
   try { findVoice(); speechSynthesis.onvoiceschanged = findVoice; } catch (e) {}
   // Đọc bằng giọng của máy; done() được gọi khi đọc xong (hoặc khi không đọc được)
   let lastU = null;
-  function deviceSay(text, done) {
+  function deviceSay(text, done, lang) {
     done = done || (() => {});
-    if (!voices[L()]) findVoice();
-    const v = voices[L()];
+    lang = lang || L();
+    if (!voices[lang]) findVoice();
+    const v = voices[lang];
     try {
       const u = new SpeechSynthesisUtterance(text);
       // Máy chưa báo danh sách giọng thì vẫn đọc theo mã ngôn ngữ, để trình duyệt tự chọn giọng
-      if (v) { u.voice = v; u.lang = v.lang; } else u.lang = L() === 'vi' ? 'vi-VN' : 'en-US';
+      if (v) { u.voice = v; u.lang = v.lang; } else u.lang = lang === 'vi' ? 'vi-VN' : 'en-US';
       u.rate = .9; u.pitch = 1.05; u.volume = 1;
       let over = false;
       const end = () => { if (!over) { over = true; clearTimeout(guard); done(); } };
@@ -415,7 +439,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
   };
   let aiDead = '', aiPauseUntil = 0;
   const aiOn = () => store.ai && !!aiKey() && !aiDead;
-  const ck = text => store.aiVoice + '|' + L() + '|' + text;
+  const ck = (text, lang) => store.aiVoice + '|' + (lang || L()) + '|' + text;
   const mem = new Map();
   const idb = (() => {
     let dbp = null;
@@ -476,12 +500,13 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
   let running = false;
   function ready(k, blob) { (waiters.get(k) || []).forEach(f => f(blob)); waiters.delete(k); }
   function failAll() { [...waiters.keys()].forEach(k => ready(k, null)); }
-  function aiQueue(text, front) {
+  function aiQueue(text, front, lang) {
+    lang = lang || L();
     if (!aiOn() || !text) return;
-    const k = ck(text);
+    const k = ck(text, lang);
     if (queued.has(k)) return;
     queued.add(k);
-    (front ? queue.unshift : queue.push).call(queue, { text, k, lang: L(), tries: 0 });
+    (front ? queue.unshift : queue.push).call(queue, { text, k, lang, tries: 0 });
     runQueue();
   }
   async function runQueue() {
@@ -523,17 +548,18 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
   function stopVoice() { sayTok++; try { player.pause(); speechSynthesis.cancel(); } catch (e) {} }
   // Đọc một câu; trả về Promise xong khi đọc hết, để màn chơi không cắt ngang lời khen.
   // Có giọng AI thì luôn dùng giọng AI (đợi tối đa vài giây), không trộn lẫn hai giọng; lỗi hoặc quá lâu mới dùng giọng máy.
-  function say(text) {
+  function say(text, lang) {
+    lang = lang || L();
     return new Promise(done => {
       if (!store.voice || !text) return done();
       const tok = ++sayTok;
       try { player.pause(); } catch (e) {}
       let over = false;
       const fin = () => { if (!over) { over = true; done(); } };
-      const dev = () => { if (tok === sayTok) deviceSay(text, fin); else fin(); };
+      const dev = () => { if (tok === sayTok) deviceSay(text, fin, lang); else fin(); };
       if (!aiOn() || aiPauseUntil > Date.now()) { dev(); return; }
       try { speechSynthesis.cancel(); } catch (e) {}
-      const k = ck(text);
+      const k = ck(text, lang);
       const play = blob => {
         if (tok !== sayTok) return fin();
         if (!blob) return dev();
@@ -552,12 +578,12 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
         let waited = false;
         const timer = setTimeout(() => { waited = true; dev(); }, 6000);
         waiters.set(k, (waiters.get(k) || []).concat([blob => { clearTimeout(timer); if (!waited) play(blob); }]));
-        aiQueue(text, true);
+        aiQueue(text, true, lang);
       });
     });
   }
   // Tạo sẵn giọng AI cho câu sắp hỏi, để tới lượt là phát ngay
-  function prefetch(text) { if (aiOn() && text) cached(ck(text)).then(b => { if (!b) aiQueue(text); }); }
+  function prefetch(text, lang) { if (aiOn() && text) cached(ck(text, lang)).then(b => { if (!b) aiQueue(text, false, lang); }); }
 
   // ---------- Các trò chơi ----------
   // Mỗi trò sinh một câu đố theo độ khó d (0: 3–4 tuổi ... 3: 6–7 tuổi).
@@ -600,6 +626,34 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
   // Những thứ diễn ra theo thứ tự
   const SEQS = [['🥚', '🐣', '🐥', '🐔'], ['🌰', '🌱', '🌿', '🌳'], ['👶', '🧒', '🧑', '🧓'], ['🌑', '🌒', '🌓', '🌔', '🌕'], ['🌅', '☀️', '🌇', '🌙'], ['🌱', '🌷', '💐'], ['☁️', '🌧️', '🌈'], ['🌾', '🍞', '🥪'], ['🕐', '🕑', '🕒', '🕓', '🕔']];
 
+  // ---------- Câu trả lời mẫu tiếng Anh kèm phiên âm IPA ----------
+  const ONES = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+  const TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+  const W = n => n < 20 ? ONES[n] : TENS[Math.floor(n / 10)] + (n % 10 ? '-' + ONES[n % 10] : '');
+  const art = w => /^[aeiou]/.test(w) ? 'an' : 'a';
+  // Tên tiếng Anh và tiếng Việt của mọi hình dùng trong câu trả lời mẫu
+  const NAMES = [
+    ['⭐', 'star', 'ngôi sao'], ['🌸', 'flower', 'bông hoa'], ['🎈', 'balloon', 'quả bóng bay'], ['⚽', 'ball', 'quả bóng'], ['🐟', 'fish', 'con cá'],
+    ['🔴', 'red circle', 'hình tròn đỏ'], ['🔵', 'blue circle', 'hình tròn xanh dương'], ['🟡', 'yellow circle', 'hình tròn vàng'], ['🟢', 'green circle', 'hình tròn xanh lá'],
+    ['🥚', 'egg', 'quả trứng'], ['🐣', 'hatching chick', 'gà con đang nở'], ['🐥', 'baby chick', 'gà con'], ['🐔', 'hen', 'gà mái'],
+    ['🌰', 'acorn', 'hạt dẻ'], ['🌱', 'seedling', 'mầm cây'], ['🌿', 'young plant', 'cây non'], ['🌳', 'big tree', 'cây to'],
+    ['👶', 'baby', 'em bé'], ['🧒', 'child', 'bạn nhỏ'], ['🧑', 'grown-up', 'người lớn'], ['🧓', 'old person', 'người già'],
+    ['🌑', 'new moon', 'trăng non'], ['🌒', 'crescent moon', 'trăng lưỡi liềm'], ['🌓', 'half moon', 'trăng bán nguyệt'], ['🌔', 'gibbous moon', 'trăng gần tròn'], ['🌕', 'full moon', 'trăng tròn'],
+    ['🌅', 'sunrise', 'bình minh'], ['☀️', 'sun', 'mặt trời'], ['🌇', 'sunset', 'hoàng hôn'], ['🌙', 'moon', 'mặt trăng'],
+    ['🌷', 'tulip', 'hoa tulip'], ['💐', 'bunch of flowers', 'bó hoa'], ['☁️', 'cloud', 'đám mây'], ['🌧️', 'rain', 'cơn mưa'], ['🌈', 'rainbow', 'cầu vồng'],
+    ['🌾', 'wheat', 'lúa mì'], ['🍞', 'bread', 'bánh mì'], ['🥪', 'sandwich', 'bánh kẹp'],
+    ['🕐', 'clock at one', 'đồng hồ 1 giờ'], ['🕑', 'clock at two', 'đồng hồ 2 giờ'], ['🕒', 'clock at three', 'đồng hồ 3 giờ'], ['🕓', 'clock at four', 'đồng hồ 4 giờ'], ['🕔', 'clock at five', 'đồng hồ 5 giờ'],
+  ];
+  const EN_OF = Object.assign(Object.fromEntries(ALL.map(x => [x.e, x.en])), Object.fromEntries(NAMES.map(x => [x[0], x[1]])));
+  const VI_OF = Object.assign(Object.fromEntries(ALL.map(x => [x.e, x.n])), Object.fromEntries(NAMES.map(x => [x[0], x[2]])));
+  // Phiên âm IPA giọng Mỹ cho từng từ xuất hiện trong câu trả lời mẫu
+  const IPA = {"a":"ə","above":"əˈbʌv","acorn":"ˈeɪkɔrn","airplane":"ˈɛrˌpleɪn","ambulance":"ˈæmbjələns","an":"ən","and":"ænd","apple":"ˈæpəl","apples":"ˈæpəlz","are":"ɑr","at":"æt","baby":"ˈbeɪbi","ball":"bɔl","balloon":"bəˈlun","balloons":"bəˈlunz","balls":"bɔlz","bamboo":"bæmˈbu","banana":"bəˈnænə","bananas":"bəˈnænəz","bear":"bɛr","bee":"bi","belong":"bɪˈlɔŋ","belongs":"bɪˈlɔŋz","below":"bɪˈloʊ","between":"bɪˈtwin","bicycle":"ˈbaɪsɪkəl","big":"bɪɡ","biggest":"ˈbɪɡɪst","bird":"bɝd","birthday":"ˈbɝθˌdeɪ","blue":"blu","bone":"boʊn","both":"boʊθ","bowl":"boʊl","bread":"brɛd","broccoli":"ˈbrɑkəli","bunch":"bʌntʃ","bus":"bʌs","cake":"keɪk","candle":"ˈkændəl","car":"kɑr","carrot":"ˈkærət","cars":"kɑrz","cat":"kæt","cats":"kæts","cherry":"ˈtʃɛri","chick":"tʃɪk","chicken":"ˈtʃɪkən","chicks":"tʃɪks","child":"tʃaɪld","circle":"ˈsɝkəl","clock":"klɑk","cloud":"klaʊd","comes":"kʌmz","corn":"kɔrn","cow":"kaʊ","crab":"kræb","crescent":"ˈkrɛsənt","cucumber":"ˈkjukəmbɚ","diamond":"ˈdaɪmənd","does":"dʌz","dog":"dɔɡ","dogs":"dɔɡz","dolphin":"ˈdɑlfən","duck":"dʌk","ducks":"dʌks","each":"itʃ","egg":"ɛɡ","eggplant":"ˈɛɡˌplænt","eight":"eɪt","eighteen":"eɪˈtin","eighty":"ˈeɪti","elephant":"ˈɛləfənt","eleven":"ɪˈlɛvən","equals":"ˈikwəlz","fewer":"ˈfjuɚ","fifteen":"fɪfˈtin","fifty":"ˈfɪfti","five":"faɪv","fire":"ˈfaɪɚ","fish":"fɪʃ","flamingo":"fləˈmɪŋɡoʊ","flower":"ˈflaʊɚ","flowers":"ˈflaʊɚz","forty":"ˈfɔrti","four":"fɔr","fourteen":"ˈfɔrˈtin","full":"fʊl","gas":"ɡæs","gibbous":"ˈɡɪbəs","giraffe":"dʒɚˈæf","goal":"ɡoʊl","goes":"ɡoʊz","grapes":"ɡreɪps","green":"ɡrin","grown-up":"ˈɡroʊnˌʌp","half":"hæf","has":"hæz","hatching":"ˈhætʃɪŋ","heart":"hɑrt","hen":"hɛn","hexagon":"ˈhɛksəˌɡɑn","honey":"ˈhʌni","horse":"hɔrs","is":"ɪz","it":"ɪt","key":"ki","left":"lɛft","letter":"ˈlɛtɚ","lion":"ˈlaɪən","lock":"lɑk","mailbox":"ˈmeɪlˌbɑks","make":"meɪk","mango":"ˈmæŋɡoʊ","milk":"mɪlk","minus":"ˈmaɪnəs","missing":"ˈmɪsɪŋ","monkey":"ˈmʌŋki","moon":"mun","more":"mɔr","nest":"nɛst","new":"nu","next":"nɛkst","nine":"naɪn","nineteen":"ˈnaɪnˈtin","ninety":"ˈnaɪnti","not":"nɑt","number":"ˈnʌmbɚ","o'clock":"əˈklɑk","octopus":"ˈɑktəˌpʊs","of":"əv","oh":"oʊ","old":"oʊld","one":"wʌn","onion":"ˈʌnjən","orange":"ˈɔrəndʒ","oranges":"ˈɔrəndʒɪz","oval":"ˈoʊvəl","owl":"aʊl","paint":"peɪnt","paintbrush":"ˈpeɪntˌbrʌʃ","palette":"ˈpælət","panda":"ˈpændə","parrot":"ˈpɛrət","past":"pæst","pear":"pɛr","pentagon":"ˈpɛntɪˌɡɑn","person":"ˈpɝsən","pig":"pɪɡ","pineapple":"ˈpaɪˌnæpəl","plant":"plænt","plus":"plʌs","police":"pəˈlis","potato":"pəˈteɪˌtoʊ","pump":"pʌmp","quarter":"ˈkwɔrtɚ","rabbit":"ˈræbət","rabbits":"ˈræbɪts","rain":"reɪn","rainbow":"ˈreɪnˌboʊ","rectangle":"ˈrɛktæŋɡəl","red":"rɛd","right":"raɪt","rocket":"ˈrɑkət","same":"seɪm","sandwich":"ˈsændwɪtʃ","scooter":"ˈskutɚ","seedling":"ˈsidlɪŋ","seven":"ˈsɛvən","seventeen":"ˈsɛvənˈtin","seventy":"ˈsɛvənti","shadow":"ˈʃæˌdoʊ","shark":"ʃɑrk","shoe":"ʃu","shrimp":"ʃrɪmp","side":"saɪd","sides":"saɪdz","six":"sɪks","sixteen":"sɪkˈstin","sixty":"ˈsɪksti","smallest":"ˈsmɔlɪst","sock":"sɑk","spoon":"spun","square":"skwɛr","squirrel":"ˈskwɝəl","star":"stɑr","stars":"stɑrz","strawberries":"ˈstrɔˌbɛriz","strawberry":"ˈstrɔˌbɛri","sun":"sʌn","sunrise":"ˈsʌnˌraɪz","sunset":"ˈsʌnˌsɛt","swan":"swɑn","ten":"tɛn","the":"ðə","there":"ðɛr","thirteen":"ˈθɝˈtin","thirty":"ˈθɝˌdi","this":"ðɪs","three":"θri","tiger":"ˈtaɪɡɚ","to":"tu","tooth":"tuθ","toothbrush":"ˈtuθbrəʃ","tractor":"ˈtræktɚ","train":"treɪn","tree":"tri","triangle":"ˈtraɪˌæŋɡəl","truck":"trʌk","tulip":"ˈtuləp","twelve":"twɛlv","twenty":"ˈtwɛnti","twenty-five":"ˈtwɛntiˌfaɪv","two":"tu","umbrella":"əmˈbrɛlə","watermelon":"ˈwɔtɚˌmɛlən","whale":"weɪl","wheat":"wit","with":"wɪð","yellow":"ˈjɛloʊ","young":"jʌŋ","zero":"ˈzɪroʊ"};
+  const ipaOf = sentence => {
+    const ws = sentence.toLowerCase().replace(/[.,!?]/g, '').split(/\s+/).map(w => IPA[w] || w.split('-').map(x => IPA[x] || x).join(' '));
+    // "the" đọc là /ði/ khi từ sau bắt đầu bằng nguyên âm (the apple, the egg)
+    return '/' + ws.map((w, i) => w === 'ðə' && /^ˈ?[aeiouæɑɔɛɪʊʌəɝ]/.test(ws[i + 1] || '') ? 'ði' : w).join(' ') + '/';
+  };
+
   const GAMES = [
     {
       id: 'tron', icon: '🎲', name: ['Trộn tất cả', 'Mix it up'], desc: ['Mỗi câu một kiểu', 'A new kind each time'],
@@ -615,7 +669,8 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
         if (d >= 2) { const other = pick(COUNTABLE.filter(x => x !== it)); arr = arr.concat(Array(ri(2, d === 2 ? 4 : 7)).fill(other)); }
         arr = shuffle(arr);
         const ask = vien('Có bao nhiêu ' + NAME[it] + '?', 'How many ' + many(it, 2) + '?');
-        return { ask, board: pileHtml(arr, pileSize(arr.length)), opts: numOpts(n, d === 0 ? 3 : 4, 1).map(v => ({ v, html: v })), ans: n, tap: true };
+        const model = [cap('There ' + (n === 1 ? 'is ' : 'are ') + W(n) + ' ' + many(it, n) + '.'), 'Có ' + n + ' ' + NAME[it] + '.'];
+        return { ask, model, board: pileHtml(arr, pileSize(arr.length)), opts: numOpts(n, d === 0 ? 3 : 4, 1).map(v => ({ v, html: v })), ans: n, tap: true };
       },
     },
     {
@@ -634,7 +689,8 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
         const cells = shown.map((e, i) => i === hole ? '<b class="q">?</b>' : '<b>' + e + '</b>');
         if (hole === len) cells.push('<b class="q">?</b>');
         const opts = shuffle([...new Set(letters.map(l => map[l]).concat(d >= 1 ? [syms[letters.length]] : []))]);
-        return { ask: hole === len ? vien('Hình nào tiếp theo?', 'What comes next?') : vien('Hình nào còn thiếu?', 'What is missing?'), board: '<div class="seq">' + cells.join('') + '</div>', opts: opts.map(v => ({ v, html: v })), ans, cols: opts.length };
+        const model = hole === len ? ['The next one is the ' + EN_OF[ans] + '.', 'Hình tiếp theo là ' + VI_OF[ans] + '.'] : ['The missing one is the ' + EN_OF[ans] + '.', 'Hình còn thiếu là ' + VI_OF[ans] + '.'];
+        return { model, ask: hole === len ? vien('Hình nào tiếp theo?', 'What comes next?') : vien('Hình nào còn thiếu?', 'What is missing?'), board: '<div class="seq">' + cells.join('') + '</div>', opts: opts.map(v => ({ v, html: v })), ans, cols: opts.length };
       },
     },
     {
@@ -649,6 +705,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
         const same = sample(CATS[a].items, k - 1), odd = pick(CATS[b].items), A = CATS[a], B = CATS[b];
         const opts = shuffle(same.concat([odd]).map(([e]) => ({ v: e, html: e })));
         return {
+          model: ['The ' + odd[2] + ' does not belong.', cap(odd[1]) + ' không cùng nhóm.'],
           ask: vien('Hình nào không cùng nhóm?', 'Which one doesn’t belong?'), board: '', opts, ans: odd[0], cols: k === 5 ? 3 : k === 4 ? 2 : 3,
           praise: vien('Đúng rồi! ' + cap(odd[1]) + ' là ' + B.vi + ', còn lại là ' + A.vi + '.', 'That’s right! The ' + odd[2] + ' is ' + B.one + ', and the others are ' + A.many + '.'),
         };
@@ -669,6 +726,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
         if (d >= 2) opts.push({ v: 'eq', html: vien('Bằng nhau', 'The same'), word: true, wide: true });
         const hi = Math.max(a, b), lo = Math.min(a, b);
         return {
+          model: ans === 'eq' ? ['Both sides are the same.', 'Hai bên bằng nhau.'] : ['The ' + (ans === 'L' ? 'left' : 'right') + ' side has ' + (more ? 'more' : 'fewer') + '.', 'Bên ' + (ans === 'L' ? 'trái' : 'phải') + (more ? ' nhiều' : ' ít') + ' hơn.'],
           ask: vien('Bên nào ' + (more ? 'nhiều' : 'ít') + ' hơn?', 'Which side has ' + (more ? 'more' : 'fewer') + '?'), board: '', opts, ans, cols: 2,
           praise: a === b ? vien('Đúng rồi! Hai bên bằng nhau, đều có ' + a + '.', 'That’s right! Both sides are the same, ' + a + ' each.') : more ? vien('Đúng rồi! ' + hi + ' nhiều hơn ' + lo + '.', 'That’s right! ' + hi + ' is more than ' + lo + '.') : vien('Đúng rồi! ' + lo + ' ít hơn ' + hi + '.', 'That’s right! ' + lo + ' is fewer than ' + hi + '.'),
         };
@@ -692,7 +750,8 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
           ? (d <= 1 ? (sub ? 'Có ' + a + ' ' + NAME[it] + ', bớt đi ' + b + '. Còn lại mấy?' : 'Có ' + a + ' ' + NAME[it] + ', thêm ' + b + '. Tất cả là mấy?') : a + (sub ? ' trừ ' : ' cộng ') + b + ' bằng mấy?')
           : (d <= 1 ? (sub ? 'There ' + (a === 1 ? 'is ' : 'are ') + a + ' ' + many(it, a) + '. Take away ' + b + '. How many are left?' : 'There ' + (a === 1 ? 'is ' : 'are ') + a + ' ' + many(it, a) + '. Add ' + b + ' more. How many in all?') : 'What is ' + a + (sub ? ' minus ' : ' plus ') + b + '?');
         const praise = vien('Đúng rồi! ' + a + (sub ? ' trừ ' : ' cộng ') + b + ' bằng ' + ans + '.', 'That’s right! ' + a + (sub ? ' minus ' : ' plus ') + b + ' is ' + ans + '.');
-        return { ask, board, opts: numOpts(ans, d === 0 ? 3 : 4, 0).map(v => ({ v, html: v })), ans, praise };
+        const model = [cap(W(a)) + (sub ? ' minus ' : ' plus ') + W(b) + ' equals ' + W(ans) + '.', a + (sub ? ' trừ ' : ' cộng ') + b + ' bằng ' + ans + '.'];
+        return { ask, model, board, opts: numOpts(ans, d === 0 ? 3 : 4, 0).map(v => ({ v, html: v })), ans, praise };
       },
     },
     {
@@ -712,7 +771,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
         if (!opts.includes(ans)) opts[0] = ans;
         const ask = Math.abs(step) > 1 ? vien('Đếm cách ' + step + '. Số nào còn thiếu?', 'Count by ' + step + 's. Which number is missing?')
           : down ? vien('Đếm lùi. Số nào còn thiếu?', 'Count backwards. Which number is missing?') : vien('Số nào còn thiếu?', 'Which number is missing?');
-        return { ask, board: '<div class="seq">' + cells + '</div>', opts: shuffle(opts).map(v => ({ v, html: v })), ans };
+        return { ask, model: ['The missing number is ' + W(ans) + '.', 'Số còn thiếu là ' + ans + '.'], board: '<div class="seq">' + cells + '</div>', opts: shuffle(opts).map(v => ({ v, html: v })), ans };
       },
     },
     {
@@ -724,7 +783,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
         const pool = d >= 2 ? ALL.filter(x => x.c === target.c) : ALL.filter(x => x.c !== target.c);
         const others = sample(pool.filter(x => x.e !== target.e), k - 1);
         const opts = shuffle(others.concat([target]).map(x => ({ v: x.e, html: '<span class="shadow">' + x.e + '</span>' })));
-        return { ask: vien('Bóng nào là của ' + target.n + '?', 'Which shadow belongs to the ' + target.en + '?'), board: '<div class="big-one">' + target.e + '</div>', opts, ans: target.e, cols: k === 4 ? 2 : 3 };
+        return { model: ['This shadow belongs to the ' + target.en + '.', 'Đây là bóng của ' + target.n + '.'], ask: vien('Bóng nào là của ' + target.n + '?', 'Which shadow belongs to the ' + target.en + '?'), board: '<div class="big-one">' + target.e + '</div>', opts, ans: target.e, cols: k === 4 ? 2 : 3 };
       },
     },
     {
@@ -737,7 +796,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
         const sizes = shuffle(base.slice(0, k));
         const target = big ? Math.max(...sizes) : Math.min(...sizes);
         const opts = sizes.map(s => ({ v: s, html: '<span style="font-size:' + s + 'rem">' + it.e + '</span>' }));
-        return { ask: big ? vien('Cái nào to nhất?', 'Which one is the biggest?') : vien('Cái nào nhỏ nhất?', 'Which one is the smallest?'), board: '', opts, ans: target, cols: k > 3 ? (k === 4 ? 2 : 3) : 3 };
+        return { model: ['This ' + it.en + ' is the ' + (big ? 'biggest' : 'smallest') + '.', cap(it.n) + ' này ' + (big ? 'to' : 'nhỏ') + ' nhất.'], ask: big ? vien('Cái nào to nhất?', 'Which one is the biggest?') : vien('Cái nào nhỏ nhất?', 'Which one is the smallest?'), board: '', opts, ans: target, cols: k > 3 ? (k === 4 ? 2 : 3) : 3 };
       },
     },
     {
@@ -753,7 +812,8 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
         const opts = shuffle([...set]).map(v => ({ v, html: v, word: true }));
         const viT = m === 0 ? h + ' giờ' : m === 30 ? h + ' giờ rưỡi' : h + ' giờ ' + m + ' phút';
         const enT = m === 0 ? h + ' o’clock' : fmt(h, m);
-        return { ask: vien('Đồng hồ chỉ mấy giờ?', 'What time is it?'), board: clockSvg(h, m), opts, ans: fmt(h, m), cols: 2, praise: vien('Đúng rồi! ' + viT + '.', 'That’s right! It’s ' + enT + '.') };
+        const enS = m === 0 ? W(h) + ' o\'clock' : m === 30 ? 'half past ' + W(h) : m === 15 ? 'a quarter past ' + W(h) : m === 45 ? 'a quarter to ' + W(h % 12 + 1) : W(h) + ' ' + (m < 10 ? 'oh ' : '') + W(m);
+        return { model: ['It is ' + enS + '.', 'Bây giờ là ' + viT + '.'], ask: vien('Đồng hồ chỉ mấy giờ?', 'What time is it?'), board: clockSvg(h, m), opts, ans: fmt(h, m), cols: 2, praise: vien('Đúng rồi! ' + viT + '.', 'That’s right! It’s ' + enT + '.') };
       },
     },
     {
@@ -766,12 +826,12 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
           const n = ri(3, 6), kinds = shuffle([3, 4, 5, 6]).map(k => pick(bySides[k]));
           const ans = kinds.find(k => SHAPES[k].sides === n);
           const opts = kinds.map((k, i) => ({ v: k, html: shapeSvg(k, colors[i]) }));
-          return { ask: vien('Hình nào có ' + n + ' cạnh?', 'Which shape has ' + n + ' sides?'), board: '', opts, ans, cols: 2, praise: vien('Đúng rồi! ' + cap(SHAPES[ans].vi) + ' có ' + n + ' cạnh.', 'That’s right! A ' + ans + ' has ' + n + ' sides.') };
+          return { model: [cap(art(ans)) + ' ' + ans + ' has ' + W(n) + ' sides.', cap(SHAPES[ans].vi) + ' có ' + n + ' cạnh.'], ask: vien('Hình nào có ' + n + ' cạnh?', 'Which shape has ' + n + ' sides?'), board: '', opts, ans, cols: 2, praise: vien('Đúng rồi! ' + cap(SHAPES[ans].vi) + ' có ' + n + ' cạnh.', 'That’s right! A ' + ans + ' has ' + n + ' sides.') };
         }
         const pool = [['circle', 'square', 'triangle', 'star', 'heart'], ['circle', 'square', 'triangle', 'star', 'heart', 'rectangle', 'oval', 'diamond'], Object.keys(SHAPES)][d];
         const kinds = sample(pool, d === 0 ? 3 : 4), ans = pick(kinds);
         const opts = kinds.map((k, i) => ({ v: k, html: shapeSvg(k, colors[i]) }));
-        return { ask: vien('Đâu là ' + SHAPES[ans].vi + '?', 'Which one is the ' + ans + '?'), board: '', opts, ans, cols: kinds.length === 4 ? 2 : 3 };
+        return { model: ['This is ' + art(ans) + ' ' + ans + '.', 'Đây là ' + SHAPES[ans].vi + '.'], ask: vien('Đâu là ' + SHAPES[ans].vi + '?', 'Which one is the ' + ans + '?'), board: '', opts, ans, cols: kinds.length === 4 ? 2 : 3 };
       },
     },
     {
@@ -780,14 +840,15 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
         const [a, b] = sample(PAIRS, 2);
         const others = sample(PAIRS.filter(p => p !== a && p !== b), d === 0 ? 2 : 3).map(p => p[3]);
         const opts = shuffle([b[3]].concat(others)).map(v => ({ v, html: v }));
+        const model = ['The ' + b[2] + ' goes with the ' + b[5] + '.', cap(b[1]) + ' đi với ' + b[4] + '.'];
         const praise = vien('Đúng rồi! ' + cap(b[1]) + ' đi với ' + b[4] + '.', 'That’s right! The ' + b[2] + ' goes with the ' + b[5] + '.');
         // Bé lớn: suy luận theo cặp mẫu (chó đi với xương, vậy thỏ đi với gì?)
         if (d >= 2) {
           const board = '<div class="seq"><b>' + a[0] + '</b><span class="op">➜</span><b>' + a[3] + '</b></div><div class="seq"><b>' + b[0] + '</b><span class="op">➜</span><b class="q">?</b></div>';
-          return { ask: vien(cap(a[1]) + ' đi với ' + a[4] + '. Vậy ' + b[1] + ' đi với gì?', 'The ' + a[2] + ' goes with the ' + a[5] + '. What goes with the ' + b[2] + '?'), board, opts, ans: b[3], cols: 2, praise };
+          return { ask: vien(cap(a[1]) + ' đi với ' + a[4] + '. Vậy ' + b[1] + ' đi với gì?', 'The ' + a[2] + ' goes with the ' + a[5] + '. What goes with the ' + b[2] + '?'), board, opts, ans: b[3], cols: 2, praise, model };
         }
         const board = '<div class="seq"><b>' + b[0] + '</b><span class="op">➜</span><b class="q">?</b></div>';
-        return { ask: vien(cap(b[1]) + ' đi với cái gì?', 'What goes with the ' + b[2] + '?'), board, opts, ans: b[3], cols: opts.length === 4 ? 2 : 3, praise };
+        return { ask: vien(cap(b[1]) + ' đi với cái gì?', 'What goes with the ' + b[2] + '?'), board, opts, ans: b[3], cols: opts.length === 4 ? 2 : 3, praise, model };
       },
     },
     {
@@ -796,27 +857,31 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
         const [A, B] = sample(['🍎', '🍌', '⭐', '🐶', '🐱', '🎈', '🌸', '🍓'], 2);
         const eq = (left, right) => '<div class="eq">' + left.map(x => x === '+' ? '<b>+</b>' : '<span>' + x + '</span>').join('') + '<b>=</b>' + (right === '?' ? '<span class="q">?</span>' : '<span class="num">' + right + '</span>') + '</div>';
         const one = (e, n) => L() === 'vi' ? NAME[e] : many(e, n);
-        let lines, ans, ask, praise;
+        let lines, ans, ask, praise, model;
         if (d === 0) {
           const v = ri(1, 3); ans = 2 * v;
           lines = [eq([A], v), eq([A, '+', A], '?')];
+          model = ['Two ' + many(A, 2) + ' make ' + W(ans) + '.', 'Hai ' + NAME[A] + ' là ' + ans + '.'];
           ask = vien('Mỗi ' + NAME[A] + ' là ' + v + '. Hai ' + NAME[A] + ' là mấy?', 'One ' + one(A, 1) + ' is ' + v + '. How much are two ' + one(A, 2) + '?');
         } else if (d === 1) {
           const a = ri(1, 4), b = ri(1, 5); ans = a + b;
           lines = [eq([A], a), eq([B], b), eq([A, '+', B], '?')];
+          model = [cap(W(a)) + ' plus ' + W(b) + ' equals ' + W(ans) + '.', a + ' cộng ' + b + ' bằng ' + ans + '.'];
           ask = vien('Nhìn gợi ý nhé. Dòng cuối bằng mấy?', 'Look at the clues. What does the last line make?');
         } else if (d === 2) {
           const v = ri(1, 6); ans = v;
           lines = [eq([A, '+', A], 2 * v), eq([A], '?')];
+          model = ['Each ' + many(A, 1) + ' is ' + W(v) + '.', 'Mỗi ' + NAME[A] + ' là ' + v + '.'];
           ask = vien('Mỗi ' + NAME[A] + ' là số mấy?', 'What number is each ' + one(A, 1) + '?');
           praise = vien('Đúng rồi! Mỗi ' + NAME[A] + ' là ' + v + '.', 'That’s right! Each ' + one(A, 1) + ' is ' + v + '.');
         } else {
           const v = ri(1, 5), w = ri(1, 6); ans = w;
           lines = [eq([A, '+', A], 2 * v), eq([A, '+', B], v + w), eq([B], '?')];
+          model = ['Each ' + many(B, 1) + ' is ' + W(w) + '.', 'Mỗi ' + NAME[B] + ' là ' + w + '.'];
           ask = vien('Mỗi ' + NAME[B] + ' là số mấy?', 'What number is each ' + one(B, 1) + '?');
           praise = vien('Đúng rồi! ' + cap(NAME[A]) + ' là ' + v + ', nên ' + NAME[B] + ' là ' + w + '.', 'That’s right! The ' + one(A, 1) + ' is ' + v + ', so the ' + one(B, 1) + ' is ' + w + '.');
         }
-        return { ask, board: '<div class="eqs">' + lines.join('') + '</div>', opts: numOpts(ans, d === 0 ? 3 : 4, 1).map(v => ({ v, html: v })), ans, praise };
+        return { ask, board: '<div class="eqs">' + lines.join('') + '</div>', opts: numOpts(ans, d === 0 ? 3 : 4, 1).map(v => ({ v, html: v })), ans, praise, model };
       },
     },
     {
@@ -847,7 +912,9 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
         const board = '<div class="grid" style="--n:' + n + '">' + items.map(x => '<span class="' + (refs.includes(x) ? 'ref' : '') + '">' + x.e + '</span>').join('') + '</div>';
         const others = sample(items.filter(x => x !== ans && !refs.includes(x)), n === 2 ? 2 : 3);
         const opts = shuffle([ans].concat(others)).map(x => ({ v: x.e, html: x.e }));
-        return { ask, board, opts, ans: ans.e, cols: opts.length === 4 ? 2 : 3, praise: vien('Đúng rồi! Là ' + ans.n + '.', 'That’s right! It’s the ' + ans.en + '.') };
+        const where = { above: ['is above the ', 'ở trên '], below: ['is below the ', 'ở dưới '], left: ['is to the left of the ', 'ở bên trái '], right: ['is to the right of the ', 'ở bên phải '], between: ['is between the ', 'ở giữa '] }[rel];
+        const model = ['The ' + ans.en + ' ' + where[0] + X.en + (Y ? ' and the ' + Y.en : '') + '.', cap(ans.n) + ' ' + where[1] + X.n + (Y ? ' và ' + Y.n : '') + '.'];
+        return { ask, model, board, opts, ans: ans.e, cols: opts.length === 4 ? 2 : 3, praise: vien('Đúng rồi! Là ' + ans.n + '.', 'That’s right! It’s the ' + ans.en + '.') };
       },
     },
     {
@@ -865,7 +932,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
         const pickd = sample(same, Math.min(same.length, d >= 2 ? 2 : 1));
         const opts = shuffle([ans].concat(pickd, sample([...new Set(far)], k - 1 - pickd.length))).map(v => ({ v, html: v }));
         const middle = hole < seq.length - 1 && hole < Math.max(show, hole + 1) - 1;
-        return { ask: middle ? vien('Cái gì còn thiếu?', 'What is missing?') : vien('Tiếp theo là gì?', 'What comes next?'), board: '<div class="seq">' + cells.join('<span class="op">➜</span>') + '</div>', opts, ans, cols: k === 4 ? 2 : 3 };
+        return { model: middle ? ['The missing one is the ' + EN_OF[ans] + '.', 'Cái còn thiếu là ' + VI_OF[ans] + '.'] : ['Next comes the ' + EN_OF[ans] + '.', 'Tiếp theo là ' + VI_OF[ans] + '.'], ask: middle ? vien('Cái gì còn thiếu?', 'What is missing?') : vien('Tiếp theo là gì?', 'What comes next?'), board: '<div class="seq">' + cells.join('<span class="op">➜</span>') + '</div>', opts, ans, cols: k === 4 ? 2 : 3 };
       },
     },
   ];
@@ -939,7 +1006,8 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
     game.upcoming = game.q + 1 < ROUND ? makeOne() : null;
     if (game.upcoming) { prefetch(game.upcoming.ask); prefetch(game.upcoming.praise); }
     prefetch(p.praise);
-    game.p = p; game.wrongHere = 0; game.locked = false;
+    game.p = p; game.wrongHere = 0; game.locked = false; game.hinted = false;
+    $('hintBox').hidden = true;
     $('dots').innerHTML = [...Array(ROUND)].map((_, i) => '<i class="' + (i < game.q ? 'done' : i === game.q ? 'now' : '') + '"></i>').join('');
     setAsk(p.ask, '🦉', '');
     $('board').innerHTML = p.board;
@@ -951,6 +1019,20 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
     opts.innerHTML = p.opts.map((o, i) => '<button class="opt' + (o.panel ? ' panel' : '') + (o.word ? ' word' : '') + '" data-i="' + i + '"' + (o.wide ? ' style="grid-column:1/-1"' : '') + '>' + o.html + '</button>').join('');
     say(p.ask);
   }
+  // Gợi ý: câu trả lời mẫu tiếng Anh đủ câu, phiên âm IPA và nghĩa tiếng Việt; bấm vào để nghe giọng tiếng Anh
+  function showHint() {
+    const [en, vi] = game.p.model;
+    $('hintEn').textContent = en; $('hintIpa').textContent = ipaOf(en); $('hintVi').textContent = vi;
+    $('hintBox').hidden = false;
+  }
+  $('hintBtn').addEventListener('click', () => {
+    if (!game) return;
+    sfx.tap();
+    // Xem gợi ý trước khi trả lời thì tính như một lần sai (chỉ một lần mỗi câu)
+    if (!game.locked && !game.hinted) { game.hinted = true; game.mistakes++; }
+    showHint(); say(game.p.model[0], 'en');
+  });
+  $('hintBox').addEventListener('click', () => { if (game) { sfx.tap(); say(game.p.model[0], 'en'); } });
   function setAsk(text, face, mood) {
     $('askText').textContent = text; $('face').textContent = face; $('ask').className = 'ask' + (mood ? ' ' + mood : '');
   }
@@ -965,7 +1047,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
     const b = e.target.closest('.opt'); if (!b || game.locked || b.classList.contains('wrong')) return;
     const o = game.p.opts[+b.dataset.i];
     if (o.v === game.p.ans) {
-      game.locked = true; b.classList.add('right'); sfx.ting();
+      game.locked = true; b.classList.add('right'); sfx.ting(); showHint();
       const msg = game.p.praise || pick(t('praise'));
       setAsk(msg, '🥳', 'good');
       // Đợi đọc xong lời khen rồi mới sang câu mới
@@ -985,7 +1067,10 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
       setTimeout(() => { if (game && !game.locked) setAsk(game.p.ask, '🦉', ''); }, 1800);
     }
   });
-  $('sayBtn').addEventListener('click', () => { sfx.tap(); say($('askText').textContent); });
+  // Nghe lại câu hỏi: nút dưới khung câu hỏi, hoặc chạm vào chính câu hỏi
+  const replay = () => { if (game) { sfx.tap(); setAsk(game.p.ask, '🦉', ''); say(game.p.ask); } };
+  $('sayBtn').addEventListener('click', replay);
+  $('askText').addEventListener('click', replay);
   $('backBtn').addEventListener('click', () => { sfx.tap(); stopVoice(); game = null; renderHome(); show('home'); });
 
   function win() {
@@ -1021,7 +1106,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
 
   renderHome();
   // Để kiểm thử: window.__beTuDuy.make(id, d) trả về một câu đố
-  window.__beTuDuy = { make: (id, d) => GAMES.find(g => g.id === id).make(d) };
+  window.__beTuDuy = { make: (id, d) => GAMES.find(g => g.id === id).make(d), ipa: ipaOf, vocab: () => [...Object.values(EN_OF), ...PAIRS.flatMap(p => [p[2], p[5]]), ...Object.keys(SHAPES), ...ONES, ...TENS, ...Object.values(COUNT_EN).flat()] };
   if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
 </script>

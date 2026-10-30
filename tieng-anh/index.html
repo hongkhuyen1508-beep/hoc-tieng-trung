@@ -849,8 +849,11 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
     if (aiOn()) say('Hello! Let us learn English together.');
   });
   $('nameSave').addEventListener('click', () => { store.name = $('nameInput').value.trim(); save(); sfx.ting(); say('Hello, ' + kidName() + '!'); });
+  // Chạm 2 lần để xóa, tránh bấm nhầm
+  let resetArm = 0;
   $('resetBtn').addEventListener('click', () => {
-    if (!confirm('Xóa hết số sao và tiến độ học từ của bé?')) return;
+    if (Date.now() - resetArm > 4000) { resetArm = Date.now(); $('resetBtn').textContent = 'Chạm lần nữa để xóa hết sao và tiến độ'; return; }
+    resetArm = 0; $('resetBtn').textContent = 'Xóa sao và tiến độ';
     store.best = {}; store.seen = {}; save(); renderHome();
   });
 

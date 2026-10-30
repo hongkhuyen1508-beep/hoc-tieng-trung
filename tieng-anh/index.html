@@ -236,6 +236,8 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
 }
 .flash .pic { font-size: 7rem; line-height: 1.1; min-height: 8rem; display: grid; place-items: center; }
 .flash .pic .numpic { font-size: 7rem; }
+.pic img.photo { display: block; width: 2.4em; height: 2.4em; object-fit: cover; border-radius: 16px; background: var(--card); }
+.flash .pic img.photo { width: 2em; height: 2em; border-radius: 24px; }
 .vcard .pic .m2, .chip .pic .m2, .opt .pic .m2 { font-size: .72em; }
 .vcard .pic .m3, .chip .pic .m3, .opt .pic .m3, .flash .pic .m3 { font-size: .55em; }
 .vcard .pic .numpic.long, .chip .pic .numpic.long, .opt .pic .numpic.long, .flash .pic .numpic.long { font-size: .7em; }
@@ -957,7 +959,11 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
   function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 
   // ---------- Hình minh họa ----------
-  function pic(p) {
+  // Ảnh minh họa thật (img/<tên-từ>.webp) cho những từ đã có ảnh; từ chưa có ảnh dùng emoji
+  const IMGS = new Set([]);
+  const slug = en => en.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  function pic(p, en) {
+    if (en && IMGS.has(slug(en))) return '<img class="photo" src="img/' + slug(en) + '.webp" alt="" loading="lazy" data-e="' + esc(pic(p)) + '" onerror="this.outerHTML=this.dataset.e">';
     if (p[0] === '#') return '<span class="sw" style="background:' + p + '"></span>';
     // Số dài và hình ghép nhiều emoji được thu nhỏ cho vừa thẻ
     if (/^[0-9 ➜?,.½+−=×÷<>]+(st|nd|rd|th)?$/.test(p)) return '<span class="numpic' + (p.length > 6 ? ' xlong' : p.length > 3 ? ' long' : '') + '">' + esc(p) + '</span>';
@@ -1251,7 +1257,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
   const groupEn = pl => cap(pl.at || pl.en);
   function renderVocab() {
     const seen = store.seen[topic.id] || [];
-    const card = (w, i) => '<button class="vcard' + (seen.includes(w.en) ? ' seen' : '') + '" data-i="' + i + '"><span class="pic">' + pic(w.p) + '</span><span class="en">' + esc(w.en) + '</span>' + (IPA[w.en] ? '<span class="ipa">/' + esc(IPA[w.en]) + '/</span>' : '') +
+    const card = (w, i) => '<button class="vcard' + (seen.includes(w.en) ? ' seen' : '') + '" data-i="' + i + '"><span class="pic">' + pic(w.p, w.en) + '</span><span class="en">' + esc(w.en) + '</span>' + (IPA[w.en] ? '<span class="ipa">/' + esc(IPA[w.en]) + '/</span>' : '') +
       (store.vi ? '<span class="vi">' + esc(w.vi) + '</span>' : '') + '</button>';
     $('vocab').innerHTML = topic.heads
       ? topic.heads.map((pl, k) => '<button class="ghead" data-k="' + k + '"><span class="gic">' + pl.p + '</span><span><b>' + esc(groupEn(pl)) + '</b>' + (store.vi ? '<small>' + esc(cap(pl.atVi || pl.vi)) + '</small>' : '') + '</span><span class="gsp">🔊</span></button>' +
@@ -1280,7 +1286,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
   function openFlash(i) {
     flashI = (i + topic.words.length) % topic.words.length;
     const w = topic.words[flashI];
-    $('flashPic').innerHTML = pic(w.p); $('flashEn').textContent = w.en; $('flashIpa').textContent = IPA[w.en] ? '/' + IPA[w.en] + '/' : ''; $('flashVi').textContent = store.vi ? w.vi : '';
+    $('flashPic').innerHTML = pic(w.p, w.en); $('flashEn').textContent = w.en; $('flashIpa').textContent = IPA[w.en] ? '/' + IPA[w.en] + '/' : ''; $('flashVi').textContent = store.vi ? w.vi : '';
     $('flashEx').hidden = !w.h;
     if (w.h) $('flashEx').innerHTML = '🔊 ' + w.h.p + ' <b>' + esc(liveEn(w)) + '</b>' + (store.vi ? '<small>' + esc(liveVi(w)) + '</small>' : '');
     $('flashBox').hidden = false; markSeen(w); say(w.en);
@@ -1322,7 +1328,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
     const q = topic.qs[qi], key = q.k && wordIn(topic, q.k), sample = answersOf(q);
     let html = '';
     if (sample.length) {
-      html += '<p class="hintlbl">' + (q.a ? 'Bé có thể trả lời:' : 'Câu mẫu:') + '</p>' + sample.map((a, i) => '<button class="ans" data-ans="' + i + '"><span class="sp">🔊</span>' + (key && i === 0 ? '<span class="pic">' + pic(key.p) + '</span>' : '') +
+      html += '<p class="hintlbl">' + (q.a ? 'Bé có thể trả lời:' : 'Câu mẫu:') + '</p>' + sample.map((a, i) => '<button class="ans" data-ans="' + i + '"><span class="sp">🔊</span>' + (key && i === 0 ? '<span class="pic">' + pic(key.p, key.en) + '</span>' : '') +
         '<span class="tx"><b>' + esc(withName(a[0])) + '</b>' + (store.vi ? '<small>' + esc(withName(a[1])) + '</small>' : '') + '</span></button>').join('');
     }
     if (q.f) {
@@ -1330,7 +1336,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
       const blank = '<span class="blank">&nbsp;</span>';
       html += '<p class="hintlbl">' + (q.a ? 'Hoặc chọn một hình' : 'Bé chọn hình khác') + ' để ghép câu trả lời:</p>' +
         '<div class="frame"><b id="frameEn">' + esc(withName(q.f[0])).replace(/\{[wasS]\}/, blank) + '</b>' + (store.vi ? '<small id="frameVi">' + esc(withName(q.f[1])).replace(/\{[vV]\}\.?/, '...') + '</small>' : '') + '</div>' +
-        '<div class="chips">' + chips.map(w => '<button class="chip" data-en="' + esc(w.en) + '" aria-pressed="false"><span class="pic">' + pic(w.p) + '</span>' + esc(w.en) + '</button>').join('') + '</div>';
+        '<div class="chips">' + chips.map(w => '<button class="chip" data-en="' + esc(w.en) + '" aria-pressed="false"><span class="pic">' + pic(w.p, w.en) + '</span>' + esc(w.en) + '</button>').join('') + '</div>';
     }
     $('answers').innerHTML = html; $('answers').hidden = false; $('showHint').hidden = true;
   }
@@ -1393,7 +1399,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
         items.push({ kind, w, pic: q.p, ask: q.q, askVi: q.v, line: q.a[0][0], lineVi: q.a[0][1], labels: true, opts: shuffle([w].concat(others(w, q.no, true).slice(0, n - 1))) });
       } else if (kind === 'where') {
         const a = fresh(x => x.h && !x.x), w = a.h;
-        items.push({ kind, w, pic: a.p, ask: 'Where does ' + art(a) + ' live?', askVi: cap(a.vi) + ' sống ở đâu?', line: liveEn(a), lineVi: liveVi(a), labels: true, opts: shuffle([w].concat(others(w).slice(0, n - 1))) });
+        items.push({ kind, w, pic: a.p, picEn: a.en, ask: 'Where does ' + art(a) + ' live?', askVi: cap(a.vi) + ' sống ở đâu?', line: liveEn(a), lineVi: liveVi(a), labels: true, opts: shuffle([w].concat(others(w).slice(0, n - 1))) });
       } else if (kind === 'who') {
         const w = fresh(x => x.h && !x.x);
         const wrong = shuffle(topic.words.filter(x => x.solo && x.h && !x.x && x.h !== w.h)).slice(0, n - 1);
@@ -1402,7 +1408,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
         const w = fresh(() => true);
         const it = { kind, w, line: wordLine(w), lineVi: w.en + ' = ' + w.vi, opts: shuffle([w].concat(others(w).slice(0, n - 1))) };
         if (kind === 'listen') Object.assign(it, { ask: 'Listen and tap the right picture!', askVi: 'Nghe và chọn hình đúng' });
-        else Object.assign(it, { pic: w.p, ask: 'What is this?', askVi: 'Đây là gì?', words: true });
+        else Object.assign(it, { pic: w.p, picEn: w.en, ask: 'What is this?', askVi: 'Đây là gì?', words: true });
         items.push(it);
       }
     }
@@ -1426,13 +1432,13 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; li
     setAsk(askLine(it), askVi(it), '🦊', '');
     $('hintText').textContent = ''; $('hintBtn').disabled = false;
     if (it.kind === 'listen') $('board').innerHTML = '<button class="listen" id="listenBtn" aria-label="Nghe lại từ">🔊</button>';
-    else $('board').innerHTML = '<div class="pic">' + pic(it.pic) + '</div>';
+    else $('board').innerHTML = '<div class="pic">' + pic(it.pic, it.picEn) + '</div>';
     $('replayBtn').textContent = it.kind === 'listen' ? '🔊 Nghe lại từ' : '🔊 Nghe lại';
     const words = it.words;
     $('opts').style.setProperty('--cols', it.opts.length === 3 ? 3 : 2);
     $('opts').innerHTML = it.opts.map((w, i) => words
       ? '<button class="opt word" data-i="' + i + '">' + esc(w.en) + '</button>'
-      : '<button class="opt" data-i="' + i + '"><span class="pic">' + pic(w.p) + '</span>' + (it.labels ? '<span class="lbl">' + esc(w.en) + '</span>' : '') + '</button>').join('');
+      : '<button class="opt" data-i="' + i + '"><span class="pic">' + pic(w.p, w.en) + '</span>' + (it.labels ? '<span class="lbl">' + esc(w.en) + '</span>' : '') + '</button>').join('');
     const nx = game.items[game.i + 1];
     if (nx) prefetch(replayLine(nx));
     prefetch(it.line);

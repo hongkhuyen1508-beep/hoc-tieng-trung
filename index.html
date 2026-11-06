@@ -2011,8 +2011,7 @@ function readView() {
 }
 function rdReadTab() {
   const r = R(), verse = r.type === "poem" || r.type === "song";
-  return `${ytBox(r)}<div class="bar"><button class="btn btn-primary" data-rdall>${state.rplayAll ? ICON.stop + "Dừng" : ICON.play + "Nghe cả bài"}</button><span class="muted" style="font-size:14px">${timesOf(r) && mediaOf(ytOf(r))?.kind === "yt" ? "Nút này đọc bằng giọng AI." : "Chạm vào câu nào để nghe câu đó."}</span></div>
-    <div class="modes-row">${modeBtn("rloop", "Lặp lại bài này")}${modeBtn("rnext", r.type === "song" ? "Tự phát bài hát tiếp" : "Tự phát bài tiếp")}</div>
+  return `${ytBox(r)}<div class="modes-row">${modeBtn("rnext", r.type === "song" ? "Tự phát bài hát tiếp" : "Tự phát bài tiếp")}${modeBtn("rloop", "Lặp lại bài này")}</div><div class="bar"><button class="btn btn-primary" data-rdall>${state.rplayAll ? ICON.stop + "Dừng" : ICON.play + "Nghe cả bài"}</button><span class="muted" style="font-size:14px">${timesOf(r) && mediaOf(ytOf(r))?.kind === "yt" ? "Nút này đọc bằng giọng AI." : "Chạm vào câu nào để nghe câu đó."}</span></div>
     <div class="rd-text ${verse ? "verse" : ""} ${state.showPy ? "" : "no-py"} ${state.showVi ? "" : "no-vi"} ${state.pyEach ? "py-each" : ""}">${r.lines.map((ln, i) => `<button class="rl ${state.rplaying === i ? "now" : ""}" id="rl-${i}" data-rplay="${i}">
       ${ln.who ? `<span class="rl-who ${rdGender(r, ln)}">${esc(ln.who)}</span>` : ""}
       <span class="rl-zh zh">${esc(ln.zh)}</span>

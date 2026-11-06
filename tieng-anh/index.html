@@ -277,8 +277,9 @@ img.e3d { width: 1.1em; height: 1.1em; vertical-align: -0.2em; object-fit: conta
       <label class="toggle"><span>Hiện nghĩa tiếng Việt</span> <input type="checkbox" id="optVi"></label>
       <label class="toggle"><span>Âm thanh vui</span> <input type="checkbox" id="optSound"></label>
       <label class="toggle"><span>Đọc to bằng tiếng Anh</span> <input type="checkbox" id="optVoice"></label>
-      <label class="toggle"><span>Giọng AI như người thật</span> <input type="checkbox" id="optAi"></label>
-      <p class="note">Giọng AI dùng Gemini của Google, đọc tiếng Anh tự nhiên như cô giáo. Cần khóa Gemini miễn phí (lấy ở aistudio.google.com/apikey). Nếu đã lưu khóa ở web học tiếng Trung, Sudoku Bé Vui hoặc Bé Tư Duy thì trang này tự dùng chung. Mỗi câu chỉ tạo một lần rồi lưu trong máy.</p>
+      <p class="note">Mọi từ và câu đã có sẵn giọng đọc tự nhiên thu âm bằng AI (Kokoro), không cần khóa hay mạng sau lần nghe đầu.</p>
+      <label class="toggle"><span>Giọng AI Gemini cho câu có tên bé</span> <input type="checkbox" id="optAi"></label>
+      <p class="note">Câu có tên bé thì không thu sẵn được, nên dùng giọng của máy, hoặc giọng Gemini của Google nếu có khóa. Khóa Gemini miễn phí (lấy ở aistudio.google.com/apikey). Nếu đã lưu khóa ở web học tiếng Trung, Sudoku Bé Vui hoặc Bé Tư Duy thì trang này tự dùng chung. Mỗi câu chỉ tạo một lần rồi lưu trong máy.</p>
       <div class="keyrow"><input id="aiKeyInput" class="field" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Dán khóa Gemini (AIza...)"><button class="btn" id="aiKeySave">Lưu khóa</button></div>
       <p class="note" id="aiStatus"></p>
       <div class="keyrow"><input id="nameInput" class="field" type="text" autocomplete="off" maxlength="20" placeholder="Tên của bé (ví dụ: Bin)"><button class="btn" id="nameSave">Lưu tên</button></div>
@@ -1264,6 +1265,11 @@ img.e3d { width: 1.1em; height: 1.1em; vertical-align: -0.2em; object-fit: conta
     const el = $('aiStatus'); if (!el) return;
     el.textContent = msg || (aiDead ? aiDead : !aiKey() ? 'Chưa có khóa Gemini, đang dùng giọng của máy' + (enVoice ? '.' : ' (máy này chưa có giọng tiếng Anh).') : store.aiKey ? 'Đã có khóa Gemini.' : 'Đang dùng chung khóa Gemini đã lưu ở trang khác.');
   }
+  // ---------- Giọng đọc thu âm sẵn (Kokoro, giọng AI mã nguồn mở) ----------
+  // Mỗi câu là một file audio/<mã>.mp3, mã là băm FNV-1a của câu; audio/list.txt liệt kê các mã có sẵn
+  const recKey = t => { let x = 0x811c9dc5; for (const c of new TextEncoder().encode(t)) x = Math.imul(x ^ c, 0x01000193) >>> 0; return x.toString(16).padStart(8, '0'); };
+  let REC = new Set();
+  fetch('audio/list.txt').then(r => r.ok ? r.text() : '').then(t => { REC = new Set(t.split(/\s+/).filter(Boolean)); }).catch(() => {});
   const player = new Audio();
   let sayTok = 0;
   function stopVoice() { sayTok++; try { player.pause(); speechSynthesis.cancel(); } catch (e) {} }
@@ -1276,6 +1282,18 @@ img.e3d { width: 1.1em; height: 1.1em; vertical-align: -0.2em; object-fit: conta
       let over = false;
       const fin = () => { if (!over) { over = true; done(); } };
       const dev = () => { if (tok === sayTok) deviceSay(text, fin, slow); else fin(); };
+      const rk = recKey(text);
+      if (REC.has(rk)) {
+        try { speechSynthesis.cancel(); } catch (e) {}
+        try {
+          if (player.src && player.src.startsWith('blob:')) URL.revokeObjectURL(player.src);
+          player.src = 'audio/' + rk + '.mp3'; player.playbackRate = slow ? 0.7 : 1; player.preservesPitch = true;
+          player.onended = fin; player.onerror = () => { REC.delete(rk); say(text, slow).then(fin); };
+          player.play().catch(e => { if (e && e.name === 'NotAllowedError') fin(); else { REC.delete(rk); say(text, slow).then(fin); } });
+          return;
+        } catch (e) {}
+      }
+      player.playbackRate = 1;
       if (!aiOn() || aiPauseUntil > Date.now()) { dev(); return; }
       try { speechSynthesis.cancel(); } catch (e) {}
       const k = ck(text, slow);
@@ -1301,7 +1319,7 @@ img.e3d { width: 1.1em; height: 1.1em; vertical-align: -0.2em; object-fit: conta
       });
     });
   }
-  function prefetch(text) { if (aiOn() && text) cached(ck(text)).then(b => { if (!b) aiQueue(text); }); }
+  function prefetch(text) { if (text && REC.has(recKey(text))) return; if (aiOn() && text) cached(ck(text)).then(b => { if (!b) aiQueue(text); }); }
 
   // ---------- Chuyển màn ----------
   function show(id) { ['home', 'topicPage', 'play'].forEach(s => $(s).hidden = s !== id); window.scrollTo(0, 0); }
@@ -1434,11 +1452,11 @@ img.e3d { width: 1.1em; height: 1.1em; vertical-align: -0.2em; object-fit: conta
     answersOf(q).forEach(a => prefetch(withName(a[0])));
   }
   // Hình để ghép câu: danh sách riêng của câu hỏi, nếu không có thì lấy các từ có hình riêng ở hai nhóm đầu
-  const qChips = q => q.c ? q.c.map(en => wordIn(topic, en)) : topic.words.filter(w => w.solo && topic.heads.indexOf(w.g) < 2).slice(0, 16);
+  const qChips = (q, tp = topic) => q.c ? q.c.map(en => wordIn(tp, en)) : tp.words.filter(w => w.solo && tp.heads.indexOf(w.g) < 2).slice(0, 16);
   // Câu trả lời mẫu: câu viết sẵn, nếu câu hỏi chỉ có khung câu thì ghép sẵn với hình đầu tiên
-  function answersOf(q) {
+  function answersOf(q, tp = topic) {
     if (q.a) return q.a;
-    const w = q.f && qChips(q)[0];
+    const w = q.f && qChips(q, tp)[0];
     return w ? [[fillEn(q.f[0], w), fillVi(q.f[1], w)]] : [];
   }
   function renderAnswers() {
@@ -1538,6 +1556,24 @@ img.e3d { width: 1.1em; height: 1.1em; vertical-align: -0.2em; object-fit: conta
     show('play'); nextQ();
   }
   const askLine = it => it.ask, askVi = it => it.askVi;
+  // Mọi câu tiếng Anh web có thể đọc (trừ câu có tên bé), dùng để thu âm sẵn giọng đọc
+  function allLines() {
+    const out = new Set(['Hello! Let us learn English together.', 'Listen and tap the right picture!', 'What is this?'].concat(PRAISE, TRY, ['Great job!', 'Awesome!', 'Hooray!'].map(t => t + ' You did it!')));
+    TOPICS.forEach(tp => {
+      tp.heads.forEach(pl => out.add(groupEn(pl)));
+      tp.places.forEach(pl => out.add('Which animal lives ' + pl.at + '?'));
+      tp.words.forEach(w => {
+        out.add(w.en); out.add(wordLine(w));
+        if (w.h) { out.add(liveEn(w)); out.add('Where does ' + art(w) + ' live?'); }
+      });
+      tp.qs.forEach(q => {
+        out.add(q.q);
+        answersOf(q, tp).forEach(a => out.add(a[0]));
+        if (q.f) qChips(q, tp).forEach(w => out.add(fillEn(q.f[0], w)));
+      });
+    });
+    return [...out].filter(t => t && !t.includes('{name}') && !new RegExp('\\b' + kidName() + '\\b').test(t));
+  }
   function setAsk(en, vi, face, mood) {
     $('askText').innerHTML = esc(en) + (vi && store.vi ? '<small>' + esc(vi) + '</small>' : '');
     $('face').textContent = face; $('ask').className = 'ask' + (mood ? ' ' + mood : '');
@@ -1639,7 +1675,7 @@ img.e3d { width: 1.1em; height: 1.1em; vertical-align: -0.2em; object-fit: conta
 
   renderHome();
   // Để kiểm thử
-  window.__beHocTiengAnh = { TOPICS, WORD, fillEn, fillVi, plural, art, wordLine, open: openTopic, quiz: () => (startQuiz(), game) };
+  window.__beHocTiengAnh = { TOPICS, WORD, fillEn, fillVi, plural, art, wordLine, open: openTopic, lines: allLines, quiz: () => (startQuiz(), game) };
   try { if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(() => {}); } catch (e) {}
 })();
 </script>

@@ -494,6 +494,46 @@ details.voices { border-radius: 12px; }
 .review { margin-top: 4px; }
 .review + .how { margin-top: 10px; }
 a { color: var(--seal); }
+/* Pinyin dưới từng chữ, kiểu sách bài hát */
+.rl-ruby { display: none; flex-wrap: wrap; gap: 2px 3px; }
+.rd-text.py-each .rl-ruby { display: flex; }
+.rd-text.py-each .rl-zh, .rd-text.py-each .rl-py { display: none; }
+.rd-text.verse .rl-ruby { justify-content: center; }
+.rc { display: inline-grid; justify-items: center; min-width: 1.6em; line-height: 1.15; }
+.rc .zh { font-size: 24px; }
+.rc i { font-style: normal; font-size: 12px; color: var(--muted); letter-spacing: 0; min-height: 1em; }
+.rc.punct { min-width: .8em; }
+.rd-text.no-py .rc i { visibility: hidden; height: 0; min-height: 0; }
+.rl.now .rc i { color: var(--ink); }
+.modes-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 0 12px; }
+.mode { display: flex; justify-content: space-between; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 10px 12px; font-size: 14px; font-weight: 600; text-align: left; color: var(--ink); }
+.mode b { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--sunk); color: var(--muted); flex: none; }
+.mode[aria-pressed="true"] { border-color: var(--ink); }
+.mode[aria-pressed="true"] b { background: var(--ink); color: var(--paper); }
+/* Thẻ có hình */
+.fc-opts { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin: -4px 0 12px; }
+.fc-pic { font-size: clamp(64px, 20vw, 96px); line-height: 1.1; font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+/* In thẻ A4 ngang: 4 cột x 2 hàng */
+.print-sheet { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 8px max(16px, env(safe-area-inset-right, 0px)) 40px max(16px, env(safe-area-inset-left, 0px)); max-width: 1100px; margin: 0 auto; }
+@media (min-width: 700px) { .print-sheet { grid-template-columns: repeat(4, 1fr); } }
+.pcard { background: #fff; color: #141c1b; border: 1.5px dashed #b9c2bf; border-radius: 10px; aspect-ratio: 1 / 1.05; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 8px; text-align: center; overflow: hidden; }
+.pc-pic { font-size: 44px; line-height: 1.1; font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+.pc-zh { font-family: var(--font-zh-display); font-weight: 900; font-size: 34px; line-height: 1.2; }
+.pc-py { font-size: 15px; color: #c8382c; font-weight: 600; }
+.pc-vi { font-size: 12px; color: #5f6a67; line-height: 1.3; }
+@media print {
+  @page { size: A4 landscape; margin: 8mm; }
+  :root, body { background: #fff !important; padding: 0 !important; }
+  .no-print, .switch, .dock { display: none !important; }
+  .print-sheet { display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 92mm; gap: 4mm; padding: 0; max-width: none; }
+  .pcard { aspect-ratio: auto; height: 92mm; break-inside: avoid; border-color: #999; }
+  .pcard:nth-child(8n) { break-after: page; }
+  .pc-pic { font-size: 30mm; }
+  .pc-zh { font-size: 20mm; }
+  .pc-py { font-size: 7mm; }
+  .pc-vi { font-size: 4.5mm; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 </style>
@@ -717,7 +757,9 @@ const state = {
   playing: null, playAll: false,
   drill: 0, drillResult: null,
   role: null, shown: 0, results: {}, hide: false,
-  call: null, cText: store.get("cText", true), cs: { pid: "xiaoyu", topic: "", level: "HSK1" },
+  call: null, cText: store.get("cText", true),
+  pyEach: store.get("pyEach", true), rloop: store.get("rloop", false), rnext: store.get("rnext", false), fcPic: store.get("fcPic", true), fcPy: store.get("fcPy", true),
+  fcPrint: { deck: "hsk1", py: true, vi: true, pic: true }, cs: { pid: "xiaoyu", topic: "", level: "HSK1" },
 };
 if (synth) { loadVoices(); synth.addEventListener?.("voiceschanged", loadVoices); }
 let sample = null;
@@ -1076,6 +1118,7 @@ function fcHome() {
     </div>
     <div class="grid" style="padding-bottom:8px">${fcDeckCard("hsk1", "Thẻ HSK 1", "壹")}${fcDeckCard("hsk2", "Thẻ HSK 2", "贰")}${myWords.length ? fcDeckCard("mine", "Từ của tôi", "我") : ""}</div>
     <p class="muted" style="font-size:12px;margin:8px 0 0">Phát âm từ vựng HSK: giọng thu âm của người bản xứ Yue Tan (dự án Shtooka, audio-cmn, giấy phép CC BY-SA). Câu ví dụ và cụm từ: giọng đọc AI của Google.</p>
+    <button class="card print-card" data-fcprintopen style="width:100%;margin-top:8px"><div class="card-mark" aria-hidden="true">🖨️</div><div class="card-body"><div class="card-title" style="font-size:17px;font-weight:600">In thẻ ra giấy khổ A4 ngang</div><div class="card-vi" style="white-space:normal">Có hình, chữ Hán, pinyin và nghĩa. Lưu thành PDF hoặc in ra để dán, học không cần điện thoại.</div></div></button>
     <div class="answer"><select id="fc-lesson" class="field" aria-label="Thẻ theo bài hội thoại" style="font-family:var(--font-body)"><option value="">Hoặc chọn thẻ theo bài hội thoại...</option>${lessonOpts}</select></div>`;
 }
 function openFc(id) {
@@ -1108,6 +1151,26 @@ function fcGrade(ok) {
   else { f.again++; f.queue.splice(Math.min(f.queue.length, f.i + 4), 0, c); } // gặp lại thẻ này sau vài thẻ
   f.i++; f.flipped = false; stopSpeaking(); render(); fcAutoPlay();
 }
+function fcPrintView() {
+  const o = state.fcPrint;
+  const decks = [["hsk1", "HSK 1"], ["hsk2", "HSK 2"], ...(myWords.length ? [["mine", "Từ của tôi"]] : []), ...LESSONS.map((l, i) => ["L-" + l.id, `Bài ${i + 1} · ${l.title}`])];
+  const items = fcItems(o.deck, "word");
+  const card = (c) => `<div class="pcard">${o.pic && EMOJI[c.zh] ? `<div class="pc-pic">${EMOJI[c.zh]}</div>` : ""}<div class="pc-zh zh">${esc(c.zh)}</div>${o.py ? `<div class="pc-py">${esc(c.pinyin)}</div>` : ""}${o.vi ? `<div class="pc-vi">${esc(c.vi)}</div>` : ""}</div>`;
+  const chip = (k, label) => `<button class="chip" data-fcpopt="${k}" aria-pressed="${o[k]}">${label}</button>`;
+  return `<header class="topbar no-print"><div class="wrap">
+      <button class="back" data-home aria-label="Về phần tập viết">${ICON.back}</button>
+      <div class="topbar-title"><span style="color:var(--ink);font-weight:600">In thẻ khổ A4 ngang</span> <span>· ${items.length} thẻ</span></div>
+    </div></header>
+    <div class="wrap no-print" style="padding-block:14px 4px">
+      <div class="answer"><select id="fcp-deck" class="field" aria-label="Chọn bộ thẻ" style="font-family:var(--font-body)">${decks.map(([id, n]) => `<option value="${esc(id)}" ${o.deck === id ? "selected" : ""}>${esc(n)}</option>`).join("")}</select></div>
+      <div class="chips" style="margin:10px 0">${chip("pic", "Hình")}${chip("py", "Pinyin")}${chip("vi", "Nghĩa tiếng Việt")}</div>
+      ${window.HOSTED ? `<div class="bar"><button class="btn btn-primary" data-fcprintgo>🖨️ In hoặc lưu PDF</button></div>
+        <p class="muted" style="font-size:13px;margin:0">iPhone: bấm nút trên, chọn In, rồi chụm hai ngón vào ảnh xem trước và bấm Chia sẻ để lưu PDF. Android: chọn máy in “Lưu dưới dạng PDF”.</p>`
+        : `<p class="callout" style="margin:0">Trang trên claude.ai không mở được hộp thoại in. Hãy mở bản GitHub của web bằng Safari hoặc Chrome, vào phần này và bấm “In hoặc lưu PDF”.</p>`}
+      <p class="muted" style="font-size:13px;margin:10px 0 0">Mỗi trang A4 ngang có 8 thẻ. Xem trước bên dưới.</p>
+    </div>
+    <div class="print-sheet">${items.map(card).join("")}</div>`;
+}
 function fcView() {
   const f = state.fc, c = fcCur();
   const top = `<header class="topbar"><div class="wrap">
@@ -1120,21 +1183,24 @@ function fcView() {
       <div class="bar"><button class="btn btn-primary" data-fcdeck="${esc(f.id)}">Học tiếp</button><button class="btn btn-ghost" data-home>Xong</button></div></div></div></div>`;
   const word = c.key[0] === "w", w = c.w;
   const zhFace = `<div class="fc-zh zh ${word ? "" : "sent"}">${esc(c.zh)}</div>`;
-  const front = state.fcDir === "zh" ? zhFace : `<div class="fc-vi">${esc(c.vi)}</div>`;
+  const pic = word && state.fcPic && EMOJI[c.zh] ? `<div class="fc-pic" aria-hidden="true">${EMOJI[c.zh]}</div>` : "";
+  const pyFront = state.fcDir === "zh" && state.fcPy;
+  const front = state.fcDir === "zh" ? pic + zhFace + (pyFront ? `<div class="fc-py">${esc(c.pinyin)}</div>` : "") : pic + `<div class="fc-vi">${esc(c.vi)}</div>`;
   const back = `${state.fcDir === "zh" ? "" : zhFace}
-    ${!word || state.fcDir === "zh" ? `<div class="fc-py">${esc(c.pinyin)}</div>` : ""}
+    ${(!word || state.fcDir === "zh") && !pyFront ? `<div class="fc-py">${esc(c.pinyin)}</div>` : ""}
     ${state.fcDir === "zh" ? `<div class="fc-mean">${esc(c.vi)}</div>` : ""}
     ${word && hvOf(w).replace(/[- ]/g, "") ? `<div class="muted" style="font-size:14px">Hán Việt: ${esc(hvOf(w))}</div>` : ""}
     ${word && w.ex ? `<div class="fc-ex"><span class="zh">${esc(w.ex)}</span><span>${esc(w.exPy || "")}</span><span class="muted">${esc(w.exVi || "")}</span></div>` : ""}`;
   return top + `<div class="wrap" style="padding-bottom:40px">
     <div class="fc-prog" aria-hidden="true"><i style="width:${(f.i / f.queue.length) * 100}%"></i></div>
+    <div class="fc-opts">${word ? `<button class="chip" data-toggle="fcPic" aria-pressed="${state.fcPic}">Hình minh họa</button>` : ""}${state.fcDir === "zh" ? `<button class="chip" data-toggle="fcPy" aria-pressed="${state.fcPy}">Hiện pinyin</button>` : ""}</div>
     <button class="fc-card ${f.flipped ? "flipped" : ""}" data-fcflip aria-label="${f.flipped ? "Mặt sau" : "Chạm để lật thẻ"}">
       <span class="fc-tag">${fcState(c.key) === "new" ? "Thẻ mới" : "Ôn lại"}</span>
       ${front}
       ${f.flipped ? `<div class="fc-line"></div>${back}` : `<div class="muted fc-hint">Chạm để lật thẻ</div>`}
     </button>
     <div class="bar" style="justify-content:center;margin-top:12px">
-      <button class="btn btn-ghost" data-fcplay>${ICON.speaker}Nghe</button>
+      <button class="btn btn-ghost" data-fcplay>${ICON.speaker}Nghe lại</button>
       ${word && canWrite(c.zh) && f.flipped ? `<button class="btn btn-ghost" data-fcsave="${esc(c.zh)}" ${myWords.some((x) => x.zh === c.zh) ? "disabled" : ""}>${myWords.some((x) => x.zh === c.zh) ? "✓ Đã lưu tập viết" : "✍️ Lưu để tập viết"}</button>` : ""}
     </div>
     ${f.flipped ? `<div class="fc-grade"><button class="btn fc-again" data-fcgrade="0">Chưa nhớ</button><button class="btn fc-good" data-fcgrade="1">Nhớ rồi</button></div>
@@ -1176,7 +1242,7 @@ function setTab(t) { state.roleRun = (state.roleRun || 0) + 1; stopSpeaking(); s
 function render() {
   const app = $("#app");
   if (writer) { try { writer.cancelQuiz(); } catch {} writer = null; }
-  app.innerHTML = state.view === "home" ? homeView() : state.view === "write" ? writeView() : state.view === "call" ? callView() : state.view === "read" ? readView() : state.view === "fc" ? fcView() : state.view === "addread" ? addReadView() : lessonView();
+  app.innerHTML = state.view === "home" ? homeView() : state.view === "write" ? writeView() : state.view === "call" ? callView() : state.view === "read" ? readView() : state.view === "fc" ? fcView() : state.view === "fcprint" ? fcPrintView() : state.view === "addread" ? addReadView() : lessonView();
   if (state.view === "lesson") renderVoicePicker();
   if (state.view === "write") mountWriter();
   if (state.view === "read") ytAttach();
@@ -1683,6 +1749,30 @@ function summaryView() {
 
 /* ---------------- Luyện đọc ---------------- */
 const READINGS = [{"id":"xiaomao","type":"story","level":"HSK1","title":"小猫找朋友","titlePy":"Xiǎomāo zhǎo péngyou","titleVi":"Mèo con đi tìm bạn","intro":"Truyện ngắn rất dễ, chỉ dùng từ HSK 1. Hợp để bắt đầu tập đọc.","g":"female","lines":[{"zh":"小猫一个人在家，没有朋友。","pinyin":"Xiǎomāo yí ge rén zài jiā, méiyǒu péngyou.","vi":"Mèo con ở nhà một mình, không có bạn."},{"zh":"它很不高兴。","pinyin":"Tā hěn bù gāoxìng.","vi":"Nó buồn lắm."},{"zh":"小猫去外面找朋友。","pinyin":"Xiǎomāo qù wàimiàn zhǎo péngyou.","vi":"Mèo con ra ngoài tìm bạn."},{"zh":"它看见一只小狗。","pinyin":"Tā kànjiàn yì zhī xiǎogǒu.","vi":"Nó nhìn thấy một chú chó con."},{"zh":"小狗说：“你好！你想和我一起玩吗？”","pinyin":"Xiǎogǒu shuō: “Nǐ hǎo! Nǐ xiǎng hé wǒ yìqǐ wán ma?”","vi":"Chó con nói: “Chào cậu! Cậu có muốn chơi cùng tớ không?”"},{"zh":"小猫说：“想！谢谢你！”","pinyin":"Xiǎomāo shuō: “Xiǎng! Xièxie nǐ!”","vi":"Mèo con nói: “Muốn chứ! Cảm ơn cậu!”"},{"zh":"它们一起喝水，一起吃饭，一起睡觉。","pinyin":"Tāmen yìqǐ hē shuǐ, yìqǐ chī fàn, yìqǐ shuìjiào.","vi":"Chúng cùng uống nước, cùng ăn cơm, cùng đi ngủ."},{"zh":"现在小猫有朋友了，它很高兴。","pinyin":"Xiànzài xiǎomāo yǒu péngyou le, tā hěn gāoxìng.","vi":"Bây giờ mèo con đã có bạn, nó vui lắm."}],"words":[{"zh":"小猫","pinyin":"xiǎomāo","vi":"mèo con"},{"zh":"找","pinyin":"zhǎo","vi":"tìm"},{"zh":"外面","pinyin":"wàimiàn","vi":"bên ngoài"},{"zh":"看见","pinyin":"kànjiàn","vi":"nhìn thấy"},{"zh":"一起","pinyin":"yìqǐ","vi":"cùng nhau"},{"zh":"玩","pinyin":"wán","vi":"chơi"},{"zh":"睡觉","pinyin":"shuìjiào","vi":"đi ngủ"},{"zh":"高兴","pinyin":"gāoxìng","vi":"vui"}]},{"id":"yitian","type":"story","level":"HSK1","title":"我的一天","titlePy":"Wǒ de yì tiān","titleVi":"Một ngày của tôi","intro":"Một bạn học sinh kể về một ngày bình thường. Học cách nói giờ giấc và việc làm hằng ngày.","g":"male","lines":[{"zh":"我叫小明，我是学生。","pinyin":"Wǒ jiào Xiǎo Míng, wǒ shì xuésheng.","vi":"Tôi tên là Tiểu Minh, tôi là học sinh."},{"zh":"我每天七点起床。","pinyin":"Wǒ měitiān qī diǎn qǐchuáng.","vi":"Mỗi ngày tôi dậy lúc bảy giờ."},{"zh":"早上我喝一杯牛奶，吃一个鸡蛋。","pinyin":"Zǎoshang wǒ hē yì bēi niúnǎi, chī yí ge jīdàn.","vi":"Buổi sáng tôi uống một cốc sữa, ăn một quả trứng."},{"zh":"八点我去学校学习汉语。","pinyin":"Bā diǎn wǒ qù xuéxiào xuéxí Hànyǔ.","vi":"Tám giờ tôi đến trường học tiếng Hán."},{"zh":"中午我和同学在学校吃饭。","pinyin":"Zhōngwǔ wǒ hé tóngxué zài xuéxiào chī fàn.","vi":"Buổi trưa tôi ăn cơm ở trường với bạn học."},{"zh":"下午四点我回家。","pinyin":"Xiàwǔ sì diǎn wǒ huí jiā.","vi":"Bốn giờ chiều tôi về nhà."},{"zh":"晚上我看电视，也给妈妈打电话。","pinyin":"Wǎnshang wǒ kàn diànshì, yě gěi māma dǎ diànhuà.","vi":"Buổi tối tôi xem ti vi, và gọi điện cho mẹ."},{"zh":"十点我睡觉。我的一天很忙，也很快乐。","pinyin":"Shí diǎn wǒ shuìjiào. Wǒ de yì tiān hěn máng, yě hěn kuàilè.","vi":"Mười giờ tôi đi ngủ. Một ngày của tôi rất bận, nhưng cũng rất vui."}],"words":[{"zh":"起床","pinyin":"qǐchuáng","vi":"thức dậy"},{"zh":"牛奶","pinyin":"niúnǎi","vi":"sữa bò"},{"zh":"鸡蛋","pinyin":"jīdàn","vi":"trứng gà"},{"zh":"学校","pinyin":"xuéxiào","vi":"trường học"},{"zh":"同学","pinyin":"tóngxué","vi":"bạn học"},{"zh":"电视","pinyin":"diànshì","vi":"ti vi"},{"zh":"打电话","pinyin":"dǎ diànhuà","vi":"gọi điện thoại"},{"zh":"忙","pinyin":"máng","vi":"bận"}]},{"id":"xiayu","type":"story","level":"HSK2","title":"下雨天","titlePy":"Xià yǔ tiān","titleVi":"Ngày mưa","intro":"Một ngày mưa quên mang ô lại thành khởi đầu của một tình bạn mới.","g":"male","lines":[{"zh":"今天早上，外面下雨了。","pinyin":"Jīntiān zǎoshang, wàimiàn xià yǔ le.","vi":"Sáng nay, bên ngoài trời mưa."},{"zh":"我没有带伞，只能在公司门口等雨停。","pinyin":"Wǒ méiyǒu dài sǎn, zhǐ néng zài gōngsī ménkǒu děng yǔ tíng.","vi":"Tôi không mang ô, chỉ đành đứng ở cửa công ty đợi tạnh mưa."},{"zh":"这时候，一个女孩走过来。","pinyin":"Zhè shíhou, yí ge nǚhái zǒu guòlai.","vi":"Lúc đó, một cô gái đi tới."},{"zh":"她笑着说：“我们一起走吧，我的伞很大。”","pinyin":"Tā xiàozhe shuō: “Wǒmen yìqǐ zǒu ba, wǒ de sǎn hěn dà.”","vi":"Cô ấy cười nói: “Mình đi chung nhé, ô của tôi to lắm.”"},{"zh":"我们一边走一边聊天。","pinyin":"Wǒmen yìbiān zǒu yìbiān liáotiān.","vi":"Chúng tôi vừa đi vừa trò chuyện."},{"zh":"原来，她也在我们公司工作。","pinyin":"Yuánlái, tā yě zài wǒmen gōngsī gōngzuò.","vi":"Hóa ra, cô ấy cũng làm ở công ty tôi."},{"zh":"从那天开始，我们每天一起吃午饭。","pinyin":"Cóng nà tiān kāishǐ, wǒmen měitiān yìqǐ chī wǔfàn.","vi":"Từ hôm đó, ngày nào chúng tôi cũng ăn trưa cùng nhau."},{"zh":"我觉得，下雨天也很不错。","pinyin":"Wǒ juéde, xià yǔ tiān yě hěn búcuò.","vi":"Tôi thấy, ngày mưa cũng hay đấy chứ."}],"words":[{"zh":"下雨","pinyin":"xià yǔ","vi":"trời mưa"},{"zh":"伞","pinyin":"sǎn","vi":"cái ô"},{"zh":"等","pinyin":"děng","vi":"đợi"},{"zh":"停","pinyin":"tíng","vi":"dừng, tạnh"},{"zh":"一边","pinyin":"yìbiān","vi":"vừa... (vừa...)"},{"zh":"聊天","pinyin":"liáotiān","vi":"trò chuyện"},{"zh":"原来","pinyin":"yuánlái","vi":"hóa ra"},{"zh":"开始","pinyin":"kāishǐ","vi":"bắt đầu"},{"zh":"不错","pinyin":"búcuò","vi":"khá hay, không tệ"}]},{"id":"beijing","type":"story","level":"HSK2","title":"第一次去北京","titlePy":"Dì-yī cì qù Běijīng","titleVi":"Lần đầu đến Bắc Kinh","intro":"Nhật ký du lịch Bắc Kinh mùa đông: Cố Cung, vịt quay và Vạn Lý Trường Thành.","g":"female","lines":[{"zh":"去年冬天，我第一次去北京旅游。","pinyin":"Qùnián dōngtiān, wǒ dì-yī cì qù Běijīng lǚyóu.","vi":"Mùa đông năm ngoái, lần đầu tiên tôi đi du lịch Bắc Kinh."},{"zh":"北京很冷，可是我非常高兴。","pinyin":"Běijīng hěn lěng, kěshì wǒ fēicháng gāoxìng.","vi":"Bắc Kinh rất lạnh, nhưng tôi vô cùng vui."},{"zh":"第一天，我去了天安门和故宫。","pinyin":"Dì-yī tiān, wǒ qùle Tiān'ānmén hé Gùgōng.","vi":"Ngày đầu tiên, tôi đến Thiên An Môn và Cố Cung."},{"zh":"故宫非常大，我走了一天，累极了。","pinyin":"Gùgōng fēicháng dà, wǒ zǒule yì tiān, lèi jí le.","vi":"Cố Cung rộng lắm, tôi đi bộ cả ngày, mệt rã rời."},{"zh":"晚上，我吃了北京烤鸭，真好吃！","pinyin":"Wǎnshang, wǒ chīle Běijīng kǎoyā, zhēn hǎochī!","vi":"Buổi tối, tôi ăn vịt quay Bắc Kinh, ngon thật!"},{"zh":"第二天，我坐车去了长城。","pinyin":"Dì-èr tiān, wǒ zuò chē qùle Chángchéng.","vi":"Ngày thứ hai, tôi đi xe đến Vạn Lý Trường Thành."},{"zh":"站在长城上，我看到了很美的雪。","pinyin":"Zhàn zài Chángchéng shang, wǒ kàndàole hěn měi de xuě.","vi":"Đứng trên Trường Thành, tôi được ngắm tuyết rất đẹp."},{"zh":"我希望明年还能再去北京。","pinyin":"Wǒ xīwàng míngnián hái néng zài qù Běijīng.","vi":"Tôi mong năm sau lại được đến Bắc Kinh."}],"words":[{"zh":"第一次","pinyin":"dì-yī cì","vi":"lần đầu tiên"},{"zh":"旅游","pinyin":"lǚyóu","vi":"du lịch"},{"zh":"冷","pinyin":"lěng","vi":"lạnh"},{"zh":"非常","pinyin":"fēicháng","vi":"vô cùng"},{"zh":"累","pinyin":"lèi","vi":"mệt"},{"zh":"烤鸭","pinyin":"kǎoyā","vi":"vịt quay"},{"zh":"长城","pinyin":"Chángchéng","vi":"Vạn Lý Trường Thành"},{"zh":"雪","pinyin":"xuě","vi":"tuyết"},{"zh":"希望","pinyin":"xīwàng","vi":"hy vọng, mong"}]},{"id":"liwu","type":"story","level":"HSK2","title":"生日礼物","titlePy":"Shēngrì lǐwù","titleVi":"Món quà sinh nhật","intro":"Món quà sinh nhật quý nhất cho mẹ không cần mua ở đâu cả.","g":"female","lines":[{"zh":"明天是妈妈的生日。","pinyin":"Míngtiān shì māma de shēngrì.","vi":"Ngày mai là sinh nhật mẹ."},{"zh":"我想给她买一件礼物，可是不知道买什么。","pinyin":"Wǒ xiǎng gěi tā mǎi yí jiàn lǐwù, kěshì bù zhīdào mǎi shénme.","vi":"Tôi muốn mua cho mẹ một món quà, nhưng không biết mua gì."},{"zh":"我问爸爸：“妈妈最喜欢什么？”","pinyin":"Wǒ wèn bàba: “Māma zuì xǐhuan shénme?”","vi":"Tôi hỏi bố: “Mẹ thích nhất cái gì ạ?”"},{"zh":"爸爸说：“你妈妈最喜欢你做的饭。”","pinyin":"Bàba shuō: “Nǐ māma zuì xǐhuan nǐ zuò de fàn.”","vi":"Bố nói: “Mẹ con thích nhất là cơm con nấu.”"},{"zh":"所以第二天，我很早就起床了。","pinyin":"Suǒyǐ dì-èr tiān, wǒ hěn zǎo jiù qǐchuáng le.","vi":"Vì vậy hôm sau, tôi dậy từ rất sớm."},{"zh":"我做了面条，还做了一个小蛋糕。","pinyin":"Wǒ zuòle miàntiáo, hái zuòle yí ge xiǎo dàngāo.","vi":"Tôi nấu mì, còn làm thêm một chiếc bánh kem nhỏ."},{"zh":"妈妈看到以后，笑得非常开心。","pinyin":"Māma kàndào yǐhòu, xiào de fēicháng kāixīn.","vi":"Mẹ nhìn thấy xong, cười rất vui."},{"zh":"她说：“这是我最好的生日礼物！”","pinyin":"Tā shuō: “Zhè shì wǒ zuì hǎo de shēngrì lǐwù!”","vi":"Mẹ nói: “Đây là món quà sinh nhật tuyệt nhất của mẹ!”"}],"words":[{"zh":"生日","pinyin":"shēngrì","vi":"sinh nhật"},{"zh":"礼物","pinyin":"lǐwù","vi":"quà"},{"zh":"知道","pinyin":"zhīdào","vi":"biết"},{"zh":"最","pinyin":"zuì","vi":"nhất"},{"zh":"所以","pinyin":"suǒyǐ","vi":"vì vậy"},{"zh":"面条","pinyin":"miàntiáo","vi":"mì sợi"},{"zh":"蛋糕","pinyin":"dàngāo","vi":"bánh ngọt"},{"zh":"以后","pinyin":"yǐhòu","vi":"sau khi"},{"zh":"开心","pinyin":"kāixīn","vi":"vui vẻ"}]},{"id":"shouzhu","type":"tale","level":"HSK2","title":"守株待兔","titlePy":"Shǒu zhū dài tù","titleVi":"Ôm cây đợi thỏ","intro":"Truyện ngụ ngôn cổ hơn 2000 năm, nay thành thành ngữ chỉ người chỉ ngồi chờ may mắn mà không chịu làm.","g":"male","lines":[{"zh":"很久以前，有一个农民每天在地里工作。","pinyin":"Hěn jiǔ yǐqián, yǒu yí ge nóngmín měitiān zài dì li gōngzuò.","vi":"Ngày xửa ngày xưa, có một người nông dân ngày nào cũng làm việc ngoài đồng."},{"zh":"有一天，一只兔子跑得太快，撞到了一棵树上。","pinyin":"Yǒu yì tiān, yì zhī tùzi pǎo de tài kuài, zhuàngdàole yì kē shù shang.","vi":"Một hôm, một con thỏ chạy quá nhanh, đâm vào một gốc cây."},{"zh":"兔子死了，农民高兴地把它拿回了家。","pinyin":"Tùzi sǐ le, nóngmín gāoxìng de bǎ tā náhuíle jiā.","vi":"Con thỏ chết, người nông dân vui vẻ mang nó về nhà."},{"zh":"他想：“不用工作，也能有兔子吃，太好了！”","pinyin":"Tā xiǎng: “Búyòng gōngzuò, yě néng yǒu tùzi chī, tài hǎo le!”","vi":"Anh ta nghĩ: “Không cần làm việc mà vẫn có thỏ để ăn, hay quá!”"},{"zh":"从那天开始，他不工作了，每天坐在树下等兔子。","pinyin":"Cóng nà tiān kāishǐ, tā bù gōngzuò le, měitiān zuò zài shù xià děng tùzi.","vi":"Từ hôm đó, anh ta bỏ việc, ngày nào cũng ngồi dưới gốc cây đợi thỏ."},{"zh":"他等了一天又一天，可是再也没有兔子来。","pinyin":"Tā děngle yì tiān yòu yì tiān, kěshì zài yě méiyǒu tùzi lái.","vi":"Anh ta đợi hết ngày này qua ngày khác, nhưng chẳng còn con thỏ nào đến nữa."},{"zh":"最后，他的地里什么都没有了。","pinyin":"Zuìhòu, tā de dì li shénme dōu méiyǒu le.","vi":"Cuối cùng, ruộng của anh ta chẳng còn gì cả."},{"zh":"这个故事告诉我们：不要只等好运气，要努力工作。","pinyin":"Zhège gùshi gàosu wǒmen: búyào zhǐ děng hǎo yùnqi, yào nǔlì gōngzuò.","vi":"Câu chuyện này dạy chúng ta: đừng chỉ chờ vận may, phải chăm chỉ làm việc."}],"words":[{"zh":"以前","pinyin":"yǐqián","vi":"trước đây"},{"zh":"农民","pinyin":"nóngmín","vi":"nông dân"},{"zh":"兔子","pinyin":"tùzi","vi":"con thỏ"},{"zh":"跑","pinyin":"pǎo","vi":"chạy"},{"zh":"树","pinyin":"shù","vi":"cây"},{"zh":"最后","pinyin":"zuìhòu","vi":"cuối cùng"},{"zh":"故事","pinyin":"gùshi","vi":"câu chuyện"},{"zh":"告诉","pinyin":"gàosu","vi":"nói cho biết"},{"zh":"努力","pinyin":"nǔlì","vi":"cố gắng, chăm chỉ"}]},{"id":"hujia","type":"tale","level":"HSK2","title":"狐假虎威","titlePy":"Hú jiǎ hǔ wēi","titleVi":"Cáo mượn oai hùm","intro":"Truyện ngụ ngôn cổ Trung Quốc, giống thành ngữ “cáo mượn oai hùm” của tiếng Việt.","g":"female","lines":[{"zh":"一只老虎在森林里找东西吃。","pinyin":"Yì zhī lǎohǔ zài sēnlín li zhǎo dōngxi chī.","vi":"Một con hổ đi tìm thức ăn trong rừng."},{"zh":"它抓到了一只狐狸。","pinyin":"Tā zhuādàole yì zhī húli.","vi":"Nó bắt được một con cáo."},{"zh":"狐狸说：“你不能吃我！我是森林的大王！”","pinyin":"Húli shuō: “Nǐ bù néng chī wǒ! Wǒ shì sēnlín de dàwáng!”","vi":"Cáo nói: “Ngươi không được ăn ta! Ta là vua của khu rừng!”"},{"zh":"老虎不相信。","pinyin":"Lǎohǔ bù xiāngxìn.","vi":"Hổ không tin."},{"zh":"狐狸说：“你跟我走，看看动物们怕不怕我。”","pinyin":"Húli shuō: “Nǐ gēn wǒ zǒu, kànkan dòngwùmen pà bu pà wǒ.”","vi":"Cáo nói: “Ngươi đi theo ta, xem các con vật có sợ ta không.”"},{"zh":"狐狸走在前面，老虎走在后面。","pinyin":"Húli zǒu zài qiánmiàn, lǎohǔ zǒu zài hòumiàn.","vi":"Cáo đi trước, hổ đi sau."},{"zh":"动物们看见了，都很快地跑了。","pinyin":"Dòngwùmen kànjiàn le, dōu hěn kuài de pǎo le.","vi":"Các con vật nhìn thấy, đều chạy thật nhanh."},{"zh":"老虎以为它们怕狐狸，其实它们怕的是老虎。","pinyin":"Lǎohǔ yǐwéi tāmen pà húli, qíshí tāmen pà de shì lǎohǔ.","vi":"Hổ tưởng chúng sợ cáo, thật ra thứ chúng sợ là hổ."}],"words":[{"zh":"老虎","pinyin":"lǎohǔ","vi":"con hổ"},{"zh":"狐狸","pinyin":"húli","vi":"con cáo"},{"zh":"森林","pinyin":"sēnlín","vi":"rừng"},{"zh":"相信","pinyin":"xiāngxìn","vi":"tin"},{"zh":"动物","pinyin":"dòngwù","vi":"động vật"},{"zh":"怕","pinyin":"pà","vi":"sợ"},{"zh":"以为","pinyin":"yǐwéi","vi":"tưởng là"},{"zh":"其实","pinyin":"qíshí","vi":"thật ra"}]},{"id":"laohu","type":"song","level":"HSK1","title":"两只老虎","titlePy":"Liǎng zhī lǎohǔ","titleVi":"Hai con hổ","intro":"Bài đồng dao thiếu nhi nổi tiếng nhất Trung Quốc, hát theo giai điệu “Kìa con bướm vàng”. Giọng AI đọc lời, không hát.","g":"female","speed":0.9,"lines":[{"zh":"两只老虎，两只老虎，","pinyin":"Liǎng zhī lǎohǔ, liǎng zhī lǎohǔ,","vi":"Hai con hổ, hai con hổ,"},{"zh":"跑得快，跑得快。","pinyin":"pǎo de kuài, pǎo de kuài.","vi":"chạy nhanh ghê, chạy nhanh ghê."},{"zh":"一只没有耳朵，","pinyin":"Yì zhī méiyǒu ěrduo,","vi":"Một con không có tai,"},{"zh":"一只没有尾巴，","pinyin":"yì zhī méiyǒu wěiba,","vi":"một con không có đuôi,"},{"zh":"真奇怪！真奇怪！","pinyin":"zhēn qíguài! zhēn qíguài!","vi":"lạ thật đấy! lạ thật đấy!"}],"words":[{"zh":"两","pinyin":"liǎng","vi":"hai"},{"zh":"老虎","pinyin":"lǎohǔ","vi":"con hổ"},{"zh":"跑","pinyin":"pǎo","vi":"chạy"},{"zh":"快","pinyin":"kuài","vi":"nhanh"},{"zh":"耳朵","pinyin":"ěrduo","vi":"tai"},{"zh":"尾巴","pinyin":"wěiba","vi":"đuôi"},{"zh":"奇怪","pinyin":"qíguài","vi":"kỳ lạ"}]},{"id":"shengri","type":"song","level":"HSK1","title":"生日快乐歌","titlePy":"Shēngrì kuàilè gē","titleVi":"Bài hát chúc mừng sinh nhật","intro":"Bài “Happy Birthday” lời tiếng Trung. Học thuộc để hát cho bạn bè người Trung Quốc nhé. Giọng AI đọc lời, không hát.","g":"female","speed":0.9,"lines":[{"zh":"祝你生日快乐，","pinyin":"Zhù nǐ shēngrì kuàilè,","vi":"Chúc bạn sinh nhật vui vẻ,"},{"zh":"祝你生日快乐，","pinyin":"zhù nǐ shēngrì kuàilè,","vi":"chúc bạn sinh nhật vui vẻ,"},{"zh":"祝你幸福，祝你健康，","pinyin":"zhù nǐ xìngfú, zhù nǐ jiànkāng,","vi":"chúc bạn hạnh phúc, chúc bạn khỏe mạnh,"},{"zh":"祝你前途光明，","pinyin":"zhù nǐ qiántú guāngmíng,","vi":"chúc bạn tương lai tươi sáng,"},{"zh":"祝你生日快乐！","pinyin":"zhù nǐ shēngrì kuàilè!","vi":"chúc bạn sinh nhật vui vẻ!"}],"words":[{"zh":"祝","pinyin":"zhù","vi":"chúc"},{"zh":"生日","pinyin":"shēngrì","vi":"sinh nhật"},{"zh":"快乐","pinyin":"kuàilè","vi":"vui vẻ"},{"zh":"幸福","pinyin":"xìngfú","vi":"hạnh phúc"},{"zh":"健康","pinyin":"jiànkāng","vi":"khỏe mạnh"},{"zh":"前途","pinyin":"qiántú","vi":"tiền đồ, tương lai"},{"zh":"光明","pinyin":"guāngmíng","vi":"tươi sáng"}]},{"id":"molihua","type":"song","level":"HSK3","title":"茉莉花","titlePy":"Mòlìhuā","titleVi":"Hoa nhài","intro":"Dân ca Giang Tô có từ thời nhà Thanh, một trong những bài hát Trung Quốc nổi tiếng nhất thế giới. Đây là lời dân ca cổ. Giọng AI đọc lời, không hát.","g":"female","speed":0.85,"lines":[{"zh":"好一朵茉莉花，","pinyin":"Hǎo yì duǒ mòlìhuā,","vi":"Ôi một bông hoa nhài thật đẹp,"},{"zh":"好一朵茉莉花，","pinyin":"hǎo yì duǒ mòlìhuā,","vi":"ôi một bông hoa nhài thật đẹp,"},{"zh":"满园花开香也香不过它。","pinyin":"mǎn yuán huā kāi xiāng yě xiāng bú guò tā.","vi":"cả vườn hoa nở, chẳng hoa nào thơm hơn nó."},{"zh":"我有心采一朵戴，","pinyin":"Wǒ yǒu xīn cǎi yì duǒ dài,","vi":"Em muốn hái một bông để cài lên tóc,"},{"zh":"又怕看花的人儿骂。","pinyin":"yòu pà kàn huā de rénr mà.","vi":"lại sợ người trông vườn hoa mắng."}],"words":[{"zh":"朵","pinyin":"duǒ","vi":"bông (lượng từ của hoa)"},{"zh":"茉莉花","pinyin":"mòlìhuā","vi":"hoa nhài"},{"zh":"满","pinyin":"mǎn","vi":"đầy, khắp"},{"zh":"香","pinyin":"xiāng","vi":"thơm"},{"zh":"采","pinyin":"cǎi","vi":"hái"},{"zh":"戴","pinyin":"dài","vi":"đeo, cài"},{"zh":"怕","pinyin":"pà","vi":"sợ"},{"zh":"骂","pinyin":"mà","vi":"mắng"}]},{"id":"jingyesi","type":"poem","level":"HSK3","title":"静夜思","titlePy":"Jìng yè sī","titleVi":"Cảm nghĩ trong đêm thanh tĩnh (Lý Bạch)","intro":"Bài thơ Đường nổi tiếng nhất, trẻ em Trung Quốc nào cũng thuộc. Lý Bạch nhìn ánh trăng mà nhớ quê nhà.","g":"male","speed":0.8,"lines":[{"zh":"床前明月光，","pinyin":"Chuáng qián míng yuè guāng,","vi":"Đầu giường ánh trăng sáng,"},{"zh":"疑是地上霜。","pinyin":"yí shì dì shàng shuāng.","vi":"ngỡ là sương trên mặt đất."},{"zh":"举头望明月，","pinyin":"Jǔ tóu wàng míng yuè,","vi":"Ngẩng đầu nhìn trăng sáng,"},{"zh":"低头思故乡。","pinyin":"dī tóu sī gùxiāng.","vi":"cúi đầu nhớ cố hương."}],"words":[{"zh":"床","pinyin":"chuáng","vi":"giường"},{"zh":"明月","pinyin":"míngyuè","vi":"trăng sáng"},{"zh":"光","pinyin":"guāng","vi":"ánh sáng"},{"zh":"霜","pinyin":"shuāng","vi":"sương giá"},{"zh":"望","pinyin":"wàng","vi":"nhìn xa"},{"zh":"低头","pinyin":"dī tóu","vi":"cúi đầu"},{"zh":"故乡","pinyin":"gùxiāng","vi":"quê hương"}]},{"id":"chunxiao","type":"poem","level":"HSK3","title":"春晓","titlePy":"Chūn xiǎo","titleVi":"Sáng mùa xuân (Mạnh Hạo Nhiên)","intro":"Bài thơ Đường về giấc ngủ say buổi sáng mùa xuân, tỉnh dậy nghe chim hót và nhớ cơn mưa đêm qua.","g":"female","speed":0.8,"lines":[{"zh":"春眠不觉晓，","pinyin":"Chūn mián bù jué xiǎo,","vi":"Giấc xuân ngủ say không biết trời sáng,"},{"zh":"处处闻啼鸟。","pinyin":"chùchù wén tí niǎo.","vi":"khắp nơi nghe tiếng chim hót."},{"zh":"夜来风雨声，","pinyin":"Yè lái fēng yǔ shēng,","vi":"Đêm qua tiếng mưa gió,"},{"zh":"花落知多少。","pinyin":"huā luò zhī duōshǎo.","vi":"hoa rụng biết bao nhiêu."}],"words":[{"zh":"春","pinyin":"chūn","vi":"mùa xuân"},{"zh":"处处","pinyin":"chùchù","vi":"khắp nơi"},{"zh":"鸟","pinyin":"niǎo","vi":"con chim"},{"zh":"夜","pinyin":"yè","vi":"đêm"},{"zh":"风雨","pinyin":"fēngyǔ","vi":"mưa gió"},{"zh":"花","pinyin":"huā","vi":"hoa"},{"zh":"多少","pinyin":"duōshǎo","vi":"bao nhiêu"}]},{"id":"minnong","type":"poem","level":"HSK3","title":"悯农","titlePy":"Mǐn nóng","titleVi":"Thương người nông dân (Lý Thân)","intro":"Bài thơ Đường dạy trẻ em quý từng hạt gạo. Người Trung Quốc hay đọc câu cuối khi nhắc ăn hết cơm.","g":"male","speed":0.8,"lines":[{"zh":"锄禾日当午，","pinyin":"Chú hé rì dāng wǔ,","vi":"Cày lúa giữa trưa nắng,"},{"zh":"汗滴禾下土。","pinyin":"hàn dī hé xià tǔ.","vi":"mồ hôi rơi xuống đất dưới gốc lúa."},{"zh":"谁知盘中餐，","pinyin":"Shéi zhī pán zhōng cān,","vi":"Ai biết bữa cơm trong đĩa,"},{"zh":"粒粒皆辛苦。","pinyin":"lì lì jiē xīnkǔ.","vi":"mỗi hạt đều là vất vả."}],"words":[{"zh":"日","pinyin":"rì","vi":"mặt trời, ngày"},{"zh":"午","pinyin":"wǔ","vi":"buổi trưa"},{"zh":"汗","pinyin":"hàn","vi":"mồ hôi"},{"zh":"土","pinyin":"tǔ","vi":"đất"},{"zh":"谁","pinyin":"shéi","vi":"ai"},{"zh":"知","pinyin":"zhī","vi":"biết"},{"zh":"辛苦","pinyin":"xīnkǔ","vi":"vất vả"}]},{"id":"yonge","type":"poem","level":"HSK3","title":"咏鹅","titlePy":"Yǒng é","titleVi":"Vịnh con ngỗng (Lạc Tân Vương)","intro":"Bài thơ Lạc Tân Vương viết năm 7 tuổi, tả đàn ngỗng bơi trên mặt nước. Rất nhiều màu sắc: trắng, xanh, đỏ.","g":"female","speed":0.8,"lines":[{"zh":"鹅，鹅，鹅，","pinyin":"É, é, é,","vi":"Ngỗng, ngỗng, ngỗng,"},{"zh":"曲项向天歌。","pinyin":"qū xiàng xiàng tiān gē.","vi":"cong cổ ngửa lên trời hát."},{"zh":"白毛浮绿水，","pinyin":"Bái máo fú lǜ shuǐ,","vi":"Lông trắng nổi trên nước xanh,"},{"zh":"红掌拨清波。","pinyin":"hóng zhǎng bō qīng bō.","vi":"chân đỏ khua làn sóng trong."}],"words":[{"zh":"鹅","pinyin":"é","vi":"con ngỗng"},{"zh":"天","pinyin":"tiān","vi":"trời"},{"zh":"歌","pinyin":"gē","vi":"hát, bài hát"},{"zh":"白","pinyin":"bái","vi":"trắng"},{"zh":"绿","pinyin":"lǜ","vi":"xanh lá"},{"zh":"水","pinyin":"shuǐ","vi":"nước"},{"zh":"红","pinyin":"hóng","vi":"đỏ"}]},{"id":"yuzhong","type":"film","level":"HSK2","title":"雨中的告白","titlePy":"Yǔ zhōng de gàobái","titleVi":"Lời tỏ tình trong mưa","intro":"Cảnh phim ngắn kiểu phim tình cảm Trung Quốc (do AI viết). Tiểu Lâm đội mưa đến nhà An An để nói một điều quan trọng.","cast":[{"n":"安安","g":"female"},{"n":"小林","g":"male"}],"lines":[{"who":"安安","zh":"你怎么来了？外面下这么大的雨。","pinyin":"Nǐ zěnme lái le? Wàimiàn xià zhème dà de yǔ.","vi":"Sao anh lại đến? Ngoài trời mưa to thế này."},{"who":"小林","zh":"我有一句话，今天一定要告诉你。","pinyin":"Wǒ yǒu yí jù huà, jīntiān yídìng yào gàosu nǐ.","vi":"Anh có một câu, hôm nay nhất định phải nói với em."},{"who":"安安","zh":"什么话？你先进来吧。","pinyin":"Shénme huà? Nǐ xiān jìnlai ba.","vi":"Câu gì vậy? Anh vào nhà trước đã."},{"who":"小林","zh":"不用了。安安，我喜欢你，喜欢你很久了。","pinyin":"Búyòng le. Ān'ān, wǒ xǐhuan nǐ, xǐhuan nǐ hěn jiǔ le.","vi":"Không cần đâu. An An, anh thích em, thích em lâu lắm rồi."},{"who":"安安","zh":"你为什么现在才说？","pinyin":"Nǐ wèishénme xiànzài cái shuō?","vi":"Sao bây giờ anh mới nói?"},{"who":"小林","zh":"因为我怕你不喜欢我。","pinyin":"Yīnwèi wǒ pà nǐ bù xǐhuan wǒ.","vi":"Vì anh sợ em không thích anh."},{"who":"安安","zh":"傻瓜，我也一直在等你。","pinyin":"Shǎguā, wǒ yě yìzhí zài děng nǐ.","vi":"Đồ ngốc, em cũng luôn đợi anh mà."},{"who":"小林","zh":"真的吗？那明天我们一起去看电影吧！","pinyin":"Zhēn de ma? Nà míngtiān wǒmen yìqǐ qù kàn diànyǐng ba!","vi":"Thật không? Vậy ngày mai mình cùng đi xem phim nhé!"}],"words":[{"zh":"告诉","pinyin":"gàosu","vi":"nói cho biết"},{"zh":"一定","pinyin":"yídìng","vi":"nhất định"},{"zh":"进来","pinyin":"jìnlai","vi":"đi vào"},{"zh":"久","pinyin":"jiǔ","vi":"lâu"},{"zh":"为什么","pinyin":"wèishénme","vi":"tại sao"},{"zh":"才","pinyin":"cái","vi":"mới (muộn)"},{"zh":"因为","pinyin":"yīnwèi","vi":"bởi vì"},{"zh":"傻瓜","pinyin":"shǎguā","vi":"đồ ngốc"},{"zh":"一直","pinyin":"yìzhí","vi":"luôn luôn"}]},{"id":"guonian","type":"film","level":"HSK2","title":"回家过年","titlePy":"Huí jiā guònián","titleVi":"Về nhà ăn Tết","intro":"Cảnh phim gia đình ngắn (do AI viết). Đêm giao thừa, mẹ gọi điện hỏi con trai có về ăn Tết không.","cast":[{"n":"妈妈","g":"female"},{"n":"小东","g":"male"}],"lines":[{"who":"妈妈","zh":"喂，小东，你什么时候回家？","pinyin":"Wéi, Xiǎodōng, nǐ shénme shíhou huí jiā?","vi":"Alô, Tiểu Đông, bao giờ con về nhà?"},{"who":"小东","zh":"妈，今年公司太忙了，我可能回不去了。","pinyin":"Mā, jīnnián gōngsī tài máng le, wǒ kěnéng huí bu qù le.","vi":"Mẹ ơi, năm nay công ty bận quá, chắc con không về được rồi."},{"who":"妈妈","zh":"哦，没关系，工作重要。","pinyin":"Ò, méi guānxi, gōngzuò zhòngyào.","vi":"Ồ, không sao đâu, công việc quan trọng mà."},{"who":"小东","zh":"妈，你和爸身体都好吗？","pinyin":"Mā, nǐ hé bà shēntǐ dōu hǎo ma?","vi":"Mẹ ơi, bố mẹ đều khỏe chứ ạ?"},{"who":"妈妈","zh":"都好，都好。你别担心我们。","pinyin":"Dōu hǎo, dōu hǎo. Nǐ bié dānxīn wǒmen.","vi":"Khỏe cả, khỏe cả. Con đừng lo cho bố mẹ."},{"who":"小东","zh":"妈，你去开一下门。","pinyin":"Mā, nǐ qù kāi yíxià mén.","vi":"Mẹ ơi, mẹ ra mở cửa một chút đi."},{"who":"妈妈","zh":"什么？小东！你怎么回来了？","pinyin":"Shénme? Xiǎodōng! Nǐ zěnme huílai le?","vi":"Gì cơ? Tiểu Đông! Sao con lại về rồi?"},{"who":"小东","zh":"新年快乐！我想给你们一个惊喜！","pinyin":"Xīnnián kuàilè! Wǒ xiǎng gěi nǐmen yí ge jīngxǐ!","vi":"Chúc mừng năm mới! Con muốn tạo bất ngờ cho bố mẹ!"}],"words":[{"zh":"过年","pinyin":"guònián","vi":"ăn Tết"},{"zh":"今年","pinyin":"jīnnián","vi":"năm nay"},{"zh":"可能","pinyin":"kěnéng","vi":"có lẽ"},{"zh":"重要","pinyin":"zhòngyào","vi":"quan trọng"},{"zh":"身体","pinyin":"shēntǐ","vi":"sức khỏe, cơ thể"},{"zh":"担心","pinyin":"dānxīn","vi":"lo lắng"},{"zh":"新年快乐","pinyin":"xīnnián kuàilè","vi":"chúc mừng năm mới"},{"zh":"惊喜","pinyin":"jīngxǐ","vi":"bất ngờ vui"}]}];
+const EMOJI = {"爱":"❤️","八":"8️⃣","爸爸":"👨","杯子":"🥛","北京":"🏯","菜":"🥗","茶":"🍵","吃":"🍽️","出租车":"🚕","打电话":"📞","点":"⏰","电脑":"💻","电视":"📺","电影":"🎬","东西":"📦","读":"📖","对不起":"🙇","儿子":"👦","二":"2️⃣","饭馆":"🍜","飞机":"✈️","高兴":"😊","工作":"💼","狗":"🐶","汉语":"🇨🇳","好":"👍","喝":"🥤","火车站":"🚉","家":"🏠","今天":"📅","九":"9️⃣","开":"🚗","看":"👀","看见":"👀","老师":"👩‍🏫","冷":"🥶","六":"6️⃣","妈妈":"👩","买":"🛒","猫":"🐱","米饭":"🍚","明天":"📅","女儿":"👧","朋友":"🧑‍🤝‍🧑","漂亮":"✨","苹果":"🍎","七":"7️⃣","钱":"💰","热":"🥵","人":"👤","认识":"🤝","日":"☀️","三":"3️⃣","商店":"🏪","上":"⬆️","上午":"🌅","十":"🔟","书":"📚","水":"💧","水果":"🍇","睡觉":"😴","说话":"🗣️","四":"4️⃣","岁":"🎂","天气":"🌤️","听":"👂","同学":"🧑‍🎓","喂":"📞","五":"5️⃣","喜欢":"❤️","下":"⬇️","下午":"🌆","下雨":"🌧️","先生":"👨","现在":"⏰","想":"💭","小姐":"👩","写":"✍️","谢谢":"🙏","星期":"🗓️","学生":"🧑‍🎓","学习":"📚","学校":"🏫","一":"1️⃣","衣服":"👕","医生":"👨‍⚕️","医院":"🏥","椅子":"🪑","月":"🌙","再见":"👋","中国":"🇨🇳","中午":"☀️","住":"🏠","字":"🔤","昨天":"📅","坐":"🪑","白":"⚪","帮助":"🤝","报纸":"📰","便宜":"🏷️","唱歌":"🎤","出":"🚪","穿":"👕","船":"🚢","错":"❌","打篮球":"🏀","大家":"🧑‍🤝‍🧑","弟弟":"👦","懂":"💡","房间":"🚪","服务员":"💁","高":"📏","告诉":"🗣️","哥哥":"👨","给":"🎁","公共汽车":"🚌","公斤":"⚖️","公司":"🏢","贵":"💎","孩子":"👶","好吃":"😋","黑":"🖤","红":"🔴","欢迎":"👏","回答":"💬","机场":"✈️","鸡蛋":"🥚","教室":"🏫","介绍":"🗣️","姐姐":"👩","进":"🚪","咖啡":"☕","开始":"▶️","考试":"📝","课":"📖","快":"⚡","快乐":"😄","累":"😫","路":"🛣️","旅游":"🧳","卖":"🏷️","慢":"🐢","忙":"🏃","妹妹":"👧","门":"🚪","男人":"👨","牛奶":"🥛","女人":"👩","跑步":"🏃","票":"🎫","妻子":"👰","起床":"🛌","晴":"☀️","上班":"💼","身体":"🧍","生病":"🤒","生日":"🎂","手表":"⌚","手机":"📱","送":"🎁","踢":"🦶","题":"❓","跳舞":"💃","玩":"🎮","晚上":"🌃","问":"❓","问题":"❓","希望":"🌟","洗":"🧼","西瓜":"🍉","小时":"⏰","笑":"😄","新":"🆕","休息":"🛋️","雪":"❄️","颜色":"🎨","眼睛":"👁️","羊肉":"🥩","药":"💊","一起":"🧑‍🤝‍🧑","阴":"☁️","游泳":"🏊","右边":"➡️","鱼":"🐟","运动":"⚽","早上":"🌅","长":"📏","丈夫":"👨","找":"🔍","知道":"💡","自行车":"🚲","走":"🚶","左边":"⬅️","早上好":"🌅","好久不见":"👋","越南":"🇻🇳","欢迎光临":"🙏","杯":"🥛","拿铁":"☕","糖":"🍬","带走":"🛍️","稍等":"⏳","芒果":"🥭","甜":"🍩","行":"👌","不好意思":"🙇","地铁站":"🚇","一直":"⬆️","路口":"🚦","往右拐":"↪️","几点":"⏰","几号":"📅","星期五":"📅","着急":"😰","来不及":"⏰","照片":"🖼️","可爱":"🥰","主意":"💡","舒服":"😌","头疼":"🤕","喝水":"🥤","不见不散":"🤝","多少钱":"💰","下个星期":"📅","师傅":"👨‍🔧","饭店":"🏨","堵车":"🚗","急":"🏃","放心":"😌","菜单":"📜","有名":"🌟","辣":"🌶️","买单":"🧾","周末":"🗓️","听说":"👂","喜剧":"🎭","门口":"🚪","踢足球":"⚽","厉害":"👍","爱好":"🎨","音乐":"🎵","饺子":"🥟","礼物":"🎁","蛋糕":"🎂","火车":"🚆","宾馆":"🏨","出发":"🛫","复习":"📚","叔叔":"👨","护照":"🛂","窗户":"🪟","登机牌":"🎫","经理":"👨‍💼","迟到":"⏰","出门":"🚪","香":"🌸","阿姨":"👩"}; // hình minh họa cho thẻ từ: emoji có sẵn trên điện thoại
+
+// Pinyin dưới từng chữ: lấy pinyin đã soạn của câu, chia theo từng chữ (pinyin-pro chỉ dùng để biết mỗi chữ dài bao nhiêu).
+const pyBase = (ch) => ch.normalize("NFD").replace(/[\u0300-\u0303\u030c]/g, "").replace(/u\u0308/g, "v").toLowerCase();
+function charPinyin(zh, py) {
+  const chars = [...zh], auto = window.pinyinPro ? pinyinPro.pinyin(zh, { type: "array" }) : [];
+  const cur = [...(py || "").replace(/[^A-Za-zÀ-ɏ\u0300-\u036f]/g, "").normalize("NFC")], base = cur.map(pyBase);
+  let pos = 0;
+  return chars.map((c, i) => {
+    if (!/[\u4e00-\u9fff]/.test(c)) return [c, ""];
+    const a = (auto[i] || "").toLowerCase(), ab = [...a].map(pyBase).join("");
+    for (let skip = 0; ab && skip < 3; skip++) {
+      if (base.slice(pos + skip, pos + skip + ab.length).join("") === ab) { const seg = cur.slice(pos + skip, pos + skip + ab.length).join("").toLowerCase(); pos += skip + ab.length; return [c, seg]; }
+    }
+    return [c, a];
+  });
+}
+const rubyLine = (zh, py) => charPinyin(zh, py).map(([c, p]) => p ? `<span class="rc"><span class="zh">${esc(c)}</span><i>${esc(p)}</i></span>` : `<span class="rc punct"><span class="zh">${esc(c)}</span><i></i></span>`).join("");
+// Bài tiếp theo cùng loại (bài hát thì sang bài hát kế tiếp), quay vòng về đầu.
+function rdNext(r) {
+  const list = allReads().filter((x) => x.type === r.type);
+  return list.length > 1 ? list[(list.findIndex((x) => x.id === r.id) + 1) % list.length] : null;
+}
+const modeBtn = (key, label) => `<button class="mode" data-toggle="${key}" aria-pressed="${state[key]}">${label}<b>${state[key] ? "Bật" : "Tắt"}</b></button>`;
 const RTYPE = { story: "Truyện ngắn", tale: "Truyện cổ", song: "Bài hát", poem: "Thơ Đường", film: "Cảnh phim", other: "Bài của bạn" };
 let myReads = store.get("myreads", []);
 const allReads = () => [...READINGS, ...myReads];
@@ -1757,7 +1847,10 @@ function ytAttach() {
   if (!f) return;
   // YouTube chỉ gửi thời gian sau khi trang báo "listening"; gửi lại vài lần cho chắc.
   const hello = () => f.contentWindow?.postMessage(JSON.stringify({ event: "listening", id: 1, channel: "widget" }), "*");
-  f.addEventListener("load", () => { hello(); let n = 0; const iv = setInterval(() => { hello(); if (++n > 5) clearInterval(iv); }, 800); });
+  f.addEventListener("load", () => {
+    hello(); let n = 0; const iv = setInterval(() => { hello(); if (++n > 5) clearInterval(iv); }, 800);
+    if (state.ytAutoplay) { state.ytAutoplay = false; setTimeout(() => ytCmd("playVideo"), 900); }
+  });
 }
 const ytCmd = (func, args = []) => ytSync.win?.postMessage(JSON.stringify({ event: "command", func, args }), "*");
 window.addEventListener("message", (e) => {
@@ -1765,6 +1858,13 @@ window.addEventListener("message", (e) => {
   let d; try { d = typeof e.data === "string" ? JSON.parse(e.data) : e.data; } catch { return; }
   const ct = d?.info?.currentTime;
   if (typeof ct === "number") { ytSync.t = ct; ytHighlight(); }
+  const ps = d?.info?.playerState;
+  if (ps === 1) ytSync.ended = false;
+  if (ps === 0 && !ytSync.ended && state.view === "read") {
+    ytSync.ended = true;
+    if (state.rloop) { ytCmd("seekTo", [0, true]); ytCmd("playVideo"); }
+    else if (state.rnext) { const nx = rdNext(R()); if (nx) rdOpenNext(nx); }
+  }
 });
 function ytHighlight() {
   const r = state.view === "read" && state.rtab === "read" ? R() : null, times = r && timesOf(r);
@@ -1871,6 +1971,15 @@ async function rdPlayAll() {
   state.rplayAll = false; state.rplaying = null;
   const p = rdProg(r.id); p.read = true; rdSave(r.id, p);
   rdRefresh();
+  if (state.rd !== r || state.view !== "read") return;
+  if (state.rloop) { await sleep(800); if (state.rd === r && !state.rplayAll) rdPlayAll(); return; }
+  if (state.rnext) { const nx = rdNext(r); if (nx) { await sleep(1200); if (state.rd === r) rdOpenNext(nx); } }
+}
+// Sang bài tiếp: có video YouTube thì cho video tự phát, không thì đọc cả bài bằng giọng AI.
+function rdOpenNext(nx) {
+  openRead(nx.id);
+  const m = mediaOf(ytOf(nx));
+  if (m && m.kind === "yt" && !state.blocked.yt) state.ytAutoplay = true; else rdPlayAll();
 }
 
 function readView() {
@@ -1890,6 +1999,7 @@ function readView() {
         <div class="tabs" role="tablist">${tabs.map(([id, name, sub], i) => `<button class="tab" role="tab" aria-selected="${state.rtab === id}" data-rtab="${id}">${i + 1}. ${name}<small>${sub}</small></button>`).join("")}</div>
         <div class="chips">
           <button class="chip" aria-pressed="${state.showPy}" data-toggle="showPy">Pinyin</button>
+          <button class="chip" aria-pressed="${state.pyEach}" data-toggle="pyEach">Pinyin dưới từng chữ</button>
           <button class="chip" aria-pressed="${state.showVi}" data-toggle="showVi">Tiếng Việt</button>
           <button class="chip" aria-pressed="${state.slow}" data-toggle="slow">Đọc chậm</button>
         </div>
@@ -1902,9 +2012,11 @@ function readView() {
 function rdReadTab() {
   const r = R(), verse = r.type === "poem" || r.type === "song";
   return `${ytBox(r)}<div class="bar"><button class="btn btn-primary" data-rdall>${state.rplayAll ? ICON.stop + "Dừng" : ICON.play + "Nghe cả bài"}</button><span class="muted" style="font-size:14px">${timesOf(r) && mediaOf(ytOf(r))?.kind === "yt" ? "Nút này đọc bằng giọng AI." : "Chạm vào câu nào để nghe câu đó."}</span></div>
-    <div class="rd-text ${verse ? "verse" : ""} ${state.showPy ? "" : "no-py"} ${state.showVi ? "" : "no-vi"}">${r.lines.map((ln, i) => `<button class="rl ${state.rplaying === i ? "now" : ""}" id="rl-${i}" data-rplay="${i}">
+    <div class="modes-row">${modeBtn("rloop", "Lặp lại bài này")}${modeBtn("rnext", r.type === "song" ? "Tự phát bài hát tiếp" : "Tự phát bài tiếp")}</div>
+    <div class="rd-text ${verse ? "verse" : ""} ${state.showPy ? "" : "no-py"} ${state.showVi ? "" : "no-vi"} ${state.pyEach ? "py-each" : ""}">${r.lines.map((ln, i) => `<button class="rl ${state.rplaying === i ? "now" : ""}" id="rl-${i}" data-rplay="${i}">
       ${ln.who ? `<span class="rl-who ${rdGender(r, ln)}">${esc(ln.who)}</span>` : ""}
       <span class="rl-zh zh">${esc(ln.zh)}</span>
+      <span class="rl-ruby">${rubyLine(ln.zh, ln.pinyin)}</span>
       ${ln.pinyin ? `<span class="rl-py">${esc(ln.pinyin)}</span>` : ""}
       ${ln.vi ? `<span class="rl-vi">${esc(ln.vi)}</span>` : ""}
     </button>`).join("")}</div>
@@ -2038,6 +2150,9 @@ document.addEventListener("click", (e) => {
   if (d.hometab) { state.home = d.hometab; store.set("home", state.home); render(); return window.scrollTo(0, 0); }
   if (d.rdopen) return openRead(d.rdopen);
   if (d.fcdeck) return openFc(d.fcdeck);
+  if ("fcprintopen" in d) { stopSpeaking(); state.view = "fcprint"; render(); return window.scrollTo(0, 0); }
+  if (d.fcpopt) { state.fcPrint[d.fcpopt] = !state.fcPrint[d.fcpopt]; return render(); }
+  if ("fcprintgo" in d) { try { window.print(); } catch {} return; }
   if (d.fckind) { state.fcKind = d.fckind; store.set("fcKind", d.fckind); return render(); }
   if (d.fcdir) { state.fcDir = d.fcdir; store.set("fcDir", d.fcdir); return render(); }
   if ("fcflip" in d) { if (Date.now() - (state.fcSwiped || 0) < 400) return; state.fc.flipped = !state.fc.flipped; render(); return fcAutoPlay(); }
@@ -2075,6 +2190,15 @@ document.addEventListener("click", (e) => {
     state[d.toggle] = !state[d.toggle];
     if (d.toggle !== "vocab") store.set(d.toggle, state[d.toggle]);
     if (state.view === "call") { stopSpeaking(); state.call.speaking = null; }
+    if (state.view === "read" && state.rtab === "read" && ["rloop", "rnext"].includes(d.toggle)) {
+      if (d.toggle === "rloop" && state.rloop && state.rnext) { state.rnext = false; store.set("rnext", false); }
+      if (d.toggle === "rnext" && state.rnext && state.rloop) { state.rloop = false; store.set("rloop", false); }
+      document.querySelectorAll(".modes-row .mode").forEach((b) => { const on = state[b.dataset.toggle]; b.setAttribute("aria-pressed", on); b.querySelector("b").textContent = on ? "Bật" : "Tắt"; });
+      return;
+    }
+    if (state.view === "read" && state.rtab === "read" && d.toggle === "pyEach") {
+      t.setAttribute("aria-pressed", state.pyEach); $(".rd-text")?.classList.toggle("py-each", state.pyEach); return;
+    }
     if (state.view === "read" && state.rtab === "read" && (d.toggle === "showPy" || d.toggle === "showVi")) {
       t.setAttribute("aria-pressed", state[d.toggle]); $(".rd-text")?.classList.toggle(d.toggle === "showPy" ? "no-py" : "no-vi", !state[d.toggle]); return;
     }
@@ -2170,6 +2294,7 @@ document.addEventListener("submit", (e) => {
 });
 document.addEventListener("change", (e) => {
   if (e.target.id === "fc-lesson" && e.target.value) return openFc(e.target.value);
+  if (e.target.id === "fcp-deck") { state.fcPrint.deck = e.target.value; return render(); }
   const s = e.target.closest("select[data-voice]");
   if (!s) return;
   store.set("voice-" + s.dataset.voice, s.value);

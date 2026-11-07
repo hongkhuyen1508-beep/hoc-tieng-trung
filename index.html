@@ -163,6 +163,25 @@ h1 em { font-style: normal; color: var(--seal); }
 .answer { display: flex; gap: 8px; }
 .answer input { flex: 1; min-width: 0; border: 1.5px solid var(--line); background: var(--surface); border-radius: 999px; padding: 12px 16px; font-family: var(--font-zh); font-size: 18px; outline: none; }
 .answer input:focus { border-color: var(--ink); }
+.recbox { display: grid; justify-items: center; gap: 6px; margin: 14px 0 4px; }
+.recbtn { display: inline-flex; align-items: center; gap: 12px; border: 0; border-radius: 999px; padding: 10px 22px 10px 10px; background: var(--seal); color: #fff; font: inherit; font-size: 17px; font-weight: 600; cursor: pointer; box-shadow: var(--shadow); }
+.recbtn:disabled { opacity: .75; cursor: default; }
+.recdot { position: relative; width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,.18); display: grid; place-items: center; }
+.recdot svg { width: 24px; height: 24px; position: relative; z-index: 1; }
+.recdot i { position: absolute; inset: 0; border-radius: 50%; background: rgba(255,255,255,.28); transform: scale(1); transition: transform .08s; }
+.recbtn.rec { background: var(--bad); animation: recpulse 1.4s ease-in-out infinite; }
+.recbtn.busy, .recbtn.wait { background: var(--ink); color: var(--paper); }
+@keyframes recpulse { 50% { box-shadow: 0 0 0 8px var(--bad-soft); } }
+.recsub { margin: 0; font-size: 13px; }
+.recerr { margin: 0; font-size: 14px; color: var(--bad); text-align: center; }
+.typeit { margin-top: 10px; }
+.typeit summary { cursor: pointer; font-size: 14px; color: var(--muted); text-align: center; list-style: none; margin-bottom: 8px; }
+.typeit summary::-webkit-details-marker { display: none; }
+.typeit summary::after { content: " ▾"; }
+.badge { white-space: nowrap; flex: none; font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 999px; align-self: center; }
+.badge.pass { background: var(--good-soft); color: var(--good); }
+.badge.nopass { background: var(--bad); color: #fff; }
+.result.fail { border: 1.5px solid var(--bad) !important; background: var(--bad-soft) !important; }
 .hint { font-size: 13px; color: var(--muted); display: flex; gap: 6px; align-items: flex-start; }
 .hint svg { width: 16px; height: 16px; flex: none; margin-top: 2px; color: var(--seal); }
 
@@ -177,7 +196,7 @@ h1 em { font-style: normal; color: var(--seal); }
 .drill .answer { margin-top: 16px; }
 .nav { display: flex; justify-content: space-between; margin-top: 16px; gap: 8px; }
 .result { margin-top: 14px; border-radius: 16px; padding: 14px; background: var(--paper); border: 1px solid var(--line); }
-.score { display: flex; align-items: baseline; gap: 10px; }
+.score { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .score b { font-size: 34px; line-height: 1; font-variant-numeric: tabular-nums; }
 .chars { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 10px; }
 .chars span { font-family: var(--font-zh); font-size: 20px; padding: 1px 6px; border-radius: 7px; }
@@ -590,6 +609,7 @@ window.HOSTED = true;
     key: getKey,
     setKey: (k) => { try { localStorage.setItem(KEY, JSON.stringify(k)); } catch {} ckSet(k); },
     link: () => location.origin + location.pathname.replace(/goi-ai\/?$/, "") + "#k=" + encodeURIComponent(getKey()),
+    audio: async (b64, mime, prompt) => parse(await call([{ role: "user", parts: [{ inline_data: { mime_type: mime, data: b64 } }, { text: prompt }] }], true)),
     video: async (url, prompt) => parse(await call([{ role: "user", parts: [{ file_data: { file_uri: url } }, { text: prompt }] }], true)),
   };
   window.claude = { use: async (name) => (name === "sample" && getKey() ? sample : null) };
@@ -742,8 +762,8 @@ function scoreAnswer(reference, answer) {
   const score = n ? Math.max(0, Math.min(100, Math.round((hit / n) * 100 - extra * 4))) : 0;
   return { score, chars: refChars.map((c, i) => ({ c, ok: ok[i] })) };
 }
-const tone = (s) => (s >= 85 ? "good" : s >= 60 ? "ok" : "bad");
-const verdict = (s) => (s >= 90 ? "Xuất sắc!" : s >= 75 ? "Rất tốt" : s >= 60 ? "Khá rồi, đọc lại chỗ màu đỏ nhé" : "Nghe mẫu rồi thử lại nhé");
+const tone = (s) => (s >= 85 ? "good" : s >= 50 ? "ok" : "bad");
+const verdict = (s) => (s >= 90 ? "Xuất sắc!" : s >= 75 ? "Rất tốt" : s >= 50 ? "Đạt, đọc lại chỗ màu đỏ cho chuẩn hơn nhé" : "Nghe mẫu rồi đọc lại nhé");
 
 /* ---------------- Tiến độ học ---------------- */
 function prog(id) { return store.get("prog-" + id, { listened: false, best: {}, role: false, talk: 0 }); }
@@ -1400,26 +1420,121 @@ function answerBox(id, label, placeholder = "Chạm vào đây rồi đọc câu
 }
 const MIC_HINT = `<div class="hint">${ICON.mic}<span>Chạm vào ô, đổi bàn phím sang <b>tiếng Trung (简体)</b> rồi bấm <b>micro trên bàn phím</b> và đọc to. Không tiện nói thì gõ chữ Hán hoặc pinyin cũng được.</span></div>`;
 
+/* ----- Thu âm trực tiếp rồi tự chấm (bản GitHub có micro) ----- */
+const CAN_REC = !!(window.HOSTED && navigator.mediaDevices?.getUserMedia && (window.AudioContext || window.webkitAudioContext));
+const rec = { id: null, phase: "idle", err: "", stop: null };
+function speakBox(id, label = "Chấm") {
+  if (!CAN_REC) return `${answerBox(id, label)}<div style="margin-top:8px">${MIC_HINT}</div>`;
+  const ph = rec.id === id ? rec.phase : "idle";
+  const txt = { wait: "Đang mở micro...", rec: "Đang nghe... đọc xong tự chấm", busy: "Đang chấm điểm..." }[ph] || "Bấm rồi đọc to";
+  return `<div class="recbox">
+    <button class="recbtn ${ph}" data-rec="${id}" ${ph === "busy" || ph === "wait" ? "disabled" : ""} aria-label="${esc(txt)}"><span class="recdot">${ICON.mic}<i id="rec-lvl"></i></span><span>${txt}</span></button>
+    ${ph === "rec" ? `<p class="muted recsub">Bấm lần nữa nếu muốn dừng sớm</p>` : ""}
+    ${rec.id === id && rec.err ? `<p class="recerr">${esc(rec.err)}</p>` : ""}
+  </div>
+  <details class="typeit"><summary>Hoặc gõ chữ Hán / pinyin</summary>${answerBox(id, label, "Gõ chữ Hán hoặc pinyin...")}</details>`;
+}
+function recRefIdx(id) {
+  if (id === "drill-in") return L().lines[state.drill].zh;
+  if (id === "role-in") return L().lines[state.shown - 1].zh;
+  return R().lines[state.rline].zh;
+}
+function wavB64(chunks, rate) {
+  // Gộp các đoạn, hạ về 16 kHz một kênh rồi đóng gói WAV 16-bit.
+  const len = chunks.reduce((a, c) => a + c.length, 0), all = new Float32Array(len);
+  let o = 0; for (const c of chunks) { all.set(c, o); o += c.length; }
+  const step = rate / 16000, n = Math.floor(len / step), pcm = new DataView(new ArrayBuffer(44 + n * 2));
+  const str = (p, t) => { for (let i = 0; i < t.length; i++) pcm.setUint8(p + i, t.charCodeAt(i)); };
+  str(0, "RIFF"); pcm.setUint32(4, 36 + n * 2, true); str(8, "WAVEfmt "); pcm.setUint32(16, 16, true); pcm.setUint16(20, 1, true); pcm.setUint16(22, 1, true);
+  pcm.setUint32(24, 16000, true); pcm.setUint32(28, 32000, true); pcm.setUint16(32, 2, true); pcm.setUint16(34, 16, true); str(36, "data"); pcm.setUint32(40, n * 2, true);
+  let peak = 0.0001; for (let i = 0; i < len; i++) peak = Math.max(peak, Math.abs(all[i]));
+  const g = Math.min(8, 0.9 / peak);
+  for (let i = 0; i < n; i++) {
+    const a = Math.floor(i * step), b = Math.max(a + 1, Math.floor((i + 1) * step)); let s = 0;
+    for (let j = a; j < b && j < len; j++) s += all[j];
+    pcm.setInt16(44 + i * 2, Math.max(-1, Math.min(1, (s / (b - a)) * g)) * 32767, true);
+  }
+  const bytes = new Uint8Array(pcm.buffer); let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+async function startRec(id) {
+  if (rec.phase === "rec" && rec.id === id) return rec.stop?.();
+  if (rec.phase !== "idle") return;
+  stopSpeaking();
+  rec.id = id; rec.err = "";
+  if (!window.gemini.key()) { rec.err = "Cần khóa AI của Google để máy nghe và chấm. Dán khóa ở tab Gọi AI một lần là xong."; return render(); }
+  const ref = recRefIdx(id);
+  // Tạo AudioContext ngay trong lúc bấm để iPhone cho phép.
+  const ac = new (window.AudioContext || window.webkitAudioContext)();
+  rec.phase = "wait"; render();
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } }); }
+  catch { ac.close(); rec.phase = "idle"; rec.err = "Trang chưa được dùng micro. Khi trình duyệt hỏi, hãy chọn Cho phép (iPhone: Cài đặt > Safari > Micro)."; return render(); }
+  try { await ac.resume(); } catch {}
+  const src = ac.createMediaStreamSource(stream), node = ac.createScriptProcessor(4096, 1, 1), mute = ac.createGain();
+  mute.gain.value = 0; src.connect(node); node.connect(mute); mute.connect(ac.destination);
+  const chunks = [], t0 = performance.now();
+  let floor = 1, spoke = false, lastLoud = 0, finished = false, resolveDone;
+  const done = new Promise((r) => (resolveDone = r));
+  const stop = (why) => {
+    if (finished) return; finished = true;
+    node.onaudioprocess = null; try { src.disconnect(); node.disconnect(); } catch {}
+    stream.getTracks().forEach((t) => t.stop()); ac.close().catch(() => {});
+    resolveDone(why);
+  };
+  rec.stop = () => stop("tap");
+  node.onaudioprocess = (e) => {
+    const x = e.inputBuffer.getChannelData(0); chunks.push(new Float32Array(x));
+    let s = 0; for (let i = 0; i < x.length; i++) s += x[i] * x[i];
+    const rms = Math.sqrt(s / x.length), now = performance.now() - t0;
+    if (now < 400) floor = Math.min(floor, rms);
+    const loud = rms > Math.max(0.012, floor * 3.5);
+    if (loud) { spoke = true; lastLoud = now; }
+    const lv = document.getElementById("rec-lvl"); if (lv) lv.style.transform = `scale(${1 + Math.min(1, rms * 12)})`;
+    if (spoke && now - lastLoud > 1300) stop("silence");
+    else if (!spoke && now > 8000) stop("quiet");
+    else if (now > 25000) stop("max");
+  };
+  rec.phase = "rec"; render();
+  const why = await done;
+  rec.stop = null;
+  if (rec.id !== id) { rec.phase = "idle"; return; }
+  if (why === "quiet" || (!spoke && why !== "max")) { rec.phase = "idle"; rec.err = "Chưa nghe thấy tiếng. Bấm lại rồi đọc to, gần điện thoại hơn nhé."; return render(); }
+  rec.phase = "busy"; render();
+  try {
+    const d = await window.gemini.audio(wavB64(chunks, ac.sampleRate), "audio/wav", `This is a recording of a Vietnamese learner reading a Chinese sentence aloud. The sentence they are trying to read is: 「${ref}」.
+Transcribe exactly what was actually said, in simplified Chinese characters. Do NOT correct the learner and do NOT copy the target sentence: if a syllable is mispronounced or has the wrong tone so that it sounds like a different syllable, write a character matching what was really heard; leave out syllables that were skipped or not understandable. If nothing intelligible was said, use an empty string.
+Return JSON: {"text": "<characters heard>", "pinyin": "<pinyin with tone marks of what was heard>"}`);
+    rec.phase = "idle";
+    if (rec.id !== id) return;
+    applyAnswer(id, String(d.text || "").trim(), { voice: true, py: String(d.pinyin || "").trim() });
+    if (id !== "role-in") document.querySelector(".result")?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  } catch (e) {
+    rec.phase = "idle"; rec.err = callErr(e); render();
+  }
+}
+
 function resultView(r, reference) {
-  return `<div class="result" aria-live="polite">
-    <div class="score"><b class="c-${tone(r.score)}">${r.score}</b><span class="muted">${verdict(r.score)}</span></div>
+  const pass = r.score >= 50;
+  return `<div class="result ${pass ? "" : "fail"}" aria-live="polite">
+    <div class="score"><b class="c-${tone(r.score)}">${r.score}</b><span class="badge ${pass ? "pass" : "nopass"}">${pass ? "Đạt" : "Không đạt"}</span><span class="muted">${verdict(r.score)}</span></div>
     <div class="chars">${r.chars.map((x) => `<span class="${x.ok ? "hit" : "miss"}">${esc(x.c)}</span>`).join("")}</div>
-    <p class="muted" style="margin:8px 0 0;font-size:14px">Bạn nói: <span class="zh" style="color:var(--ink)">${esc(r.text)}</span></p>
+    <p class="muted" style="margin:8px 0 0;font-size:14px">${r.voice ? "Máy nghe được" : "Bạn nói"}: <span class="zh" style="color:var(--ink)">${esc(r.text) || "(không rõ)"}</span>${r.py ? ` <span>· ${esc(r.py)}</span>` : ""}</p>
   </div>`;
 }
 
 /* ----- 2. Luyện nói ----- */
 function drillView() {
   const l = L(), i = state.drill, ln = l.lines[i], c = ch(ln.speaker), best = prog(l.id).best || {};
-  return `<p class="muted" style="margin:0 0 14px">Nghe câu mẫu, rồi đọc lại. Chữ <span class="c-good">xanh</span> là máy nghe đúng, chữ <span class="c-bad">đỏ</span> là cần đọc lại.</p>
+  return `<p class="muted" style="margin:0 0 14px">Nghe câu mẫu, rồi ${CAN_REC ? "bấm nút micro và đọc to, đọc xong máy tự chấm" : "đọc lại"}. Dưới 50 điểm là chưa đạt. Chữ <span class="c-good">xanh</span> là máy nghe đúng, chữ <span class="c-bad">đỏ</span> là cần đọc lại.</p>
   <div class="drill">
     <div class="drill-top"><div class="drill-who">${avatar(c, state.playing === "drill" ? "talking" : "")}<span class="zh">${esc(c.name)}</span></div><span>Câu ${i + 1}/${l.lines.length}</span></div>
     <p class="drill-zh">${esc(ln.zh)}</p>
     ${state.showPy ? `<p class="drill-py">${esc(ln.pinyin)}</p>` : ""}
     ${state.showVi ? `<p class="drill-vi">${esc(ln.vi)}</p>` : ""}
     <div class="bar" style="margin:16px 0 0"><button class="btn btn-ghost" data-drillplay>${ICON.play}Nghe mẫu</button></div>
-    ${answerBox("drill-in", "Chấm")}
-    <div style="margin-top:8px">${MIC_HINT}</div>
+    ${speakBox("drill-in")}
     ${state.drillResult ? resultView(state.drillResult) : ""}
     <div class="nav"><button class="btn btn-ghost" data-drillgo="${i - 1}" ${i === 0 ? "disabled" : ""}>← Câu trước</button><button class="btn btn-dark" data-drillgo="${i + 1}" ${i === l.lines.length - 1 ? "disabled" : ""}>Câu tiếp →</button></div>
   </div>
@@ -1451,7 +1566,7 @@ function roleView() {
   if (finished) {
     dock = `<div class="bar" style="margin:0"><b>Xong rồi! Điểm trung bình: <span class="c-${tone(avg)}">${avg}</span></b><button class="btn btn-dark" data-pickrole="${state.role}">Làm lại</button><button class="btn btn-ghost" data-pickrole="${state.role === "A" ? "B" : "A"}">Đổi vai</button></div>`;
   } else if (yourTurn) {
-    dock = `${answerBox("role-in", "Nói")}${MIC_HINT}`;
+    dock = speakBox("role-in", "Nói");
   } else if (cur && cur.speaker === state.role && state.results[idx]) {
     dock = `<div class="bar" style="margin:0"><button class="btn btn-primary" data-continue>Tiếp tục →</button><button class="btn btn-ghost" data-retry>Nói lại câu này</button></div>`;
   } else {
@@ -2023,15 +2138,14 @@ function rdReadTab() {
 }
 function rdAloudTab() {
   const r = R(), i = state.rline, ln = r.lines[i], best = rdProg(r.id).best || {};
-  return `<p class="muted" style="margin:0 0 14px">Nghe mẫu rồi đọc to từng câu. Chữ <span class="c-good">xanh</span> là máy nghe đúng, chữ <span class="c-bad">đỏ</span> là cần đọc lại.</p>
+  return `<p class="muted" style="margin:0 0 14px">Nghe mẫu rồi ${CAN_REC ? "bấm nút micro và đọc to từng câu, đọc xong máy tự chấm" : "đọc to từng câu"}. Dưới 50 điểm là chưa đạt. Chữ <span class="c-good">xanh</span> là máy nghe đúng, chữ <span class="c-bad">đỏ</span> là cần đọc lại.</p>
   <div class="drill">
     <div class="drill-top"><span>${ln.who ? `<span class="zh">${esc(ln.who)}</span>` : ""}</span><span>Câu ${i + 1}/${r.lines.length}</span></div>
     <p class="drill-zh">${esc(ln.zh)}</p>
     ${state.showPy && ln.pinyin ? `<p class="drill-py">${esc(ln.pinyin)}</p>` : ""}
     ${state.showVi && ln.vi ? `<p class="drill-vi">${esc(ln.vi)}</p>` : ""}
     <div class="bar" style="margin:16px 0 0"><button class="btn btn-ghost" data-rplay="${i}">${ICON.play}Nghe mẫu</button></div>
-    ${answerBox("rd-in", "Chấm")}
-    <div style="margin-top:8px">${MIC_HINT}</div>
+    ${speakBox("rd-in")}
     ${state.rres ? resultView(state.rres) : ""}
     <div class="nav"><button class="btn btn-ghost" data-rgo="${i - 1}" ${i === 0 ? "disabled" : ""}>← Câu trước</button><button class="btn btn-dark" data-rgo="${i + 1}" ${i === r.lines.length - 1 ? "disabled" : ""}>Câu tiếp →</button></div>
   </div>
@@ -2144,6 +2258,7 @@ document.addEventListener("click", (e) => {
   const t = e.target.closest("button");
   if (!t) return;
   const d = t.dataset;
+  if (d.rec) return startRec(d.rec);
   if (d.open) return openLesson(d.open);
   if ("home" in d) return goHome();
   if (d.hometab) { state.home = d.hometab; store.set("home", state.home); render(); return window.scrollTo(0, 0); }
@@ -2169,7 +2284,7 @@ document.addEventListener("click", (e) => {
   if (d.rtab) { stopSpeaking(); state.rplayAll = false; state.rplaying = null; state.rtab = d.rtab; state.rres = null; return render(); }
   if (d.rplay != null) return rdPlayLine(+d.rplay);
   if ("rdall" in d) return rdPlayAll();
-  if (d.rgo != null) { stopSpeaking(); state.rline = Math.max(0, Math.min(R().lines.length - 1, +d.rgo)); state.rres = null; state.rplaying = null; return render(); }
+  if (d.rgo != null) { stopSpeaking(); rec.stop?.(); rec.id = null; rec.err = ""; state.rline = Math.max(0, Math.min(R().lines.length - 1, +d.rgo)); state.rres = null; state.rplaying = null; return render(); }
   if (d.rword) return rdAudio(R(), 0, d.rword);
   if (d.rsave) { const w = R().words.find((x) => x.zh === d.rsave); if (w) saveWord(w); return render(); }
   if ("rddel" in d) { if (!confirm("Xóa bài đọc này?")) return; myReads = myReads.filter((x) => x.id !== R().id); store.set("myreads", myReads); return goHome(); }
@@ -2218,7 +2333,7 @@ document.addEventListener("click", (e) => {
     state.playing = "drill"; render();
     return playLineAudio(L(), state.drill).then(() => { if (state.playing === "drill") { state.playing = null; render(); } });
   }
-  if (d.drillgo != null) { stopSpeaking(); state.drill = Math.max(0, Math.min(L().lines.length - 1, +d.drillgo)); state.drillResult = null; state.playing = null; return render(); }
+  if (d.drillgo != null) { stopSpeaking(); rec.stop?.(); rec.id = null; rec.err = ""; state.drill = Math.max(0, Math.min(L().lines.length - 1, +d.drillgo)); state.drillResult = null; state.playing = null; return render(); }
   if (d.pickrole != null) {
     stopSpeaking(); state.roleRun = (state.roleRun || 0) + 1;
     state.role = d.pickrole || null; state.results = {}; state.shown = 0; state.speaking = null;
@@ -2272,25 +2387,27 @@ document.addEventListener("submit", (e) => {
   if (e.target.matches("[data-addform]")) { if (!state.add?.busy) createRead(); return; }
   const form = e.target, input = form.querySelector("input"), text = input.value.trim();
   if (!text) { input.focus(); return; }
-  const kind = form.dataset.answer;
+  applyAnswer(form.dataset.answer, text);
+});
+function applyAnswer(kind, text, extra = {}) {
   if (kind === "drill-in") {
     const ln = L().lines[state.drill];
-    const r = { ...scoreAnswer(ln.zh, text), text };
+    const r = { ...scoreAnswer(ln.zh, text), text, ...extra };
     state.drillResult = r; recordBest(state.drill, r.score); render();
   } else if (kind === "role-in") {
     const idx = state.shown - 1, ln = L().lines[idx];
-    const r = { ...scoreAnswer(ln.zh, text), text };
+    const r = { ...scoreAnswer(ln.zh, text), text, ...extra };
     state.results[idx] = r; recordBest(idx, r.score); render(); scrollBottom();
   } else if (kind === "rd-in") {
     const r = R(), ln = r.lines[state.rline];
-    state.rres = { ...scoreAnswer(ln.zh, text), text };
+    state.rres = { ...scoreAnswer(ln.zh, text), text, ...extra };
     const p = rdProg(r.id); p.best = p.best || {}; p.best[state.rline] = Math.max(p.best[state.rline] || 0, state.rres.score); rdSave(r.id, p);
     render();
   } else if (kind === "talk-in") {
     if (!state.call || state.call.busy) return;
     sendTalk(text);
   }
-});
+}
 document.addEventListener("change", (e) => {
   if (e.target.id === "fc-lesson" && e.target.value) return openFc(e.target.value);
   if (e.target.id === "fcp-deck") { state.fcPrint.deck = e.target.value; return render(); }

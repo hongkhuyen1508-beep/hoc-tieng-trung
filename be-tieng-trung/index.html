@@ -1,0 +1,853 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Bé Học Tiếng Trung</title>
+<meta name="description" content="Học tiếng Trung theo tuần cho bé: nghe cả tuần, thẻ từ có hình, sách bài hát có pinyin và tải PDF.">
+<meta name="theme-color" content="#f7f4ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Bé Học Tiếng Trung">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+/* Bố cục: một cột tối đa 720px. Trên cùng là chọn tuần, rồi thẻ tuần với 3 nút lớn
+   (Nghe cả tuần, Thẻ từ, Sách bài hát); bấm nút nào thì khung đó mở ngay bên dưới.
+   Cuối trang là danh sách bài của tuần. Màu giấy kem, xanh lá dịu như trang mẫu. */
+:root {
+  --paper: #f7f4ec;
+  --surface: #fffdf8;
+  --sunk: #eef0e8;
+  --ink: #23362c;
+  --muted: #6b7a70;
+  --line: #e2e3d8;
+  --sage: #3f6b52;
+  --sage-soft: #e3ece2;
+  --sand: #ead9b2;
+  --sand-ink: #6a5320;
+  --mint: #cfe0d3;
+  --mint-ink: #2f5a41;
+  --sky: #dfe6ee;
+  --sky-ink: #34506e;
+  --row: #e8efe5;
+  --hi: #fff1b8;
+  --hi-ink: #5a4300;
+  --shadow: 0 1px 2px rgba(35, 54, 44, .05), 0 10px 24px -16px rgba(35, 54, 44, .25);
+  --font: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --zh: "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --r: 22px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #141a16; --surface: #1c241f; --sunk: #18201b; --ink: #e9efe9; --muted: #9fb0a5; --line: #2c3730;
+    --sage: #8fc4a3; --sage-soft: #233229; --sand: #4a3e24; --sand-ink: #f0d9a4; --mint: #29402f; --mint-ink: #bfe2c9;
+    --sky: #26313c; --sky-ink: #c6d6e8; --row: #212c25; --hi: #4a3f12; --hi-ink: #ffe9a3;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 24px -16px rgba(0,0,0,.6);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #141a16; --surface: #1c241f; --sunk: #18201b; --ink: #e9efe9; --muted: #9fb0a5; --line: #2c3730;
+  --sage: #8fc4a3; --sage-soft: #233229; --sand: #4a3e24; --sand-ink: #f0d9a4; --mint: #29402f; --mint-ink: #bfe2c9;
+  --sky: #26313c; --sky-ink: #c6d6e8; --row: #212c25; --hi: #4a3f12; --hi-ink: #ffe9a3;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 24px -16px rgba(0,0,0,.6);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font); line-height: 1.5; }
+button { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.wrap { max-width: 720px; margin: 0 auto; padding: max(18px, env(safe-area-inset-top)) 16px calc(40px + env(safe-area-inset-bottom)); }
+.zh { font-family: var(--zh); }
+img.em { display: block; width: 100%; height: 100%; object-fit: contain; }
+.hide { display: none !important; }
+
+/* Đầu trang */
+header.top { display: flex; align-items: center; gap: 12px; margin: 4px 0 16px; }
+header.top .logo { width: 48px; height: 48px; border-radius: 16px; background: var(--sage-soft); display: grid; place-items: center; padding: 8px; flex: none; }
+header.top h1 { margin: 0; font-size: 1.35rem; line-height: 1.2; letter-spacing: -.01em; }
+header.top p { margin: 2px 0 0; color: var(--muted); font-size: .9rem; }
+header.top .gear { margin-left: auto; width: 44px; height: 44px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); font-size: 1.2rem; flex: none; }
+
+/* Chọn tuần */
+.weeks { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 10px; margin: 0 -16px; padding-left: 16px; padding-right: 16px; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.weeks::-webkit-scrollbar { display: none; }
+.wk { flex: none; scroll-snap-align: start; display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 14px 6px 6px; min-height: 44px; font-weight: 600; font-size: .92rem; }
+.wk .ic { width: 32px; height: 32px; border-radius: 50%; background: var(--sunk); padding: 5px; }
+.wk[aria-pressed="true"] { background: var(--sage); border-color: var(--sage); color: var(--surface); }
+.wk[aria-pressed="true"] .ic { background: var(--surface); }
+
+/* Thẻ tuần */
+.hero { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); padding: 18px; margin-top: 6px; }
+.hero .row { display: flex; align-items: center; gap: 14px; }
+.hero .pic { width: 76px; height: 76px; border-radius: 22px; background: var(--sage-soft); padding: 12px; flex: none; }
+.hero .kick { font-size: .78rem; font-weight: 700; letter-spacing: .08em; color: var(--muted); text-transform: uppercase; }
+.hero h2 { margin: 0; font-size: 1.5rem; line-height: 1.25; }
+.hero h2 .zh { font-weight: 700; margin-right: 6px; }
+.hero .sub { color: var(--muted); font-size: .92rem; }
+.tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
+.tab { border: 2px solid transparent; border-radius: 18px; padding: 14px 8px 12px; min-height: 92px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-weight: 700; font-size: .92rem; line-height: 1.25; text-align: center; }
+.tab .ti { font-size: 1.6rem; line-height: 1; }
+.tab.mp3 { background: var(--sand); color: var(--sand-ink); }
+.tab.card { background: var(--mint); color: var(--mint-ink); }
+.tab.book { background: var(--sky); color: var(--sky-ink); }
+.tab[aria-expanded="true"] { border-color: currentColor; }
+
+/* Khung mở ra */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); margin-top: 16px; overflow: hidden; }
+.panel > .ph { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px 6px; }
+.panel > .ph h3 { margin: 0; font-size: 1.3rem; color: var(--sage); }
+.x { width: 44px; height: 44px; border-radius: 50%; border: 0; background: transparent; font-size: 1.5rem; color: var(--muted); }
+.pb { padding: 8px 18px 18px; }
+#pBook .pb { padding: 8px 10px 16px; }
+.note { color: var(--muted); font-size: .85rem; margin: 0 0 12px; }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 14px; min-height: 44px; padding: 8px 14px; font-weight: 600; font-size: .92rem; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.btn.pri { background: var(--sage); border-color: var(--sage); color: var(--surface); }
+.btn:disabled { opacity: .4; cursor: default; }
+
+/* Trình nghe */
+.now { background: var(--sunk); border-radius: 18px; padding: 16px; text-align: center; }
+.now .ns { font-size: .82rem; color: var(--muted); font-weight: 600; }
+.now .nl { font-family: var(--zh); font-size: 1.7rem; font-weight: 700; margin: 6px 0 0; min-height: 2.4rem; line-height: 1.35; }
+.now .np { color: var(--sage); font-size: 1rem; min-height: 1.5rem; }
+.now .nv { color: var(--muted); font-size: .9rem; min-height: 1.35rem; }
+.bar { height: 6px; background: var(--line); border-radius: 3px; margin: 14px 0 4px; overflow: hidden; }
+.bar i { display: block; height: 100%; width: 0; background: var(--sage); transition: width .3s; }
+.ctl { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 12px; }
+.ctl button { width: 52px; height: 52px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); font-size: 1.2rem; }
+.ctl .play { width: 72px; height: 72px; background: var(--sage); border-color: var(--sage); color: var(--surface); font-size: 1.7rem; }
+.opts { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 14px; }
+.chip { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; min-height: 40px; padding: 6px 14px; font-size: .88rem; font-weight: 600; }
+.chip[aria-pressed="true"] { background: var(--sage-soft); border-color: var(--sage); color: var(--sage); }
+.tracks { list-style: none; margin: 16px 0 0; padding: 0; border-top: 1px solid var(--line); }
+.tracks li { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.tracks li.on .tt { color: var(--sage); }
+.tracks .tt { flex: 1; min-width: 0; font-weight: 600; }
+.tracks .tt small { display: block; color: var(--muted); font-weight: 500; font-size: .8rem; }
+.tracks .btn { min-height: 38px; padding: 6px 10px; font-size: .8rem; }
+.tag { display: inline-block; font-size: .7rem; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: var(--sand); color: var(--sand-ink); margin-left: 4px; vertical-align: 1px; }
+
+/* Thẻ từ */
+.fc-stage { perspective: 1200px; }
+.fc { position: relative; width: 100%; max-width: 360px; margin: 0 auto; aspect-ratio: 3 / 4; border: 0; padding: 0; background: none; transform-style: preserve-3d; transition: transform .45s; }
+.fc.flip { transform: rotateY(180deg); }
+.fc .face { position: absolute; inset: 0; border-radius: 26px; backface-visibility: hidden; -webkit-backface-visibility: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 22px; background: var(--sage-soft); border: 2px solid var(--line); }
+.fc .back { transform: rotateY(180deg); background: var(--sand); color: var(--sand-ink); }
+.fc .art { width: 62%; aspect-ratio: 1; display: grid; place-items: center; }
+.fc .art .apples { display: flex; flex-wrap: wrap; justify-content: center; align-content: center; gap: 6px; width: 100%; height: 100%; }
+.fc .art .apples img { width: 26%; height: auto; }
+.fc .art .apples.n1 img { width: 60%; }
+.fc .art .apples.n2 img { width: 44%; }
+.fc .art .apples.n3 img, .fc .art .apples.n4 img { width: 38%; }
+.fc .art .dot { width: 80%; aspect-ratio: 1; border-radius: 50%; border: 3px solid rgba(0,0,0,.12); }
+.fc .fz { font-family: var(--zh); font-size: 3rem; font-weight: 700; line-height: 1.15; }
+.fc .fp { font-size: 1.25rem; color: var(--sage); font-weight: 600; }
+.fc .back .bz { font-family: var(--zh); font-size: 2rem; font-weight: 700; }
+.fc .back .bv { font-size: 1.6rem; font-weight: 800; text-align: center; line-height: 1.25; }
+.fc .back .bp { font-size: 1.1rem; }
+.fc .hint { position: absolute; bottom: 12px; left: 0; right: 0; text-align: center; font-size: .78rem; color: var(--muted); }
+.fc .back .hint { color: inherit; opacity: .7; }
+.fc-nav { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 16px; }
+.fc-nav .cnt { min-width: 64px; text-align: center; font-weight: 700; font-size: 1.05rem; }
+.sq { width: 52px; height: 52px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface); font-size: 1.3rem; display: inline-grid; place-items: center; }
+.sq:disabled { opacity: .35; cursor: default; }
+.fc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; margin-top: 16px; }
+.fc-mini { border: 1px solid var(--line); background: var(--surface); border-radius: 14px; padding: 8px 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.fc-mini.on { border-color: var(--sage); background: var(--sage-soft); }
+.fc-mini .mi { width: 40px; height: 40px; display: grid; place-items: center; }
+.fc-mini .mi .dot { width: 30px; height: 30px; border-radius: 50%; border: 2px solid rgba(0,0,0,.12); }
+.fc-mini .mi .num { font-weight: 800; font-size: 1.4rem; color: var(--sage); }
+.fc-mini b { font-family: var(--zh); font-size: 1.05rem; }
+.fc-mini small { color: var(--muted); font-size: .72rem; }
+
+/* Sách bài hát */
+.book-tools { display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--sunk); border-radius: 18px 18px 0 0; padding: 12px; border: 1px solid var(--line); border-bottom: 0; }
+.book-tools .pg { min-width: 70px; text-align: center; font-weight: 700; font-size: 1.15rem; }
+.book-tools .sq { width: 48px; height: 48px; }
+.book-view { border: 1px solid var(--line); border-radius: 0 0 18px 18px; background: var(--sunk); padding: 6px; overflow-x: auto; touch-action: pan-y pinch-zoom; }
+.page { background: #fffef9; color: #23362c; border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,.08); padding: 16px 10px 20px; --z: 1; }
+.page .pt { padding: 0 6px; display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; font-size: .74rem; color: #6b7a70; }
+.page .pt .brand { display: flex; align-items: center; gap: 8px; }
+.page .pt .brand span { width: 26px; height: 26px; border-radius: 50%; background: #e3ece2; padding: 4px; display: inline-block; }
+.page .pt b { letter-spacing: .08em; }
+.page .head { display: flex; gap: 12px; align-items: flex-start; margin: 14px 6px 10px; }
+.page .head .hl { flex: 1; min-width: 0; }
+.page .head .num { font-size: .72rem; font-weight: 700; letter-spacing: .06em; color: #6b7a70; text-transform: uppercase; }
+.page .head .pic { width: calc(84px * var(--z)); height: calc(84px * var(--z)); max-width: 30%; border-radius: 16px; background: #e3ece2; padding: 10px; flex: none; }
+.page .head .vt { font-size: .82rem; color: #6b7a70; margin-top: 4px; }
+.ln { display: flex; flex-wrap: wrap; gap: 0 calc(2px * var(--z)); align-items: flex-end; }
+.ch { display: inline-flex; flex-direction: column; align-items: center; min-width: calc(27px * var(--z)); }
+.ch b { font-family: var(--zh); font-weight: 500; font-size: calc(1.55rem * var(--z)); line-height: 1.25; }
+.ch i { font-style: normal; font-size: calc(.72rem * var(--z)); color: #6b7a70; line-height: 1.2; white-space: nowrap; }
+.head .ln .ch b { font-weight: 700; font-size: calc(1.9rem * var(--z)); }
+.lyr { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.lr { border: 0; background: transparent; text-align: left; border-radius: 12px; padding: calc(8px * var(--z)) 8px; width: 100%; color: inherit; }
+.lr:nth-child(odd) { background: #e8efe5; }
+.lr.now { background: #fff1b8; box-shadow: inset 0 0 0 2px #e2c75a; }
+.lr .lv { font-size: calc(.8rem * var(--z)); color: #7a6a3a; margin-top: 2px; }
+.nov .lr .lv { display: none; }
+.dl { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 14px; }
+
+/* Danh sách bài */
+.list { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); margin-top: 18px; overflow: hidden; }
+.list h3 { margin: 0; padding: 14px 18px 8px; font-size: 1rem; color: var(--muted); font-weight: 600; }
+.song { display: flex; align-items: center; gap: 14px; width: 100%; border: 0; border-top: 1px solid var(--line); background: transparent; padding: 14px 18px; text-align: left; min-height: 72px; }
+.song.on { background: var(--sage-soft); }
+.song .n { width: 22px; color: var(--muted); font-weight: 600; flex: none; }
+.song .si { width: 44px; height: 44px; border-radius: 14px; background: var(--sunk); padding: 7px; flex: none; }
+.song .st { flex: 1; min-width: 0; }
+.song .st b { font-family: var(--zh); font-size: 1.25rem; font-weight: 700; display: block; line-height: 1.3; }
+.song .st small { color: var(--muted); font-size: .9rem; }
+.song .pl { color: var(--sage); font-size: 1.1rem; flex: none; }
+footer { text-align: center; color: var(--muted); font-size: .82rem; margin-top: 28px; }
+footer a { color: inherit; }
+
+/* Cài đặt */
+dialog { border: 0; border-radius: 22px; padding: 0; width: min(92vw, 460px); background: var(--surface); color: var(--ink); box-shadow: 0 20px 60px rgba(0,0,0,.3); }
+dialog::backdrop { background: rgba(0,0,0,.35); }
+dialog .pb { padding: 18px; }
+dialog h3 { margin: 0 0 6px; }
+dialog label { display: block; font-weight: 600; margin: 14px 0 6px; font-size: .92rem; }
+dialog input[type=password], dialog input[type=text] { width: 100%; min-height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); padding: 8px 12px; font: inherit; font-size: 16px; }
+dialog .seg { display: flex; flex-wrap: wrap; gap: 8px; }
+#status { font-size: .82rem; color: var(--muted); margin-top: 8px; min-height: 1.2em; }
+
+/* In / lưu PDF: chỉ in sách bài hát của tuần, mỗi bài một trang */
+#print { display: none; }
+@media print {
+  @page { size: A4; margin: 14mm; }
+  body { background: #fff; }
+  .wrap { display: none; }
+  dialog { display: none; }
+  #print { display: block; }
+  #print .page { box-shadow: none; padding: 0; break-after: page; page-break-after: always; }
+  #print .page:last-child { break-after: auto; page-break-after: auto; }
+  #print .lr { break-inside: avoid; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  #print .page .head .pic, #print .pt .brand span { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  #print .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  #print .pc { border: 1.5px dashed #b8c4b6; border-radius: 12px; padding: 10px; text-align: center; break-inside: avoid; }
+  #print .pc .pi { width: 64px; height: 64px; margin: 0 auto 4px; display: grid; place-items: center; }
+  #print .pc .pi .dot { width: 54px; height: 54px; border-radius: 50%; border: 2px solid rgba(0,0,0,.15); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  #print .pc .pi .num { font-size: 2rem; font-weight: 800; }
+  #print .pc b { font-family: var(--zh); font-size: 1.6rem; display: block; }
+  #print .pc i { font-style: normal; color: #3f6b52; display: block; }
+  #print .pc small { color: #6b7a70; }
+}
+@media (prefers-reduced-motion: reduce) { .fc { transition: none; } .bar i { transition: none; } }
+@media (max-width: 380px) {
+  .tab { font-size: .82rem; min-height: 84px; }
+  .hero h2 { font-size: 1.3rem; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="logo"><img class="em" src="emoji/1f43c.svg" alt=""></div>
+    <div>
+      <h1>Bé Học Tiếng Trung</h1>
+      <p>Mỗi tuần một chủ đề: nghe, thẻ từ, bài hát</p>
+    </div>
+    <button class="gear" id="openSet" aria-label="Cài đặt giọng đọc">⚙️</button>
+  </header>
+
+  <nav class="weeks" id="weeks" aria-label="Chọn tuần"></nav>
+
+  <section class="hero" id="hero"></section>
+
+  <section class="panel hide" id="pMp3" aria-label="Nghe cả tuần">
+    <div class="ph"><h3>Nghe cả tuần</h3><button class="x" data-close aria-label="Đóng">×</button></div>
+    <div class="pb">
+      <p class="note" id="mp3Note"></p>
+      <div class="now">
+        <div class="ns" id="nowSong">Bấm ▶ để nghe</div>
+        <div class="nl" id="nowLine"></div>
+        <div class="np" id="nowPy"></div>
+        <div class="nv" id="nowVi"></div>
+        <div class="bar"><i id="bar"></i></div>
+      </div>
+      <div class="ctl">
+        <button id="prev" aria-label="Bài trước">⏮</button>
+        <button id="play" class="play" aria-label="Phát">▶</button>
+        <button id="next" aria-label="Bài sau">⏭</button>
+      </div>
+      <div class="opts">
+        <button class="chip" id="optSlow" aria-pressed="false">🐢 Đọc chậm</button>
+        <button class="chip" id="optRepeat" aria-pressed="false">🔁 Lặp lại cả tuần</button>
+        <button class="chip" id="optVi" aria-pressed="false">🇻🇳 Đọc nghĩa tiếng Việt</button>
+      </div>
+      <ul class="tracks" id="tracks"></ul>
+      <input type="file" id="fileIn" accept="audio/*,.mp3,.m4a" class="hide">
+    </div>
+  </section>
+
+  <section class="panel hide" id="pCard" aria-label="Thẻ từ cả tuần">
+    <div class="ph"><h3>Thẻ từ cả tuần</h3><button class="x" data-close aria-label="Đóng">×</button></div>
+    <div class="pb">
+      <div class="fc-stage"><button class="fc" id="fc" aria-label="Lật thẻ"></button></div>
+      <div class="fc-nav">
+        <button class="sq" id="fcPrev" aria-label="Thẻ trước">←</button>
+        <button class="sq" id="fcSay" aria-label="Nghe lại">🔊</button>
+        <span class="cnt" id="fcCnt"></span>
+        <button class="sq" id="fcShuf" aria-label="Trộn thẻ">🔀</button>
+        <button class="sq" id="fcNext" aria-label="Thẻ sau">→</button>
+      </div>
+      <div class="fc-grid" id="fcGrid"></div>
+    </div>
+  </section>
+
+  <section class="panel hide" id="pBook" aria-label="Sách bài hát">
+    <div class="ph"><h3>Sách bài hát</h3><button class="x" data-close aria-label="Đóng">×</button></div>
+    <div class="pb">
+      <div class="book-tools">
+        <button class="sq" id="bPrev" aria-label="Trang trước">←</button>
+        <button class="sq" id="zOut" aria-label="Thu nhỏ chữ">−</button>
+        <span class="pg" id="bPg"></span>
+        <button class="sq" id="zIn" aria-label="Phóng to chữ">+</button>
+        <button class="sq" id="bNext" aria-label="Trang sau">→</button>
+      </div>
+      <div class="book-view" id="bookView"></div>
+      <div class="dl">
+        <button class="btn pri" id="pdf">↓ Tải PDF cả tuần</button>
+        <button class="btn" id="readPage">🔊 Đọc trang này</button>
+        <button class="chip" id="optMean" aria-pressed="true">Hiện nghĩa tiếng Việt</button>
+      </div>
+      <p class="note" style="margin-top:10px">Bấm vào một dòng để nghe dòng đó. Nút Tải PDF mở hộp in, chọn “Lưu thành PDF” (trên iPhone: bấm Chia sẻ rồi Lưu vào Tệp).</p>
+    </div>
+  </section>
+
+  <section class="list">
+    <h3 id="listTitle">Bài của tuần</h3>
+    <div id="songs"></div>
+  </section>
+
+  <footer>
+    <p>Lời “Lời mới” do trang tự soạn; bài dân gian, đồng dao và thơ Đường là của chung. Hình vẽ: <a href="https://github.com/jdecked/twemoji" target="_blank" rel="noopener">Twemoji</a> (CC BY 4.0).</p>
+    <p><a href="../">← Về trang Nói tiếng Trung mỗi ngày</a></p>
+  </footer>
+</div>
+
+<dialog id="set">
+  <div class="pb">
+    <h3>Giọng đọc</h3>
+    <p class="note">Giọng của máy dùng được ngay. Giọng AI của Google nghe tự nhiên hơn, cần khóa Gemini miễn phí (lấy ở aistudio.google.com/apikey). Khóa chỉ lưu trong trình duyệt này và dùng chung với các trang khác của bạn.</p>
+    <div class="seg">
+      <button class="chip" id="vDev" aria-pressed="true">Giọng của máy</button>
+      <button class="chip" id="vAi" aria-pressed="false">Giọng AI (Gemini)</button>
+    </div>
+    <label for="key">Khóa Gemini</label>
+    <input type="password" id="key" placeholder="Dán khóa vào đây" autocomplete="off">
+    <div id="status"></div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
+      <button class="btn" id="testVoice">🔊 Thử giọng</button>
+      <button class="btn pri" id="closeSet">Xong</button>
+    </div>
+  </div>
+</dialog>
+
+<div id="print"></div>
+
+<script src="noi-dung.js"></script>
+<script>
+(() => {
+  'use strict';
+  const W = window.WEEKS || [];
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const pad = n => String(n).padStart(2, '0');
+  const em = code => `<img class="em" src="emoji/${code}.svg" alt="" loading="lazy">`;
+
+  // ---------- Lưu lựa chọn trên máy ----------
+  const KEY = 'be-tieng-trung-v1';
+  const store = { week: 0, zoom: 1, slow: false, repeat: false, readVi: false, mean: true, ai: false, aiKey: '', aiModel: '' };
+  try { Object.assign(store, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) {}
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {} };
+  if (!(store.week >= 0 && store.week < W.length)) store.week = 0;
+
+  let week = W[store.week];
+  let open = '';            // khung đang mở: mp3, card, book
+  let page = 0;             // trang sách
+  let card = 0, order = []; // thẻ từ
+
+  // ---------- Hình trên thẻ ----------
+  function art(img, big) {
+    if (typeof img === 'number') {
+      if (!big) return `<span class="num">${img}</span>`;
+      return `<div class="apples n${Math.min(img, 4)}">${Array.from({ length: img }, () => '<img src="emoji/1f34e.svg" alt="">').join('')}</div>`;
+    }
+    if (/^#/.test(img)) return `<span class="dot" style="background:${img}"></span>`;
+    return em(img);
+  }
+
+  // ---------- Vẽ trang ----------
+  function renderWeeks() {
+    $('weeks').innerHTML = W.map((w, i) => `<button class="wk" aria-pressed="${i === store.week}" data-w="${i}"><span class="ic">${em(w.em)}</span>Tuần ${i + 1} · ${esc(w.vi)}</button>`).join('');
+    const on = $('weeks').querySelector('[aria-pressed="true"]');
+    if (on) on.scrollIntoView({ block: 'nearest', inline: 'center' });
+  }
+  function renderHero() {
+    $('hero').innerHTML = `
+      <div class="row">
+        <div class="pic">${em(week.em)}</div>
+        <div>
+          <div class="kick">Tuần ${pad(store.week + 1)}</div>
+          <h2><span class="zh">${esc(week.t)}</span>${esc(week.vi)}</h2>
+          <div class="sub">${esc(week.tpy)} · ${week.songs.length} bài · ${week.cards.length} thẻ từ</div>
+        </div>
+      </div>
+      <div class="tabs">
+        <button class="tab mp3" data-open="mp3" aria-expanded="${open === 'mp3'}"><span class="ti">🎵</span>Nghe cả tuần</button>
+        <button class="tab card" data-open="card" aria-expanded="${open === 'card'}"><span class="ti">🃏</span>Thẻ từ cả tuần</button>
+        <button class="tab book" data-open="book" aria-expanded="${open === 'book'}"><span class="ti">📖</span>Sách bài hát</button>
+      </div>`;
+  }
+  function renderSongs() {
+    $('listTitle').textContent = `Bài của tuần ${store.week + 1}`;
+    $('songs').innerHTML = week.songs.map((s, i) => `
+      <button class="song${player.song === i && player.on ? ' on' : ''}" data-song="${i}">
+        <span class="n">${i + 1}</span>
+        <span class="si">${em(s.em)}</span>
+        <span class="st"><b>${esc(s.zh)}</b><small>${esc(s.vi)} · ${esc(s.src)}</small></span>
+        <span class="pl" aria-hidden="true">▶</span>
+      </button>`).join('');
+  }
+  function chars(line, cls) {
+    const zh = [...line.zh], py = (line.py || '').split(/\s+/);
+    return `<div class="ln ${cls || ''}">${zh.map((c, i) => `<span class="ch"><b>${esc(c)}</b><i>${esc(py[i] || '')}</i></span>`).join('')}</div>`;
+  }
+  function pageHtml(si, forPrint) {
+    const s = week.songs[si];
+    return `<article class="page${store.mean ? '' : ' nov'}" style="--z:${forPrint ? 1.5 : store.zoom}">
+      <div class="pt"><span class="brand"><span>${em('1f43c')}</span>Bé Học Tiếng Trung · Lời bài hát & bài đọc</span><b>TUẦN ${pad(store.week + 1)}</b></div>
+      <div class="head">
+        <div class="hl">
+          <div class="num">Bài ${pad(si + 1)} · ${esc(s.src)}</div>
+          ${chars({ zh: s.zh, py: s.py || '' })}
+          <div class="vt">${esc(s.vi)}</div>
+        </div>
+        <div class="pic">${em(s.em)}</div>
+      </div>
+      <div class="lyr">${s.lines.map((l, i) => `<button class="lr" data-line="${i}">${chars(l)}<div class="lv">${esc(l.vi)}</div></button>`).join('')}</div>
+    </article>`;
+  }
+  function renderBook() {
+    const n = week.songs.length;
+    page = Math.max(0, Math.min(page, n - 1));
+    $('bPg').textContent = `${page + 1} / ${n}`;
+    $('bPrev').disabled = page === 0; $('bNext').disabled = page === n - 1;
+    $('zOut').disabled = store.zoom <= .7; $('zIn').disabled = store.zoom >= 1.8;
+    $('bookView').innerHTML = pageHtml(page);
+    $('optMean').setAttribute('aria-pressed', store.mean);
+    markLine();
+  }
+  function markLine() {
+    document.querySelectorAll('#bookView .lr').forEach(el => el.classList.remove('now'));
+    if (player.on && player.song === page && player.line >= 0) {
+      const el = document.querySelector(`#bookView .lr[data-line="${player.line}"]`);
+      if (el) el.classList.add('now');
+    }
+  }
+
+  // ---------- Thẻ từ ----------
+  function renderCard() {
+    const cs = week.cards, c = cs[order[card]];
+    $('fc').classList.remove('flip');
+    $('fc').innerHTML = `
+      <span class="face front"><span class="art">${art(c.img, true)}</span><span class="fz">${esc(c.zh)}</span><span class="fp">${esc(c.py)}</span><span class="hint">Chạm để lật thẻ</span></span>
+      <span class="face back"><span class="bz">${esc(c.zh)}</span><span class="bp">${esc(c.py)}</span><span class="bv">${esc(c.vi)}</span><span class="hint">Chạm để lật lại</span></span>`;
+    $('fcCnt').textContent = `${card + 1} / ${cs.length}`;
+    $('fcPrev').disabled = card === 0; $('fcNext').disabled = card === cs.length - 1;
+    $('fcGrid').innerHTML = order.map((k, i) => { const x = cs[k]; return `<button class="fc-mini${i === card ? ' on' : ''}" data-card="${i}"><span class="mi">${art(x.img, false)}</span><b>${esc(x.zh)}</b><small>${esc(x.vi)}</small></button>`; }).join('');
+  }
+  function sayCard() { const c = week.cards[order[card]]; stopAll(); say(c.zh); }
+
+  // ---------- Khung ----------
+  function setOpen(which) {
+    open = open === which ? '' : which;
+    $('pMp3').classList.toggle('hide', open !== 'mp3');
+    $('pCard').classList.toggle('hide', open !== 'card');
+    $('pBook').classList.toggle('hide', open !== 'book');
+    document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-expanded', t.dataset.open === open));
+    if (open === 'card') renderCard();
+    if (open === 'book') renderBook();
+    if (open === 'mp3') renderTracks();
+    const p = { mp3: 'pMp3', card: 'pCard', book: 'pBook' }[open];
+    if (p) $(p).scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function setWeek(i) {
+    stopAll();
+    store.week = i; save(); week = W[i];
+    page = 0; card = 0; order = week.cards.map((_, k) => k);
+    player.song = 0; player.line = -1;
+    renderWeeks(); renderHero(); renderSongs(); showNow();
+    if (open === 'card') renderCard();
+    if (open === 'book') renderBook();
+    if (open === 'mp3') renderTracks();
+  }
+
+  // ---------- Âm thanh ----------
+  const audio = new Audio();
+  audio.preload = 'auto';
+  const SILENT = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
+  document.addEventListener('pointerdown', () => {
+    try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } catch (e) {}
+  }, { once: true, capture: true });
+
+  let zhVoice = null, viVoice = null;
+  function findVoices() {
+    try {
+      const vs = speechSynthesis.getVoices();
+      const pick = (re, pref) => vs.filter(v => re.test(v.lang.replace('_', '-'))).sort((a, b) => (pref.test(b.name) - pref.test(a.name)) || (b.localService - a.localService))[0] || null;
+      zhVoice = pick(/^zh-?(CN|Hans)?/i, /Tingting|Ting-Ting|Xiaoxiao|Yaoyao|Huihui|Google 普通话|Lili|Meijia/i);
+      if (zhVoice && /HK|TW/i.test(zhVoice.lang)) zhVoice = vs.find(v => /zh-?CN/i.test(v.lang)) || zhVoice;
+      viVoice = pick(/^vi/i, /Linh|An|Google/i);
+    } catch (e) {}
+  }
+  try { findVoices(); speechSynthesis.onvoiceschanged = findVoices; } catch (e) {}
+
+  // Kho lưu trên máy: tệp MP3 bạn chọn cho từng bài, và giọng AI đã tạo
+  const idb = (() => {
+    let p = null;
+    const db = () => p = p || new Promise((res, rej) => {
+      const r = indexedDB.open('be-tieng-trung', 1);
+      r.onupgradeneeded = () => { r.result.createObjectStore('mp3'); r.result.createObjectStore('tts'); };
+      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+    });
+    const op = (st, mode, fn) => db().then(d => new Promise(res => { const t = d.transaction(st, mode); const q = fn(t.objectStore(st)); t.oncomplete = () => res(q && q.result); t.onerror = () => res(null); })).catch(() => null);
+    return {
+      get: (st, k) => op(st, 'readonly', s => s.get(k)),
+      set: (st, k, v) => op(st, 'readwrite', s => s.put(v, k)),
+      del: (st, k) => op(st, 'readwrite', s => s.delete(k)),
+      keys: st => op(st, 'readonly', s => s.getAllKeys()),
+    };
+  })();
+
+  // Giọng AI Gemini (dùng chung khóa với các trang khác của bạn)
+  const aiKey = () => {
+    if (store.aiKey) return store.aiKey;
+    try { const k = JSON.parse(localStorage.getItem('goi-key') || '""'); if (k) return k; } catch (e) {}
+    for (const n of ['be-hoc-tieng-anh-v1', 'be-tu-duy-v1', 'sudoku-be-v1']) {
+      try { const k = (JSON.parse(localStorage.getItem(n) || '{}').aiKey) || ''; if (k) return k; } catch (e) {}
+    }
+    return '';
+  };
+  let aiDead = '';
+  const aiOn = () => store.ai && !!aiKey() && !aiDead;
+  async function aiModel() {
+    if (store.aiModel) return store.aiModel;
+    let names = [];
+    try {
+      const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key=' + encodeURIComponent(aiKey()));
+      const d = await r.json();
+      names = (d.models || []).filter(m => /tts/i.test(m.name) && (m.supportedGenerationMethods || []).includes('generateContent')).map(m => m.name.replace(/^models\//, ''));
+    } catch (e) {}
+    names.sort((a, b) => (/flash/.test(b) - /flash/.test(a)) || (/preview/.test(a) - /preview/.test(b)));
+    store.aiModel = names[0] || 'gemini-2.5-flash-preview-tts'; save();
+    return store.aiModel;
+  }
+  function pcmToWav(b64, rate) {
+    const pcm = Uint8Array.from(atob(b64), c => c.charCodeAt(0)), buf = new ArrayBuffer(44 + pcm.length), v = new DataView(buf);
+    const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+    w(0, 'RIFF'); v.setUint32(4, 36 + pcm.length, true); w(8, 'WAVE'); w(12, 'fmt '); v.setUint32(16, 16, true);
+    v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true);
+    v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, pcm.length, true);
+    new Uint8Array(buf, 44).set(pcm);
+    return new Blob([buf], { type: 'audio/wav' });
+  }
+  const aiMem = new Map(), aiBusy = new Map();
+  function aiGet(text, slow) {
+    const k = 'Leda|' + (slow ? 's|' : '') + text;
+    if (aiMem.has(k)) return Promise.resolve(aiMem.get(k));
+    if (aiBusy.has(k)) return aiBusy.get(k);
+    const job = (async () => {
+      const have = await idb.get('tts', k);
+      if (have) { aiMem.set(k, have); return have; }
+      const model = await aiModel();
+      const style = slow ? 'Đọc thật chậm và rõ, như cô giáo đọc cho em bé tập nói tiếng Trung phổ thông: ' : 'Đọc vui tươi, rõ ràng, như cô giáo mầm non đọc tiếng Trung phổ thông cho em bé: ';
+      const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + encodeURIComponent(aiKey()), {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: style + text }] }], generationConfig: { responseModalities: ['AUDIO'], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Leda' } } } } }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        if (r.status === 400 || r.status === 401 || r.status === 403) aiDead = 'Khóa Gemini không dùng được, đang dùng giọng của máy.';
+        if (r.status === 404) store.aiModel = '';
+        throw new Error(d.error && d.error.message || 'HTTP ' + r.status);
+      }
+      const part = ((d.candidates && d.candidates[0] && d.candidates[0].content || {}).parts || []).find(p => p.inlineData);
+      if (!part) throw new Error('Không có âm thanh');
+      const rate = +((part.inlineData.mimeType || '').match(/rate=(\d+)/) || [0, 24000])[1];
+      const blob = pcmToWav(part.inlineData.data, rate);
+      aiMem.set(k, blob); idb.set('tts', k, blob);
+      return blob;
+    })().catch(() => null).finally(() => aiBusy.delete(k));
+    aiBusy.set(k, job);
+    return job;
+  }
+
+  let tok = 0;
+  function stopVoice() { tok++; try { speechSynthesis.cancel(); } catch (e) {} try { audio.pause(); } catch (e) {} }
+  function deviceSay(text, lang, slow, t) {
+    return new Promise(done => {
+      try {
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = lang === 'vi' ? 'vi-VN' : 'zh-CN';
+        const v = lang === 'vi' ? viVoice : zhVoice; if (v) u.voice = v;
+        u.rate = lang === 'vi' ? 1 : (slow ? .55 : .8);
+        u.pitch = lang === 'vi' ? 1 : 1.1;
+        let fin = false; const end = () => { if (!fin) { fin = true; clearTimeout(guard); done(); } };
+        const guard = setTimeout(end, 1500 + text.length * 900);
+        u.onend = end; u.onerror = end;
+        speechSynthesis.speak(u);
+      } catch (e) { done(); }
+    });
+  }
+  function playBlob(blob, t) {
+    return new Promise(done => {
+      if (t !== tok) return done(false);
+      try {
+        if (audio.src.startsWith('blob:')) URL.revokeObjectURL(audio.src);
+        audio.src = URL.createObjectURL(blob);
+        audio.playbackRate = 1;
+        audio.onended = () => done(true); audio.onerror = () => done(false);
+        audio.play().catch(() => done(false));
+      } catch (e) { done(false); }
+    });
+  }
+  // Đọc một câu. lang: 'zh' hoặc 'vi'. Trả về khi đọc xong.
+  async function say(text, lang, slow, keep) {
+    if (!keep) stopVoice();
+    const t = tok;
+    lang = lang || 'zh';
+    if (lang === 'zh' && aiOn()) {
+      const blob = await Promise.race([aiGet(text, slow), new Promise(r => setTimeout(() => r(null), 8000))]);
+      if (t !== tok) return;
+      if (blob && await playBlob(blob, t)) return;
+      if (t !== tok) return;
+    }
+    await deviceSay(text, lang, slow, t);
+  }
+
+  // ---------- Trình nghe cả tuần ----------
+  const player = { on: false, song: 0, line: -1, mode: '' };
+  const mp3Have = {};       // bài nào có MP3: 'mine' (bạn chọn) hoặc 'file' (có sẵn trong thư mục nhac)
+  const sk = (w, s) => `t${w + 1}-b${s + 1}`;
+  async function refreshMp3() {
+    const keys = (await idb.keys('mp3')) || [];
+    W.forEach((w, wi) => w.songs.forEach((s, si) => {
+      const k = sk(wi, si);
+      if (keys.includes(k)) mp3Have[k] = 'mine';
+      else if (s.mp3) mp3Have[k] = 'file';
+      else delete mp3Have[k];
+    }));
+  }
+  function renderTracks() {
+    const anyMine = week.songs.some((_, i) => mp3Have[sk(store.week, i)]);
+    $('mp3Note').textContent = anyMine
+      ? 'Bài có nhãn MP3 sẽ phát bản nhạc của bạn; các bài khác trang đọc lời cho bé nghe theo.'
+      : 'Trang đọc lời từng bài cho bé nghe theo, dòng đang đọc hiện ở trên. Có bản nhạc MP3 của bài nào thì bấm “＋ MP3” để phát bản nhạc đó.';
+    $('tracks').innerHTML = week.songs.map((s, i) => {
+      const h = mp3Have[sk(store.week, i)];
+      return `<li class="${player.song === i && player.on ? 'on' : ''}">
+        <span class="tt"><span class="zh">${esc(s.zh)}</span>${h ? '<span class="tag">MP3</span>' : ''}<small>${esc(s.vi)}</small></span>
+        <button class="btn" data-play="${i}" aria-label="Nghe bài ${i + 1}">▶</button>
+        ${h === 'mine' ? `<button class="btn" data-del="${i}">Bỏ MP3</button>` : `<button class="btn" data-add="${i}">＋ MP3</button>`}
+      </li>`;
+    }).join('');
+    $('optSlow').setAttribute('aria-pressed', store.slow);
+    $('optRepeat').setAttribute('aria-pressed', store.repeat);
+    $('optVi').setAttribute('aria-pressed', store.readVi);
+  }
+  function showNow(l) {
+    const s = week.songs[player.song];
+    $('nowSong').textContent = player.on ? `Bài ${player.song + 1}/${week.songs.length} · ${s.zh} · ${s.vi}` : 'Bấm ▶ để nghe cả tuần';
+    $('nowLine').textContent = l ? l.zh : '';
+    $('nowPy').textContent = l ? l.py : '';
+    $('nowVi').textContent = l ? l.vi : '';
+    $('play').textContent = player.on ? '⏸' : '▶';
+    $('play').setAttribute('aria-label', player.on ? 'Tạm dừng' : 'Phát');
+    const total = week.songs.length;
+    const frac = player.mode === 'mp3' ? (audio.duration ? audio.currentTime / audio.duration : 0) : (player.line + 1) / Math.max(1, s.lines.length);
+    $('bar').style.width = player.on ? ((player.song + Math.max(0, Math.min(1, frac))) / total * 100) + '%' : '0%';
+    document.querySelectorAll('.song').forEach(b => b.classList.toggle('on', player.on && +b.dataset.song === player.song));
+    document.querySelectorAll('#tracks li').forEach((li, i) => li.classList.toggle('on', player.on && i === player.song));
+    if (open === 'book') markLine();
+  }
+  audio.addEventListener('timeupdate', () => { if (player.mode === 'mp3') showNow(); });
+
+  async function getMp3(si) {
+    const k = sk(store.week, si);
+    if (mp3Have[k] === 'mine') return await idb.get('mp3', k);
+    const s = week.songs[si];
+    if (s.mp3) return s.mp3;
+    return null;
+  }
+  async function playSong(si) {
+    const s = week.songs[si];
+    player.song = si; player.line = -1; player.on = true;
+    if (open === 'book' && page !== si) { page = si; renderBook(); }
+    showNow();
+    const t = tok;
+    const src = await getMp3(si);
+    if (t !== tok || !player.on) return false;
+    if (src) {
+      player.mode = 'mp3';
+      showNow({ zh: s.zh, py: 'Đang phát bản nhạc MP3', vi: s.vi });
+      const ok = await new Promise(done => {
+        try {
+          if (audio.src.startsWith('blob:')) URL.revokeObjectURL(audio.src);
+          audio.src = typeof src === 'string' ? src : URL.createObjectURL(src);
+          audio.playbackRate = store.slow ? .85 : 1;
+          audio.onended = () => done(true); audio.onerror = () => done(true);
+          audio.play().catch(() => done(true));
+        } catch (e) { done(true); }
+      });
+      return ok && t === tok && player.on;
+    }
+    player.mode = 'tts';
+    // Đọc tên bài trước rồi đọc từng dòng
+    showNow({ zh: s.zh, py: s.py || '', vi: s.vi });
+    await say(s.zh, 'zh', store.slow, true);
+    if (t !== tok || !player.on) return false;
+    await wait(500);
+    for (let i = 0; i < s.lines.length; i++) {
+      if (t !== tok || !player.on) return false;
+      const l = s.lines[i];
+      player.line = i; showNow(l);
+      if (aiOn() && s.lines[i + 1]) aiGet(s.lines[i + 1].zh, store.slow);
+      await say(l.zh, 'zh', store.slow, true);
+      if (t !== tok || !player.on) return false;
+      if (store.readVi) { await wait(250); await say(l.vi, 'vi', false, true); }
+      await wait(store.slow ? 700 : 400);
+    }
+    return t === tok && player.on;
+  }
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  async function playFrom(si) {
+    stopVoice();
+    const t = tok;
+    player.on = true;
+    let i = si;
+    for (;;) {
+      const ok = await playSong(i);
+      if (!ok || t !== tok) return;
+      await wait(1200);
+      if (t !== tok) return;
+      i++;
+      if (i >= week.songs.length) { if (store.repeat) i = 0; else break; }
+    }
+    player.on = false; player.line = -1; player.mode = ''; showNow();
+  }
+  function stopAll() { player.on = false; player.line = -1; player.mode = ''; stopVoice(); showNow(); }
+
+  // ---------- PDF ----------
+  function buildPrint() {
+    const cards = `<article class="page">
+      <div class="pt"><span class="brand">Bé Học Tiếng Trung · Thẻ từ</span><b>TUẦN ${pad(store.week + 1)}</b></div>
+      <div class="head"><div class="hl"><div class="num">Thẻ từ cả tuần</div>${chars({ zh: week.t, py: week.tpy })}<div class="vt">${esc(week.vi)}</div></div></div>
+      <div class="cards">${week.cards.map(c => `<div class="pc"><div class="pi">${art(c.img, false)}</div><b>${esc(c.zh)}</b><i>${esc(c.py)}</i><small>${esc(c.vi)}</small></div>`).join('')}</div>
+    </article>`;
+    $('print').innerHTML = week.songs.map((_, i) => pageHtml(i, true)).join('') + cards;
+  }
+
+  // ---------- Sự kiện ----------
+  document.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.w != null) return setWeek(+b.dataset.w);
+    if (b.dataset.open) return setOpen(b.dataset.open);
+    if (b.hasAttribute('data-close')) return setOpen(open);
+    if (b.dataset.song != null) {
+      const i = +b.dataset.song;
+      page = i;
+      if (open !== 'book') setOpen('book'); else renderBook();
+      player.on = true; playFrom(i);
+      return;
+    }
+    if (b.dataset.play != null) { player.on = true; playFrom(+b.dataset.play); return; }
+    if (b.dataset.add != null) { pickFor = +b.dataset.add; $('fileIn').value = ''; $('fileIn').click(); return; }
+    if (b.dataset.del != null) {
+      const k = sk(store.week, +b.dataset.del);
+      idb.del('mp3', k).then(refreshMp3).then(renderTracks);
+      return;
+    }
+    if (b.dataset.card != null) { card = +b.dataset.card; renderCard(); sayCard(); return; }
+    if (b.dataset.line != null) {
+      const l = week.songs[page].lines[+b.dataset.line];
+      player.on = false; stopVoice();
+      document.querySelectorAll('#bookView .lr').forEach(el => el.classList.toggle('now', el === b));
+      say(l.zh, 'zh', store.slow).then(() => b.classList.remove('now'));
+      return;
+    }
+  });
+  let pickFor = -1;
+  $('fileIn').addEventListener('change', async () => {
+    const f = $('fileIn').files[0]; if (!f || pickFor < 0) return;
+    await idb.set('mp3', sk(store.week, pickFor), f);
+    await refreshMp3(); renderTracks();
+  });
+
+  $('play').onclick = () => { if (player.on) stopAll(); else { player.on = true; playFrom(player.song); } };
+  $('prev').onclick = () => { const i = Math.max(0, player.song - 1); player.on = true; playFrom(i); };
+  $('next').onclick = () => { const i = Math.min(week.songs.length - 1, player.song + 1); player.on = true; playFrom(i); };
+  $('optSlow').onclick = () => { store.slow = !store.slow; save(); renderTracks(); };
+  $('optRepeat').onclick = () => { store.repeat = !store.repeat; save(); renderTracks(); };
+  $('optVi').onclick = () => { store.readVi = !store.readVi; save(); renderTracks(); };
+
+  $('fc').onclick = () => { $('fc').classList.toggle('flip'); };
+  $('fcPrev').onclick = () => { if (card > 0) { card--; renderCard(); sayCard(); } };
+  $('fcNext').onclick = () => { if (card < week.cards.length - 1) { card++; renderCard(); sayCard(); } };
+  $('fcSay').onclick = sayCard;
+  $('fcShuf').onclick = () => { for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; } card = 0; renderCard(); sayCard(); };
+
+  $('bPrev').onclick = () => { if (page > 0) { page--; renderBook(); } };
+  $('bNext').onclick = () => { if (page < week.songs.length - 1) { page++; renderBook(); } };
+  $('zIn').onclick = () => { store.zoom = Math.min(1.8, +(store.zoom + .2).toFixed(1)); save(); renderBook(); };
+  $('zOut').onclick = () => { store.zoom = Math.max(.7, +(store.zoom - .2).toFixed(1)); save(); renderBook(); };
+  $('optMean').onclick = () => { store.mean = !store.mean; save(); renderBook(); };
+  $('readPage').onclick = () => { player.on = true; playFrom(page); };
+  $('pdf').onclick = () => { stopAll(); buildPrint(); const t = document.title; document.title = `Be-hoc-tieng-Trung-Tuan-${pad(store.week + 1)}`; setTimeout(() => { window.print(); document.title = t; }, 50); };
+
+  // Vuốt để lật trang sách và thẻ từ
+  function swipe(el, left, right) {
+    let x0 = null, y0 = 0;
+    el.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
+    el.addEventListener('touchend', e => {
+      if (x0 == null) return;
+      const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0; x0 = null;
+      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) (dx < 0 ? left : right)();
+    }, { passive: true });
+  }
+  swipe($('bookView'), () => $('bNext').click(), () => $('bPrev').click());
+  swipe($('fc'), () => $('fcNext').click(), () => $('fcPrev').click());
+
+  // Cài đặt
+  function renderSet() {
+    $('vDev').setAttribute('aria-pressed', !store.ai);
+    $('vAi').setAttribute('aria-pressed', store.ai);
+    $('key').value = store.aiKey || '';
+    const shared = !store.aiKey && aiKey();
+    $('status').textContent = store.ai
+      ? (aiDead || (aiKey() ? (shared ? 'Đang dùng chung khóa Gemini đã lưu ở trang khác.' : 'Đã có khóa Gemini.') : 'Hãy dán khóa Gemini để dùng giọng AI.'))
+      : (zhVoice ? 'Giọng của máy: ' + zhVoice.name : 'Máy này chưa thấy giọng tiếng Trung; trên iPhone vào Cài đặt > Trợ năng > Nội dung được đọc > Giọng nói để tải giọng Trung Quốc.');
+  }
+  $('openSet').onclick = () => { renderSet(); try { $('set').showModal(); } catch (e) { $('set').setAttribute('open', ''); } };
+  $('closeSet').onclick = () => { store.aiKey = $('key').value.trim(); save(); try { $('set').close(); } catch (e) { $('set').removeAttribute('open'); } };
+  $('vDev').onclick = () => { store.ai = false; save(); renderSet(); };
+  $('vAi').onclick = () => { store.ai = true; aiDead = ''; save(); renderSet(); };
+  $('key').oninput = () => { store.aiKey = $('key').value.trim(); aiDead = ''; store.aiModel = ''; save(); renderSet(); };
+  $('testVoice').onclick = () => { store.aiKey = $('key').value.trim(); save(); say('你好，小朋友！我们一起唱歌吧。').then(renderSet); };
+
+  // Bắt đầu
+  order = week.cards.map((_, k) => k);
+  renderWeeks(); renderHero(); renderSongs(); showNow();
+  refreshMp3();
+  if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+})();
+</script>
+</body>
+</html>

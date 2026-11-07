@@ -173,6 +173,7 @@ h1 em { font-style: normal; color: var(--seal); }
 .recbtn.busy, .recbtn.wait { background: var(--ink); color: var(--paper); }
 @keyframes recpulse { 50% { box-shadow: 0 0 0 8px var(--bad-soft); } }
 .recsub { margin: 0; font-size: 13px; }
+.reclive { margin: 0; min-height: 1.4em; font-size: 20px; text-align: center; color: var(--ink); }
 .recerr { margin: 0; font-size: 14px; color: var(--bad); text-align: center; }
 .typeit { margin-top: 10px; }
 .typeit summary { cursor: pointer; font-size: 14px; color: var(--muted); text-align: center; list-style: none; margin-bottom: 8px; }
@@ -577,12 +578,12 @@ window.HOSTED = true;
   const getKey = () => { try { return JSON.parse(localStorage.getItem(KEY) || '""'); } catch { return ""; } };
   // Mô hình nào đang quá tải thì thử mô hình kế tiếp; nhớ mô hình chạy được lần trước.
   const MODELS = ["gemini-flash-latest", "gemini-3.5-flash", "gemini-3.8-flash", "gemini-flash-lite-latest", "gemini-2.5-flash", "gemini-2.5-flash-lite"];
-  async function call(contents, json) {
+  async function call(contents, json, only) {
     let last, good = "";
     try { good = localStorage.getItem("goi-goodModel") || ""; } catch {}
-    for (const m of [...new Set([good, ...MODELS].filter(Boolean))]) {
+    for (const m of only || [...new Set([good, ...MODELS].filter(Boolean))]) {
       let r;
-      const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), 25000);
+      const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), 15000);
       try { r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(getKey())}`, {
         method: "POST", headers: { "Content-Type": "application/json" }, signal: ctl.signal,
         body: JSON.stringify({ contents, generationConfig: json ? { responseMimeType: "application/json" } : {} }),
@@ -593,7 +594,7 @@ window.HOSTED = true;
         if ([404, 429, 500, 503].includes(r.status)) continue;
         throw last;
       }
-      try { localStorage.setItem("goi-goodModel", m); } catch {}
+      if (!only) try { localStorage.setItem("goi-goodModel", m); } catch {}
       return (d.candidates?.[0]?.content?.parts || []).map((p) => p.text || "").join("");
     }
     throw last;
@@ -610,7 +611,7 @@ window.HOSTED = true;
     key: getKey,
     setKey: (k) => { try { localStorage.setItem(KEY, JSON.stringify(k)); } catch {} ckSet(k); },
     link: () => location.origin + location.pathname.replace(/goi-ai\/?$/, "") + "#k=" + encodeURIComponent(getKey()),
-    audio: async (b64, mime, prompt) => parse(await call([{ role: "user", parts: [{ inline_data: { mime_type: mime, data: b64 } }, { text: prompt }] }], true)),
+    audio: async (b64, mime, prompt) => parse(await call([{ role: "user", parts: [{ inline_data: { mime_type: mime, data: b64 } }, { text: prompt }] }], true, ["gemini-flash-lite-latest", "gemini-3.5-flash", "gemini-flash-latest"])),
     video: async (url, prompt) => parse(await call([{ role: "user", parts: [{ file_data: { file_uri: url } }, { text: prompt }] }], true)),
   };
   window.claude = { use: async (name) => (name === "sample" && getKey() ? sample : null) };
@@ -1430,7 +1431,7 @@ function speakBox(id, label = "Chấm") {
   const txt = { wait: "Đang mở micro...", rec: "Đang nghe... Đọc xong bấm để chấm", busy: "Đang chấm điểm..." }[ph] || "Bấm rồi đọc to";
   return `<div class="recbox">
     <button class="recbtn ${ph}" data-rec="${id}" ${ph === "busy" ? "disabled" : ""} aria-label="${esc(txt)}"><span class="recdot">${ICON.mic}<i id="rec-lvl"></i></span><span>${txt}</span></button>
-    ${ph === "rec" ? `<p class="muted recsub">Ngừng nói một chút máy cũng tự chấm</p>` : ""}
+    ${ph === "rec" ? `<p class="reclive zh" id="rec-live">${esc(rec.live || "")}</p><p class="muted recsub">Ngừng nói một chút máy cũng tự chấm</p>` : ""}
     ${ph === "busy" ? `<p class="muted recsub">AI đang nghe lại giọng bạn, chờ vài giây nhé</p>` : ""}
     ${rec.id === id && rec.err ? `<p class="recerr">${esc(rec.err)}</p>` : ""}
   </div>
@@ -1460,12 +1461,51 @@ function wavB64(chunks, rate) {
   for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
   return btoa(bin);
 }
+// Ưu tiên nhận giọng ngay trên máy (nhanh, không cần AI); máy nào không có thì mới thu âm gửi AI Google.
+const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+let srBroken = false, srEmpty = 0;
+function srListen(id) {
+  const r = new SpeechRec();
+  r.lang = "zh-CN"; r.interimResults = true; r.continuous = true; r.maxAlternatives = 1;
+  let fin = "", live = "", err = "", ended = false, quiet, cap;
+  const t0 = performance.now();
+  const end = () => { if (!ended) { try { r.stop(); } catch {} } };
+  const arm = () => { clearTimeout(quiet); quiet = setTimeout(end, live || fin ? 1300 : 8000); };
+  rec.id = id; rec.err = ""; rec.phase = "rec"; rec.live = ""; rec.stop = end;
+  r.onresult = (e) => {
+    fin = ""; live = "";
+    for (let i = 0; i < e.results.length; i++) { const x = e.results[i]; if (x.isFinal) fin += x[0].transcript; else live += x[0].transcript; }
+    rec.live = fin + live; const el = document.getElementById("rec-live"); if (el) el.textContent = rec.live;
+    arm();
+  };
+  r.onerror = (e) => { err = e.error || "error"; };
+  r.onend = () => {
+    if (ended) return; ended = true; clearTimeout(quiet); clearTimeout(cap); rec.stop = null; rec.phase = "idle";
+    const text = (fin + live).trim();
+    if (rec.id !== id) return;
+    if (text) {
+      srEmpty = 0;
+      const py = window.pinyinPro ? pinyinPro.pinyin(hanOnly(text) || text) : "";
+      applyAnswer(id, text, { voice: true, py });
+      if (id !== "role-in") document.querySelector(".result")?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      return;
+    }
+    if (err === "not-allowed") { rec.err = "Trang chưa được dùng micro. Khi trình duyệt hỏi, hãy chọn Cho phép (iPhone: Cài đặt > Safari > Micro và Nhận dạng giọng nói)."; return render(); }
+    if (err && err !== "no-speech" && err !== "aborted") { srBroken = true; rec.err = "Máy này chưa nhận giọng trực tiếp được. Bấm lại nút micro, lần này máy sẽ thu âm rồi nhờ AI Google chấm."; return render(); }
+    if (++srEmpty >= 2) { srBroken = true; rec.err = "Máy vẫn chưa nghe thấy. Bấm lại nút micro, lần này máy sẽ thu âm rồi nhờ AI Google chấm."; return render(); }
+    rec.err = "Chưa nghe thấy tiếng. Bấm lại rồi đọc to, gần điện thoại hơn nhé."; render();
+  };
+  try { r.start(); } catch { srBroken = true; rec.phase = "idle"; return startRec(id); }
+  arm(); cap = setTimeout(end, 15000);
+  render();
+}
 async function startRec(id) {
   if (rec.phase === "rec" && rec.id === id) return rec.stop?.();
+  if (rec.phase === "idle" && SpeechRec && !srBroken) { stopSpeaking(); return srListen(id); }
   if (rec.phase === "wait" && rec.id === id) { rec.cancel?.(); return; }
   if (rec.phase !== "idle") return;
   stopSpeaking();
-  rec.id = id; rec.err = "";
+  rec.id = id; rec.err = ""; rec.live = "";
   if (!window.gemini.key()) { rec.err = "Cần khóa AI của Google để máy nghe và chấm. Dán khóa ở tab Gọi AI một lần là xong."; return render(); }
   const ref = recRefIdx(id);
   // Tạo AudioContext ngay trong lúc bấm để iPhone cho phép.
@@ -1513,11 +1553,12 @@ async function startRec(id) {
   if (why === "quiet" || (!spoke && why !== "max" && why !== "tap")) { rec.phase = "idle"; rec.err = "Chưa nghe thấy tiếng. Bấm lại rồi đọc to, gần điện thoại hơn nhé."; return render(); }
   rec.phase = "busy"; render();
   try {
-    const d = await Promise.race([new Promise((_, no) => setTimeout(() => no(Object.assign(new Error("timeout"), { code: "timeout" })), 45000)), window.gemini.audio(wavB64(chunks, ac.sampleRate), "audio/wav", `This is a recording of a Vietnamese learner reading a Chinese sentence aloud. The sentence they are trying to read is: 「${ref}」.
+    let d = await Promise.race([new Promise((_, no) => setTimeout(() => no(Object.assign(new Error("timeout"), { code: "timeout" })), 30000)), window.gemini.audio(wavB64(chunks, ac.sampleRate), "audio/wav", `This is a recording of a Vietnamese learner reading a Chinese sentence aloud. The sentence they are trying to read is: 「${ref}」.
 Transcribe exactly what was actually said, in simplified Chinese characters. Do NOT correct the learner and do NOT copy the target sentence: if a syllable is mispronounced or has the wrong tone so that it sounds like a different syllable, write a character matching what was really heard; leave out syllables that were skipped or not understandable. If nothing intelligible was said, use an empty string.
 Return JSON: {"text": "<characters heard>", "pinyin": "<pinyin with tone marks of what was heard>"}`)]);
     rec.phase = "idle";
     if (rec.id !== id) return;
+    if (Array.isArray(d)) d = d[0] || {};
     applyAnswer(id, String(d.text || "").trim(), { voice: true, py: String(d.pinyin || "").trim() });
     if (id !== "role-in") document.querySelector(".result")?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   } catch (e) {
